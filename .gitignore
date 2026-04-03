@@ -1,0 +1,5 @@
+# Ignore virtual environments and node modules
+*/venv/
+*/node_modules/
+
+*/package-lock.json

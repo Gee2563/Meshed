@@ -1,0 +1,37 @@
+<svg width="256" height="160" viewBox="0 0 256 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="meshedGradient" x1="16" y1="80" x2="240" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1293C9"/>
+      <stop offset="0.45" stop-color="#8E3AA4"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <path d="M20 95C47 54 85 36 125 36C166 36 203 54 236 93" stroke="url(#meshedGradient)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M19 98C53 120 91 127 127 126C164 125 200 117 237 94" stroke="url(#meshedGradient)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M42 68L76 84L108 58L128 86L160 58L194 84L224 64" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M43 98L76 84" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M76 84L108 110" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M108 58L108 110" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M108 58L128 86" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M128 86L108 110" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M128 86L160 58" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M128 86L160 110" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M160 58L160 110" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M160 58L194 84" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M160 110L194 84" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M194 84L224 64" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M194 84L224 106" stroke="url(#meshedGradient)" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="20" cy="95" r="12" fill="#1293C9"/>
+  <circle cx="42" cy="68" r="13" fill="#1197C0"/>
+  <circle cx="43" cy="98" r="13" fill="#1496C8"/>
+  <circle cx="76" cy="84" r="15" fill="#2C6CB0"/>
+  <circle cx="108" cy="58" r="14" fill="#2E5CA8"/>
+  <circle cx="108" cy="110" r="15" fill="#54389F"/>
+  <circle cx="128" cy="86" r="13" fill="#60359C"/>
+  <circle cx="160" cy="58" r="14" fill="#A12576"/>
+  <circle cx="160" cy="110" r="14" fill="#B51E74"/>
+  <circle cx="194" cy="84" r="15" fill="#E3472C"/>
+  <circle cx="224" cy="64" r="14" fill="#F27C1C"/>
+  <circle cx="224" cy="106" r="14" fill="#F08B1A"/>
+  <circle cx="238" cy="84" r="13" fill="#F4B81C"/>
+</svg>

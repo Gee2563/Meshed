@@ -28,3 +28,9 @@ Team:
 - Tani Monique Gaan
 - George Smith
 
+Installing project:
+
+cd network_pipeline
+python3 -m venv venv
+cd ../web_dev
+npm install
