@@ -10,6 +10,8 @@ Meshed is aimed to improve relationships within VC communities, by find companie
 
 MVP requirements:
 
+We'll use a TDD approach.
+
 Front end with
 - Landing page,
 - Registration page using Dynamic 
@@ -25,3 +27,4 @@ Back-end needs to include:
 Team:
 - Tani Monique Gaan
 - George Smith
+
