@@ -7,7 +7,7 @@ from .core import PipelineContext, StageResult
 from .registry import STAGES
 
 
-PIPELINE_ORDER = ["dashboard_publish"]
+PIPELINE_ORDER = ["source_registry", "fetch_raw", "dashboard_publish"]
 
 
 class PipelineRunner:

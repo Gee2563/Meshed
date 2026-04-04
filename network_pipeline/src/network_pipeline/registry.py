@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import Callable
 
 from .core import PipelineContext, StageResult
-from .stages import dashboard_publish
+from .stages import dashboard_publish, fetch_raw, source_registry
 
 StageFn = Callable[[PipelineContext], StageResult]
 
 STAGES: dict[str, StageFn] = {
+    "source_registry": source_registry.run,
+    "fetch_raw": fetch_raw.run,
     "dashboard_publish": dashboard_publish.run,
 }
 

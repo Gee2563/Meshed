@@ -7,8 +7,19 @@ from pathlib import Path
 from typing import Any
 
 
+REQUIRED_A16Z_CRYPTO_FILES = (
+    "company_network_data.json",
+    "company_network_summary.json",
+    "people_network_data.json",
+)
+
+
 def get_a16z_crypto_artifacts_root() -> Path:
     return Path(__file__).resolve().parents[2] / "public" / "crypto_ecosystems" / "a16z-crypto"
+
+
+def get_a16z_crypto_fetch_root() -> Path:
+    return Path(__file__).resolve().parents[2] / "data" / "raw" / "a16z-crypto"
 
 
 def get_a16z_crypto_publish_root() -> Path:
@@ -19,8 +30,23 @@ def _sanitize_published_json(raw: str) -> str:
     return re.sub(r":\s*NaN(?=\s*[,}\]])", ": null", raw)
 
 
-def _read_json(file_name: str) -> Any:
-    root = get_a16z_crypto_artifacts_root()
+def _root_has_required_files(root: Path) -> bool:
+    return all((root / file_name).exists() for file_name in REQUIRED_A16Z_CRYPTO_FILES)
+
+
+def resolve_a16z_crypto_input_root(input_root: Path | None = None) -> Path:
+    if input_root is not None:
+        return Path(input_root)
+
+    fetched_root = get_a16z_crypto_fetch_root()
+    if _root_has_required_files(fetched_root):
+        return fetched_root
+
+    return get_a16z_crypto_artifacts_root()
+
+
+def _read_json(file_name: str, *, input_root: Path | None = None) -> Any:
+    root = resolve_a16z_crypto_input_root(input_root)
     payload_path = root / file_name
     return json.loads(_sanitize_published_json(payload_path.read_text(encoding="utf-8")))
 
@@ -113,10 +139,11 @@ def _build_person_preview(node: dict[str, object]) -> A16zCryptoPersonPreview:
     )
 
 
-def load_a16z_crypto_dashboard_snapshot() -> A16zCryptoDashboardSnapshot:
-    company_summary_payload = _read_json("company_network_summary.json")
-    company_data_payload = _read_json("company_network_data.json")
-    people_data_payload = _read_json("people_network_data.json")
+def load_a16z_crypto_dashboard_snapshot(input_root: Path | None = None) -> A16zCryptoDashboardSnapshot:
+    source_root = resolve_a16z_crypto_input_root(input_root)
+    company_summary_payload = _read_json("company_network_summary.json", input_root=source_root)
+    company_data_payload = _read_json("company_network_data.json", input_root=source_root)
+    people_data_payload = _read_json("people_network_data.json", input_root=source_root)
 
     company_summary = company_summary_payload.get("summary", {}) if isinstance(company_summary_payload, dict) else {}
     people_summary = people_data_payload.get("summary", {}) if isinstance(people_data_payload, dict) else {}
@@ -157,12 +184,12 @@ def load_a16z_crypto_dashboard_snapshot() -> A16zCryptoDashboardSnapshot:
       generated_via=_as_text(company_summary.get("generated_via")) or None,
       top_companies=top_companies,
       featured_people=featured_people,
-      source_root=get_a16z_crypto_artifacts_root(),
+      source_root=source_root,
     )
 
 
-def build_a16z_crypto_dashboard_document() -> dict[str, object]:
-    snapshot = load_a16z_crypto_dashboard_snapshot()
+def build_a16z_crypto_dashboard_document(input_root: Path | None = None) -> dict[str, object]:
+    snapshot = load_a16z_crypto_dashboard_snapshot(input_root)
 
     return {
       "scope": snapshot.scope,
@@ -180,14 +207,19 @@ def build_a16z_crypto_dashboard_document() -> dict[str, object]:
     }
 
 
-def publish_a16z_crypto_bundle(output_root: Path | None = None) -> Path:
+def publish_a16z_crypto_bundle(
+    output_root: Path | None = None,
+    *,
+    input_root: Path | None = None,
+) -> Path:
     publish_root = output_root or get_a16z_crypto_publish_root()
     publish_root.mkdir(parents=True, exist_ok=True)
 
-    company_network_data = _read_json("company_network_data.json")
-    company_network_summary = _read_json("company_network_summary.json")
-    people_network_data = _read_json("people_network_data.json")
-    dashboard_snapshot = build_a16z_crypto_dashboard_document()
+    source_root = resolve_a16z_crypto_input_root(input_root)
+    company_network_data = _read_json("company_network_data.json", input_root=source_root)
+    company_network_summary = _read_json("company_network_summary.json", input_root=source_root)
+    people_network_data = _read_json("people_network_data.json", input_root=source_root)
+    dashboard_snapshot = build_a16z_crypto_dashboard_document(source_root)
 
     bundle_payloads = {
       "company_network_data.json": company_network_data,

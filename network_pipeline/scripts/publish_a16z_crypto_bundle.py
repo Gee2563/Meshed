@@ -29,10 +29,10 @@ def main() -> int:
     args = parse_args()
     runner = PipelineRunner(workdir=ROOT)
     results = runner.run(
-      stages=["dashboard_publish"],
+      stages=None,
       overrides={"dashboard_publish": {"output_root": args.output_root.resolve()}},
     )
-    publish_root = results[0].outputs.get("publish_root", "")
+    publish_root = results[-1].outputs.get("publish_root", "")
     print(f"[a16z-crypto] published={publish_root}")
     return 0
 
