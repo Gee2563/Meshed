@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { env } from "@/lib/config/env";
 import { ApiError } from "@/lib/server/http";
 import { onboardingContractRepository } from "@/lib/server/repositories/onboarding-contract-repository";
+import { Prisma } from "@/lib/server/prisma-client";
 import type { OnboardingContractArtifactSummary, UserSummary } from "@/lib/types";
 
 type WorldVerifiedContractDeploymentInput = {
@@ -16,7 +17,7 @@ type WorldVerifiedContractDeploymentResult = {
   contractAddress: string;
   network: string;
   generationMode: "MOCK" | "REAL";
-  metadata?: Record<string, unknown> | null;
+  metadata?: Prisma.InputJsonObject | null;
 };
 
 type WorldOnboardingContractServiceDependencies = {
@@ -31,7 +32,7 @@ type WorldOnboardingContractServiceDependencies = {
       contractAddress: string;
       network: string;
       generationMode?: "MOCK" | "REAL";
-      metadata?: Record<string, unknown> | null;
+      metadata?: Prisma.InputJsonValue | null;
     }): Promise<OnboardingContractArtifactSummary>;
   };
   idGenerator: {

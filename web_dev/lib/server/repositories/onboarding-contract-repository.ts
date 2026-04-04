@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/server/prisma";
+import { Prisma } from "@/lib/server/prisma-client";
 import type { OnboardingContractArtifactSummary } from "@/lib/types";
 
 function toSummary(
@@ -37,7 +38,7 @@ export const onboardingContractRepository = {
     contractAddress: string;
     network: string;
     generationMode?: "MOCK" | "REAL";
-    metadata?: Record<string, unknown> | null;
+    metadata?: Prisma.InputJsonValue | null;
   }) {
     const artifact = await prisma.onboardingContractArtifact.create({
       data: {
@@ -49,7 +50,7 @@ export const onboardingContractRepository = {
         contractAddress: data.contractAddress,
         network: data.network,
         generationMode: data.generationMode ?? "MOCK",
-        metadata: data.metadata ?? null,
+        metadata: data.metadata === null ? Prisma.JsonNull : data.metadata,
       },
     });
 

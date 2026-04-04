@@ -17,7 +17,31 @@ type DynamicInviteRecord = {
 
 export type DynamicNextRoute = "/human-idv" | "/onboarding";
 
+function parseDynamicInviteEmailsFromEnv() {
+  const configured = process.env.DYNAMIC_INVITATION_EMAILS;
+
+  if (!configured) {
+    return [];
+  }
+
+  return configured
+    .split(/[,;\n]/)
+    .map((value) => normalizeEmail(value))
+    .filter(Boolean)
+    .map((email) => ({
+      email,
+      kind: "vc_member" as const,
+      nextRoute: "/onboarding" as const,
+      role: "investor" as const,
+      outsideNetworkAccessEnabled: true,
+      onboardingMode: "individual" as const,
+      onboardingStep: "complete" as const,
+      title: "Investor",
+    }));
+}
+
 const inviteRegistry: DynamicInviteRecord[] = [
+  ...parseDynamicInviteEmailsFromEnv(),
   {
     email: "georgegds92+1@gmail.com",
     kind: "portfolio_member",
