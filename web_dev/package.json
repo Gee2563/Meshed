@@ -15,10 +15,14 @@
     "test:watch": "vitest",
     "test:contracts": "hardhat test",
     "test:all": "npm run test && npm run test:contracts",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed",
-    "db:push": "prisma db push",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f db",
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "prisma:generate": "node scripts/run-prisma-with-db-url.cjs generate",
+    "prisma:migrate": "node scripts/run-prisma-with-db-url.cjs migrate dev",
+    "prisma:seed": "node scripts/run-prisma-with-db-url.cjs db seed",
+    "db:push": "node scripts/run-prisma-with-db-url.cjs db push",
     "db:studio": "prisma studio"
   },
   "prisma": {

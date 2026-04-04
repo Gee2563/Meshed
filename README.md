@@ -34,3 +34,15 @@ cd network_pipeline
 python3 -m venv venv
 cd ../web_dev
 npm install
+
+Quick local DB setup (for /api/auth routes):
+
+cd web_dev
+cp .env.example .env.local (edit if needed)
+npm run db:up
+npm run db:push
+
+If you need a clean DB state:
+
+npm run db:reset
+npm run db:push
