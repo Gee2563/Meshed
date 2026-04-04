@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
 
-import { Button } from "@/components/ui/Button";
 import { LogoutButton } from "@/components/LogoutButton";
 import type { UserSummary } from "@/lib/types";
 
@@ -20,12 +19,9 @@ export function TopNav({ currentUser }: TopNavProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-white/85 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
-        <div className="min-w-fit">
-          <Link href="/" className="font-display text-xl font-semibold tracking-tight text-ink">
-            Meshed
-          </Link>
-          <p className="text-xs uppercase tracking-[0.2em] text-slate">Portfolio Network MVP</p>
-        </div>
+        <Link href="/" className="min-w-fit">
+          <img src="/meshed-logo.png" alt="Meshed" className="h-12 w-auto sm:h-14" />
+        </Link>
         <nav className="flex flex-1 flex-wrap items-center gap-3 sm:justify-center sm:gap-5">
           {links.map((link) => (
             <Link key={link.href} href={link.href} className="text-sm font-medium text-slate transition hover:text-ink">
@@ -41,11 +37,7 @@ export function TopNav({ currentUser }: TopNavProps) {
               </div>
               <LogoutButton />
             </>
-          ) : (
-            <Button href="/" variant="secondary">
-              Start with Dynamic
-            </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

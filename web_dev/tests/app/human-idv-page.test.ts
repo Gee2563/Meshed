@@ -19,6 +19,11 @@ vi.mock("@/components/WorldVerificationButton", () => ({
     `WorldVerificationButton:${props.signal}:${props.verified ? "verified" : "pending"}`,
 }));
 
+vi.mock("@/components/HumanIdvIdentityForm", () => ({
+  HumanIdvIdentityForm: (props: { initialFirstName: string; initialLastName: string }) =>
+    `HumanIdvIdentityForm:${props.initialFirstName}:${props.initialLastName}`,
+}));
+
 vi.mock("@/components/ui/Button", () => ({
   Button: (props: { children: React.ReactNode }) => props.children,
 }));
@@ -29,14 +34,14 @@ describe("human IDV page", () => {
     mocks.getCurrentUser.mockReset();
   });
 
-  it("sends signed-out visitors back to the Dynamic registration entrypoint", async () => {
+  it("sends signed-out visitors back home", async () => {
     mocks.getCurrentUser.mockResolvedValue(null);
 
     const { default: HumanIdvPage } = await import("@/app/human-idv/page");
     const markup = renderToStaticMarkup(await HumanIdvPage());
 
     expect(markup).toContain("Session required");
-    expect(markup).toContain("Return to Dynamic registration");
+    expect(markup).toContain("Return home");
     expect(markup).not.toContain("LogoutButton");
   });
 
@@ -63,6 +68,7 @@ describe("human IDV page", () => {
     const markup = renderToStaticMarkup(await HumanIdvPage());
 
     expect(markup).toContain("Finish the trust checkpoint for Avery Collins.");
+    expect(markup).toContain("HumanIdvIdentityForm:Avery:Collins");
     expect(markup).toContain("Human verification is still pending.");
     expect(markup).toContain("WorldVerificationButton:usr_dynamic:pending");
     expect(markup).toContain("Return home");

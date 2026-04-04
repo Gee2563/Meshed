@@ -46,24 +46,12 @@ function DynamicRegistrationPanelInner() {
   const { primaryWallet, sdkHasLoaded, user } = useDynamicContext();
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   // Dynamic can emit several auth-related updates in a row, so guard against duplicate POSTs.
   const registrationSubmitted = useRef(false);
   const registrationGate = getDynamicRegistrationGate({
     hasPrimaryWallet: Boolean(primaryWallet?.address),
     hasUser: Boolean(user),
   });
-
-  useEffect(() => {
-    // Seed the editable fields from Dynamic once, then let the user correct them locally.
-    if (!firstName && user?.firstName?.trim()) {
-      setFirstName(user.firstName.trim());
-    }
-    if (!lastName && user?.lastName?.trim()) {
-      setLastName(user.lastName.trim());
-    }
-  }, [firstName, lastName, user?.firstName, user?.lastName]);
 
   useEffect(() => {
     console.info("[meshed][dynamic-panel] auth state changed", {
@@ -127,26 +115,14 @@ function DynamicRegistrationPanelInner() {
       return;
     }
 
-    const normalizedFirstName = firstName.trim();
-    const normalizedLastName = lastName.trim();
-    if (!normalizedFirstName || !normalizedLastName) {
-      registrationSubmitted.current = false;
-      setSyncState("error");
-      setErrorMessage("Enter first and last name before continuing.");
-      return;
-    }
-
     const payload = buildDynamicRegistrationPayload({
       user,
       walletAddress: primaryWallet.address,
-      firstName: normalizedFirstName,
-      lastName: normalizedLastName,
     });
     console.info("[meshed][dynamic-panel] posting Dynamic registration payload.", {
       dynamicUserId: payload.dynamicUserId,
       email: payload.email,
-      firstName: normalizedFirstName,
-      lastName: normalizedLastName,
+      name: payload.name,
       walletAddress: payload.walletAddress,
       target: "/api/auth/dynamic/register",
     });
@@ -173,8 +149,6 @@ function DynamicRegistrationPanelInner() {
       });
   }, [
     errorMessage,
-    firstName,
-    lastName,
     primaryWallet?.address,
     registrationGate,
     router,
@@ -190,28 +164,6 @@ function DynamicRegistrationPanelInner() {
           <div className="text-center text-2xl font-semibold tracking-tight text-slate-900">Log in or sign up</div>
         </div>
         <div className="px-4 py-4">
-          <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              First name
-              <input
-                type="text"
-                value={firstName}
-                onChange={(event) => setFirstName(event.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-                placeholder="First name"
-              />
-            </label>
-            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Last name
-              <input
-                type="text"
-                value={lastName}
-                onChange={(event) => setLastName(event.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-                placeholder="Last name"
-              />
-            </label>
-          </div>
           <DynamicEmbeddedWidget background="none" />
         </div>
       </div>
@@ -224,7 +176,7 @@ function DynamicRegistrationPanelInner() {
           <p>Syncing the authenticated Dynamic user into Meshed and preparing the next verification step.</p>
         ) : null}
         {syncState === "idle" ? (
-          <p>Use Dynamic to register. Once the wallet is ready, Meshed will move you straight to human verification.</p>
+          <p>Use Dynamic to authenticate. Once the wallet is ready, Meshed will move you straight to human verification.</p>
         ) : null}
         {syncState === "error" ? (
           <p className="text-rose-600">{errorMessage ?? "Unable to complete Dynamic registration."}</p>

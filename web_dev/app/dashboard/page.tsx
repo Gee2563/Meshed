@@ -66,7 +66,7 @@ export default async function DashboardPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate">Dashboard access</p>
           <h1 className="mt-4 font-display text-4xl tracking-tight text-ink">Session required</h1>
           <p className="mt-4 text-sm leading-7 text-slate">
-            The dashboard is part of the Meshed trust flow. Start from Dynamic registration first, then return once the
+            The dashboard is part of the Meshed trust flow. Start from the Meshed home page first, then return once the
             session is active.
           </p>
           <div className="mt-6">

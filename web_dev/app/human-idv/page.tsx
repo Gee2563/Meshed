@@ -1,9 +1,25 @@
+import { HumanIdvIdentityForm } from "@/components/HumanIdvIdentityForm";
 import { LogoutButton } from "@/components/LogoutButton";
 import { WorldVerificationButton } from "@/components/WorldVerificationButton";
 import { Button } from "@/components/ui/Button";
 import { getCurrentUser } from "@/lib/server/current-user";
 
 export const dynamic = "force-dynamic";
+
+function splitDisplayName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return {
+      firstName: "",
+      lastName: "",
+    };
+  }
+
+  return {
+    firstName: parts[0] ?? "",
+    lastName: parts.slice(1).join(" "),
+  };
+}
 
 export default async function HumanIdvPage() {
   const currentUser = await getCurrentUser();
@@ -13,14 +29,14 @@ export default async function HumanIdvPage() {
       <main className="px-6 py-16">
         <section className="mx-auto max-w-3xl rounded-[2rem] border border-amber-200 bg-amber-50/80 px-8 py-10 shadow-[0_30px_120px_rgba(15,23,42,0.08)]">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-700">Session required</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900">Human verification starts after Dynamic sign-in.</h1>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900">Human verification starts after sign-in.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-700">
             Meshed needs an active authenticated session before we can continue into the human IDV checkpoint. Return to
-            the Dynamic registration page and sign in with your allowlisted email to continue.
+            the home page and sign in with your allowlisted email to continue.
           </p>
           <div className="mt-6">
             <Button href="/" variant="secondary">
-              Return to Dynamic registration
+              Return home
             </Button>
           </div>
         </section>
@@ -30,6 +46,7 @@ export default async function HumanIdvPage() {
 
   const verificationStatus = currentUser.worldVerified ? "Verified" : "Pending";
   const verificationSignal = currentUser.id;
+  const nameParts = splitDisplayName(currentUser.name);
 
   return (
     <main className="px-6 py-16">
@@ -42,8 +59,9 @@ export default async function HumanIdvPage() {
                 Finish the trust checkpoint for {currentUser.name}.
               </h1>
               <p className="max-w-2xl text-base leading-7 text-slate-600">
-                Dynamic has already linked your Meshed account and embedded wallet. This step now hands you into World ID
-                staging so Meshed can record the human verification result against the current signed-in account.
+                Your authenticated Meshed session is active. Use this page to confirm the member name that should be
+                shown across the network, then continue into World ID staging so Meshed can record the verified result
+                against the current account.
               </p>
             </div>
 
@@ -64,6 +82,8 @@ export default async function HumanIdvPage() {
               </div>
             </div>
 
+            <HumanIdvIdentityForm initialFirstName={nameParts.firstName} initialLastName={nameParts.lastName} />
+
             <div className="rounded-[1.75rem] border border-sky-200 bg-sky-50/80 px-6 py-5">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">World staging flow</p>
               <p className="mt-3 text-sm leading-6 text-slate-700">
@@ -80,8 +100,8 @@ export default async function HumanIdvPage() {
             </h2>
             <p className="text-base leading-7 text-slate-600">
               {currentUser.worldVerified
-                ? "Your account already carries the World verification flag, so this page can later hand off to the next onboarding checkpoint."
-                : "Your registration succeeded. The remaining trust step is to complete World ID and attach that verified result to this Meshed account."}
+                ? "Your account already carries the World verification flag, so this page can hand off to the rest of the Meshed product surface."
+                : "Once your member details look right, complete World ID and attach that verified result to this Meshed account."}
             </p>
             <div className="rounded-[1.5rem] border border-slate-200 bg-mist/80 px-5 py-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Verification action</p>
