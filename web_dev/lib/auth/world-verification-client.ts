@@ -12,21 +12,39 @@ type RpSignatureResponseBody = {
   error?: string;
 } | null;
 
+type WorldVerificationResultData = {
+  user?: {
+    id?: string;
+    worldVerified?: boolean;
+  };
+  verification?: {
+    success?: boolean;
+    message?: string;
+    environment?: string;
+  };
+};
+
 type WorldVerifyResponseBody = {
   ok?: boolean;
   error?: string;
-  data?: {
-    user?: {
-      id?: string;
-      worldVerified?: boolean;
-    };
-    verification?: {
-      success?: boolean;
-      message?: string;
-      environment?: string;
-    };
+  detail?: {
+    message?: string;
+    code?: string;
+    results?: Array<{
+      identifier?: string;
+      code?: string;
+      detail?: string;
+    }>;
   } | null;
+  data?: WorldVerificationResultData | null;
 } | null;
+
+export type WorldRpSignature = {
+  sig: string;
+  nonce: string;
+  created_at: number;
+  expires_at: number;
+};
 
 type WorldIdKitCompletionResult =
   | {
@@ -44,6 +62,29 @@ function formatWorldErrorCode(code: string) {
 
 function normalizeAppOrigin(appUrl: string) {
   return appUrl.endsWith("/") ? appUrl.slice(0, -1) : appUrl;
+}
+
+function formatWorldServerErrorCode(code: string) {
+  return code.replaceAll("_", " ");
+}
+
+function extractWorldVerificationFailureMessage(body: WorldVerifyResponseBody) {
+  const resultDetail = body?.detail?.results?.find((result) => typeof result.detail === "string" && result.detail.length > 0)?.detail;
+  if (resultDetail) {
+    return resultDetail;
+  }
+
+  const detailMessage = body?.detail?.message;
+  if (detailMessage) {
+    return detailMessage;
+  }
+
+  const detailCode = body?.detail?.results?.find((result) => typeof result.code === "string" && result.code.length > 0)?.code ?? body?.detail?.code;
+  if (detailCode) {
+    return `World verification failed (${formatWorldServerErrorCode(detailCode)}).`;
+  }
+
+  return body?.error ?? "Unable to store World ID verification.";
 }
 
 function ensureWorldClientConfig() {
@@ -73,27 +114,7 @@ export async function runWorldVerification(
 ) {
   const worldConfig = ensureWorldClientConfig();
   const fetcher = input.fetch ?? fetch;
-
-  const rpSignatureResponse = await fetcher("/api/rp-signature", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      action: worldConfig.worldAction,
-    }),
-  });
-
-  const rpSignature = (await rpSignatureResponse.json().catch(() => null)) as RpSignatureResponseBody;
-  if (
-    !rpSignatureResponse.ok ||
-    !rpSignature?.sig ||
-    !rpSignature.nonce ||
-    typeof rpSignature.created_at !== "number" ||
-    typeof rpSignature.expires_at !== "number"
-  ) {
-    throw new Error(rpSignature?.error ?? "Unable to start World ID verification.");
-  }
+  const rpSignature = await requestWorldRpSignature(worldConfig.worldAction, { fetch: fetcher });
 
   const requestBuilder = await IDKit.request({
     app_id: worldConfig.worldAppId as `app_${string}`,
@@ -117,17 +138,61 @@ export async function runWorldVerification(
     throw new Error(`World ID verification did not complete (${formatWorldErrorCode(result.error)}).`);
   }
 
-  const verifyResponse = await fetcher("/api/auth/world/verify", {
+  return submitWorldVerificationResult(result.result, { fetch: fetcher });
+}
+
+export async function requestWorldRpSignature(
+  action: string,
+  input: {
+    fetch?: FetchLike;
+  } = {},
+): Promise<WorldRpSignature> {
+  const fetcher = input.fetch ?? fetch;
+  const response = await fetcher("/api/rp-signature", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(result.result),
+    body: JSON.stringify({
+      action,
+    }),
   });
 
-  const verification = (await verifyResponse.json().catch(() => null)) as WorldVerifyResponseBody;
-  if (!verifyResponse.ok || !verification?.ok) {
-    throw new Error(verification?.error ?? "Unable to store World ID verification.");
+  const body = (await response.json().catch(() => null)) as RpSignatureResponseBody;
+  if (!response.ok || !body?.sig || !body.nonce || typeof body.created_at !== "number" || typeof body.expires_at !== "number") {
+    throw new Error(body?.error ?? "Unable to start World ID verification.");
+  }
+
+  return {
+    sig: body.sig,
+    nonce: body.nonce,
+    created_at: body.created_at,
+    expires_at: body.expires_at,
+  };
+}
+
+export async function submitWorldVerificationResult(
+  result: unknown,
+  input: {
+    fetch?: FetchLike;
+  } = {},
+): Promise<WorldVerificationResultData> {
+  const fetcher = input.fetch ?? fetch;
+  const response = await fetcher("/api/auth/world/verify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(result),
+  });
+
+  const verification = (await response.json().catch(() => null)) as WorldVerifyResponseBody;
+  if (!response.ok || !verification?.ok) {
+    throw new Error(extractWorldVerificationFailureMessage(verification));
+  }
+
+  if (!verification.data) {
+    throw new Error("World verification response did not include result data.");
   }
 
   return verification.data;

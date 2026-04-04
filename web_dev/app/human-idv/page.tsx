@@ -29,7 +29,7 @@ export default async function HumanIdvPage() {
   }
 
   const verificationStatus = currentUser.worldVerified ? "Verified" : "Pending";
-  const verificationSignal = currentUser.walletAddress ?? currentUser.id;
+  const verificationSignal = currentUser.id;
 
   return (
     <main className="px-6 py-16">
@@ -86,8 +86,8 @@ export default async function HumanIdvPage() {
             <div className="rounded-[1.5rem] border border-slate-200 bg-mist/80 px-5 py-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Verification action</p>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Meshed binds the World proof to your current session using the same wallet-or-user signal that Dynamic just
-                established.
+                Meshed binds the World proof to your current signed-in member identity so the verification result lands on
+                the correct account every time.
               </p>
               <div className="mt-4">
                 <WorldVerificationButton signal={verificationSignal} verified={currentUser.worldVerified} />

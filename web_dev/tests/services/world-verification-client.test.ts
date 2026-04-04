@@ -182,4 +182,34 @@ describe("runWorldVerification", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("surfaces the detailed backend verification error when the host-app verification fails", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: false,
+          error: "World verification failed.",
+          detail: {
+            message: "Action is inactive for this app.",
+          },
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const { submitWorldVerificationResult } = await import("@/lib/auth/world-verification-client");
+
+    await expect(
+      submitWorldVerificationResult(
+        {
+          protocol_version: "3.0",
+          nonce: "0xnonce",
+          action: "test-action",
+          environment: "staging",
+          responses: [{ identifier: "orb" }],
+        },
+        { fetch: fetchMock },
+      ),
+    ).rejects.toThrow("Action is inactive for this app.");
+  });
 });

@@ -64,7 +64,7 @@ describe("human IDV page", () => {
 
     expect(markup).toContain("Finish the trust checkpoint for Avery Collins.");
     expect(markup).toContain("Human verification is still pending.");
-    expect(markup).toContain("WorldVerificationButton:0x1234567890123456789012345678901234567890:pending");
+    expect(markup).toContain("WorldVerificationButton:usr_dynamic:pending");
     expect(markup).toContain("Return home");
     expect(markup).toContain("LogoutButton");
   });

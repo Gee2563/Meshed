@@ -27,6 +27,7 @@ type WorldVerifyApiResponse = {
 } | null;
 
 const WORLD_VERIFY_API_BASE_URL = "https://developer.world.org/api/v4/verify";
+const WORLD_VERIFY_USER_AGENT = "Meshed/0.1 (world-id verification)";
 
 function normalizeHex(value: string) {
   return value.trim().toLowerCase();
@@ -48,9 +49,10 @@ function requireMatchingSignal(
     throw new ApiError(400, "World verification response did not include a signal hash.");
   }
 
-  const expectedSignal = user.walletAddress ?? user.id;
-  const expectedSignalHash = normalizeHex(hashSignal(expectedSignal));
-  const matchesCurrentUser = signalHashes.some((signalHash) => normalizeHex(signalHash) === expectedSignalHash);
+  const expectedSignalHashes = [user.id, user.walletAddress]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => normalizeHex(hashSignal(value)));
+  const matchesCurrentUser = signalHashes.some((signalHash) => expectedSignalHashes.includes(normalizeHex(signalHash)));
 
   if (!matchesCurrentUser) {
     throw new ApiError(400, "World verification signal did not match the current user.");
@@ -137,6 +139,8 @@ export const worldVerificationService = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": WORLD_VERIFY_USER_AGENT,
       },
       body: JSON.stringify(payload),
     });
