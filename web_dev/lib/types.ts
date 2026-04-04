@@ -7,6 +7,16 @@ export type UserRole =
   | "investor"
   | "admin";
 
+export type BadgeKey =
+  | "world_verified"
+  | "wallet_connected"
+  | "payment_verified"
+  | "cross_chain_verified"
+  | "external_kpi_verified"
+  | "rising_contributor"
+  | "trusted_mentor"
+  | "verified_operator"
+  | "high_engagement_consultant";
 
 export type OnboardingMode = "company" | "individual";
 
@@ -43,6 +53,8 @@ export interface UserSummary {
   dynamicUserId?: string | null;
   engagementScore: number;
   reliabilityScore: number;
+  verificationBadges: BadgeKey[];
+  outsideNetworkAccessEnabled?: boolean;
   lastActiveAt?: string | null;
   createdAt: string;
 }
@@ -90,3 +102,18 @@ export interface OnboardingContractArtifactSummary {
   createdAt: string;
 }
 
+export interface OnboardingProfileSummary {
+  id: string;
+  userId: string;
+  companyId?: string | null;
+  vcCompanyId?: string | null;
+  portfolioCompanyId?: string | null;
+  mode: OnboardingMode;
+  title: string;
+  isExecutive: boolean;
+  executiveSignoffEmail?: string | null;
+  currentStep: RegistrationFlowStep;
+  teamCsvUploadedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -91,5 +91,5 @@ export function getHumanIdvRoute() {
 
 export function normalizeDynamicNextRoute(value?: string | null): DynamicNextRoute {
   // Only allow server-provided routes that Meshed explicitly understands.
-  return value === "/onboarding" ? "/onboarding" : "/human-idv";
+  return value === "/onboarding" || value === "/human-idv" ? value : "/human-idv";
 }

@@ -4,13 +4,13 @@ import type {
   CompanySummary,
   OnboardingProfileSummary,
   UserSummary,
-} from "../../types";
+} from "@/lib/types";
+import { getDynamicInvitationAccess } from "@/lib/auth/invitation-access";
+import { ApiError } from "@/lib/server/http";
 import { companyRepository } from "@/lib/server/repositories/company-repository";
 import { onboardingRepository } from "@/lib/server/repositories/onboarding-repository";
 import { userRepository } from "@/lib/server/repositories/user-repository";
-import { ApiError } from "@/lib/server/http";
 
-// Dynamic registration service is the bridge from Dynamic-authenticated identities into Meshed onboarding records.
 const genericDynamicBio = "New Meshed member authenticated with Dynamic.";
 
 type DynamicRegistrationInput = {
@@ -20,6 +20,13 @@ type DynamicRegistrationInput = {
   name: string;
   firstName?: string | null;
   lastName?: string | null;
+};
+
+type DynamicRegistrationResult = {
+  user: UserSummary;
+  onboardingProfile: OnboardingProfileSummary;
+  nextRoute: "/human-idv" | "/onboarding";
+  contractArtifact: null;
 };
 
 type DynamicRegistrationDependencies = {
@@ -65,7 +72,7 @@ type DynamicRegistrationDependencies = {
         title: string;
         isExecutive: boolean;
         executiveSignoffEmail?: string | null;
-        currentStep?: "VC_COMPANY" | "COMPLETE";
+        currentStep?: "VC_COMPANY" | "PORTFOLIO_COMPANY" | "COMPANY_ACCESS" | "INDIVIDUAL_PROFILE" | "COMPLETE";
       },
     ): Promise<OnboardingProfileSummary>;
   };
@@ -124,7 +131,6 @@ async function ensureWalletVerification(
   deps: DynamicRegistrationDependencies,
   user: UserSummary,
 ) {
-  // Registration may be retried, so only create the wallet verification record once per user.
   const existing = await deps.verificationRepository.findWalletVerification(user.id);
   if (existing) {
     return;
@@ -143,17 +149,11 @@ async function ensureCompany(
     id: string;
     ownerUserId: string;
     name: string;
-    description: string;
-    sector: string;
-    stage: string;
-    website: string;
-    currentPainTags: string[];
     companyKind: "VC" | "PORTFOLIO";
     parentCompanyId?: string | null;
     outsideNetworkAccessEnabled: boolean;
   },
 ) {
-  // Invite-driven onboarding sometimes references companies that need to be created lazily.
   const existing = await deps.companyRepository.findById(input.id);
   if (existing) {
     return existing;
@@ -163,11 +163,11 @@ async function ensureCompany(
     id: input.id,
     ownerUserId: input.ownerUserId,
     name: input.name,
-    description: input.description,
-    sector: input.sector,
-    stage: input.stage,
-    website: input.website,
-    currentPainTags: input.currentPainTags,
+    description: `${input.name} onboarding shell`,
+    sector: "General",
+    stage: "Active",
+    website: "https://meshed.local",
+    currentPainTags: [],
     resolvedPainTags: [],
     companyKind: input.companyKind,
     parentCompanyId: input.parentCompanyId ?? null,
@@ -175,36 +175,133 @@ async function ensureCompany(
   });
 }
 
+async function ensurePortfolioInviteScaffold(
+  deps: DynamicRegistrationDependencies,
+  user: UserSummary,
+  invite: NonNullable<ReturnType<typeof getDynamicInvitationAccess>>,
+) {
+  if (!invite.vcCompanyId || !invite.vcCompanyName || !invite.portfolioCompanyId || !invite.portfolioCompanyName) {
+    throw new ApiError(500, "Portfolio invite is missing company metadata.");
+  }
+
+  await ensureCompany(deps, {
+    id: invite.vcCompanyId,
+    ownerUserId: user.id,
+    name: invite.vcCompanyName,
+    companyKind: "VC",
+    outsideNetworkAccessEnabled: true,
+  });
+
+  await ensureCompany(deps, {
+    id: invite.portfolioCompanyId,
+    ownerUserId: user.id,
+    name: invite.portfolioCompanyName,
+    companyKind: "PORTFOLIO",
+    parentCompanyId: invite.vcCompanyId,
+    outsideNetworkAccessEnabled: false,
+  });
+
+  const existingMemberships = await deps.membershipRepository.findByUserId(user.id);
+  const hasPortfolioMembership = existingMemberships.some(
+    (membership) =>
+      membership.companyId === invite.portfolioCompanyId &&
+      membership.relation === "portfolio_member",
+  );
+
+  if (!hasPortfolioMembership) {
+    await deps.membershipRepository.create({
+      id: deps.idGenerator.membershipId(),
+      companyId: invite.portfolioCompanyId,
+      userId: user.id,
+      relation: "portfolio_member",
+      title: invite.title,
+    });
+  }
+}
+
+async function ensureUserForInvite(
+  deps: DynamicRegistrationDependencies,
+  input: DynamicRegistrationInput,
+  role: "OPERATOR" | "INVESTOR",
+  outsideNetworkAccessEnabled: boolean,
+) {
+  const existingUser =
+    (await deps.userRepository.findByDynamicUserId(input.dynamicUserId)) ??
+    (await deps.userRepository.findByEmail(input.email)) ??
+    (await deps.userRepository.findByWalletAddress(input.walletAddress));
+
+  const displayName = resolveDisplayName(input);
+
+  if (!existingUser) {
+    const created = await deps.userRepository.create({
+      id: deps.idGenerator.userId(),
+      name: displayName,
+      email: input.email,
+      role,
+      bio: genericDynamicBio,
+      skills: [],
+      sectors: [],
+      outsideNetworkAccessEnabled,
+    });
+    return deps.userRepository.linkWallet(created.id, input.walletAddress, input.dynamicUserId);
+  }
+
+  const updatedProfile = deps.userRepository.updateProfile
+    ? await deps.userRepository.updateProfile(existingUser.id, {
+        name: displayName,
+        role,
+        bio: existingUser.bio || genericDynamicBio,
+        outsideNetworkAccessEnabled,
+      })
+    : existingUser;
+
+  return deps.userRepository.linkWallet(updatedProfile.id, input.walletAddress, input.dynamicUserId);
+}
+
 export function createDynamicRegistrationService(deps: DynamicRegistrationDependencies) {
   return {
-    async register(input: DynamicRegistrationInput) {
-      // Normalize identifiers up front so account matching does not depend on email casing.
+    async register(input: DynamicRegistrationInput): Promise<DynamicRegistrationResult> {
       const email = normalizeEmail(input.email);
+      const invite = getDynamicInvitationAccess(email);
 
-      const existingUser =
-        (await deps.userRepository.findByDynamicUserId(input.dynamicUserId)) ??
-        (await deps.userRepository.findByEmail(email)) ??
-        (await deps.userRepository.findByWalletAddress(input.walletAddress));
+      if (!invite) {
+        throw new ApiError(403, "This Meshed onboarding flow is invitation-only.");
+      }
 
-      // The current implementation is intentionally minimal while the invite-aware onboarding path is being rebuilt.
-      const user = await deps.userRepository.linkWallet(
-        input.walletAddress,
-        input.dynamicUserId,
+      const user = await ensureUserForInvite(
+        deps,
+        { ...input, email },
+        invite.role === "operator" ? "OPERATOR" : "INVESTOR",
+        invite.outsideNetworkAccessEnabled,
       );
 
-    
+      if (invite.kind === "portfolio_member") {
+        await ensurePortfolioInviteScaffold(deps, user, invite);
+      }
+
+      const onboardingProfile = await deps.onboardingRepository.upsertByUserId(user.id, {
+        id: deps.idGenerator.onboardingId(),
+        companyId: null,
+        vcCompanyId: invite.vcCompanyId ?? null,
+        portfolioCompanyId: invite.portfolioCompanyId ?? null,
+        mode: invite.onboardingMode === "company" ? "COMPANY" : "INDIVIDUAL",
+        title: invite.title,
+        isExecutive: invite.role === "investor",
+        currentStep: invite.onboardingStep === "vc_company" ? "VC_COMPANY" : "COMPLETE",
+      });
 
       await ensureWalletVerification(deps, user);
 
       return {
         user,
+        onboardingProfile,
+        nextRoute: invite.nextRoute,
         contractArtifact: null,
       };
     },
   };
 }
 
-// Default singleton used by route handlers; several dependencies are still explicit placeholders for unfinished flows.
 export const dynamicRegistrationService = createDynamicRegistrationService({
   userRepository,
   onboardingRepository,
@@ -213,22 +310,15 @@ export const dynamicRegistrationService = createDynamicRegistrationService({
     create: async () => {
       throw new ApiError(500, "Membership creation not implemented in dynamic registration.");
     },
-    findByUserId: async () => {
-      return [];
-    },
+    findByUserId: async () => [],
   },
   verificationRepository: {
-    findWalletVerification: async () => {
-      return null;
-    },
-    createWalletVerification: async () => {
-      return null;
-    },
+    findWalletVerification: async () => null,
+    createWalletVerification: async () => null,
   },
   idGenerator: {
     userId: () => `user_${randomUUID()}`,
     onboardingId: () => `onb_${randomUUID()}`,
     membershipId: () => `mem_${randomUUID()}`,
-    },
-
-  });
+  },
+});

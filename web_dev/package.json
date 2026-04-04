@@ -25,9 +25,10 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@dynamic-labs/embedded-wallet-evm": "^4.75.0",
-    "@dynamic-labs/sdk-react-core": "^4.75.0",
-    "@dynamic-labs/waas-evm": "^4.75.0",
+    "@dynamic-labs-sdk/client": "0.23.2",
+    "@dynamic-labs/embedded-wallet-evm": "4.75.0",
+    "@dynamic-labs/sdk-react-core": "4.75.0",
+    "@dynamic-labs/waas-evm": "4.75.0",
     "@prisma/client": "^6.0.0",
     "clsx": "^2.1.1",
     "jose": "^5.9.6",

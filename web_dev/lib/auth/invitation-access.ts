@@ -1,0 +1,54 @@
+type DynamicInviteKind = "portfolio_member" | "vc_member";
+
+type DynamicInviteRecord = {
+  email: string;
+  kind: DynamicInviteKind;
+  nextRoute: DynamicNextRoute;
+  role: "operator" | "investor";
+  outsideNetworkAccessEnabled: boolean;
+  onboardingMode: "individual" | "company";
+  onboardingStep: "complete" | "vc_company";
+  title: string;
+  vcCompanyId?: string;
+  vcCompanyName?: string;
+  portfolioCompanyId?: string;
+  portfolioCompanyName?: string;
+};
+
+export type DynamicNextRoute = "/human-idv" | "/onboarding";
+
+const inviteRegistry: DynamicInviteRecord[] = [
+  {
+    email: "georgegds92+1@gmail.com",
+    kind: "portfolio_member",
+    nextRoute: "/human-idv",
+    role: "operator",
+    outsideNetworkAccessEnabled: false,
+    onboardingMode: "individual",
+    onboardingStep: "complete",
+    title: "Portfolio Manager",
+    vcCompanyId: "co_invite_rho_capital",
+    vcCompanyName: "Rho Capital",
+    portfolioCompanyId: "co_invite_company_a",
+    portfolioCompanyName: "companyA",
+  },
+  {
+    email: "georgegds92+3@gmail.com",
+    kind: "vc_member",
+    nextRoute: "/onboarding",
+    role: "investor",
+    outsideNetworkAccessEnabled: true,
+    onboardingMode: "company",
+    onboardingStep: "vc_company",
+    title: "Investor",
+  },
+];
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+export function getDynamicInvitationAccess(email: string) {
+  const normalized = normalizeEmail(email);
+  return inviteRegistry.find((invite) => invite.email === normalized) ?? null;
+}
