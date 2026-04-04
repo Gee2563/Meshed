@@ -233,6 +233,9 @@ describe("CompanyNetworkGraph", () => {
     expect(container.textContent).toContain("Browse the company network");
     expect(container.textContent).toContain("Select a company or bridge");
     expect(container.querySelector('[data-testid="company-network-graph"]')).not.toBeNull();
+    const graphStage = container.querySelector('[data-testid="company-network-stage"]');
+    const detailPanel = container.querySelector('[data-testid="company-network-details"]');
+    expect(graphStage?.contains(detailPanel ?? null)).toBe(true);
     expect(mocks.instances).toHaveLength(1);
 
     const network = mocks.instances[0];

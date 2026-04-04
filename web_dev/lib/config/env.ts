@@ -18,10 +18,13 @@ const envSchema = z.object({
   NEXT_PUBLIC_USE_MOCK_WORLD: z.boolean().optional(),
   NEXT_PUBLIC_WORLD_ENVIRONMENT: z.enum(["production", "staging"]).optional(),
   NEXT_PUBLIC_WORLD_ACTION: z.string().optional(),
+  NEXT_PUBLIC_LOGO_DEV_TOKEN: z.string().optional(),
+  NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY: z.string().optional(),
   WORLD_APP_ID: z.string().optional(),
   WORLD_RP_ID: z.string().optional(),
   WORLD_RP_SIGNING_KEY: z.string().optional(),
   WORLD_ACTION: z.string().default("meshed-network-access"),
+  LOGO_DEV_PUBLISHABLE_KEY: z.string().optional(),
   FLARE_RPC_URL: z.string().optional(),
   PRIVATE_KEY: z.string().optional(),
   FLARE_CHAIN_ID: z.coerce.number().default(114),
@@ -55,10 +58,13 @@ export const env = envSchema.parse({
       : parseBooleanEnv(process.env.NEXT_PUBLIC_USE_MOCK_WORLD, false),
   NEXT_PUBLIC_WORLD_ENVIRONMENT: process.env.NEXT_PUBLIC_WORLD_ENVIRONMENT as "production" | "staging" | undefined,
   NEXT_PUBLIC_WORLD_ACTION: process.env.NEXT_PUBLIC_WORLD_ACTION,
+  NEXT_PUBLIC_LOGO_DEV_TOKEN: process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN,
+  NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY,
   WORLD_APP_ID: process.env.WORLD_APP_ID,
   WORLD_RP_ID: process.env.WORLD_RP_ID,
   WORLD_RP_SIGNING_KEY: process.env.WORLD_RP_SIGNING_KEY,
   WORLD_ACTION: process.env.WORLD_ACTION,
+  LOGO_DEV_PUBLISHABLE_KEY: process.env.LOGO_DEV_PUBLISHABLE_KEY,
   FLARE_RPC_URL: process.env.FLARE_RPC_URL,
   PRIVATE_KEY: process.env.PRIVATE_KEY,
   FLARE_CHAIN_ID: process.env.FLARE_CHAIN_ID,
@@ -80,6 +86,9 @@ export function buildClientEnv(input: {
   NEXT_PUBLIC_USE_MOCK_WORLD?: boolean;
   NEXT_PUBLIC_WORLD_ENVIRONMENT?: "production" | "staging";
   NEXT_PUBLIC_WORLD_ACTION?: string;
+  NEXT_PUBLIC_LOGO_DEV_TOKEN?: string;
+  NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY?: string;
+  LOGO_DEV_PUBLISHABLE_KEY?: string;
   WORLD_ACTION?: string;
   NEXT_PUBLIC_APP_URL: string;
 }) {
@@ -91,6 +100,10 @@ export function buildClientEnv(input: {
     worldRpId: input.NEXT_PUBLIC_WORLD_RP_ID,
     worldEnvironment: input.NEXT_PUBLIC_WORLD_ENVIRONMENT ?? "staging",
     worldAction: input.NEXT_PUBLIC_WORLD_ACTION ?? input.WORLD_ACTION ?? "meshed-network-access",
+    logoDevToken:
+      input.NEXT_PUBLIC_LOGO_DEV_TOKEN ??
+      input.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY ??
+      input.LOGO_DEV_PUBLISHABLE_KEY,
     useMockDynamic: input.NEXT_PUBLIC_USE_MOCK_DYNAMIC ?? !Boolean(input.NEXT_PUBLIC_DYNAMIC_ENV_ID),
     useMockWorld: input.NEXT_PUBLIC_USE_MOCK_WORLD ?? !hasLiveWorldConfig,
     appUrl: input.NEXT_PUBLIC_APP_URL,
@@ -105,6 +118,9 @@ export const clientEnv = buildClientEnv({
   NEXT_PUBLIC_USE_MOCK_WORLD: env.NEXT_PUBLIC_USE_MOCK_WORLD,
   NEXT_PUBLIC_WORLD_ENVIRONMENT: env.NEXT_PUBLIC_WORLD_ENVIRONMENT,
   NEXT_PUBLIC_WORLD_ACTION: env.NEXT_PUBLIC_WORLD_ACTION,
+  NEXT_PUBLIC_LOGO_DEV_TOKEN: env.NEXT_PUBLIC_LOGO_DEV_TOKEN,
+  NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY: env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY,
+  LOGO_DEV_PUBLISHABLE_KEY: env.LOGO_DEV_PUBLISHABLE_KEY,
   WORLD_ACTION: env.WORLD_ACTION,
   NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL,
 });

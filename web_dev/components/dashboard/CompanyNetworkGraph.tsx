@@ -4,6 +4,7 @@ import { ExternalLink, RotateCcw, Search, Workflow, X } from "lucide-react";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { clientEnv } from "@/lib/config/env";
 import type {
   A16zCompanyGraphEdge,
   A16zCompanyGraphNode,
@@ -23,6 +24,37 @@ type VisNetworkInstance = {
   on: (eventName: string, handler: (payload: { nodes?: unknown[]; edges?: unknown[] }) => void) => void;
   setData: (data: { nodes: unknown[]; edges: unknown[] }) => void;
 };
+
+function extractDomainFromWebsite(website: string | null | undefined) {
+  if (!website) {
+    return null;
+  }
+
+  try {
+    return new URL(website).hostname.replace(/^www\./, "");
+  } catch {
+    return website.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0] || null;
+  }
+}
+
+function buildLogoDevUrl(website: string | null | undefined, size: number) {
+  const domain = extractDomainFromWebsite(website);
+
+  if (!domain) {
+    return null;
+  }
+
+  const url = new URL(`https://img.logo.dev/${domain}`);
+  url.searchParams.set("size", String(size));
+  url.searchParams.set("format", "png");
+  url.searchParams.set("retina", "true");
+
+  if (clientEnv.logoDevToken) {
+    url.searchParams.set("token", clientEnv.logoDevToken);
+  }
+
+  return url.toString();
+}
 
 function normalizeSearchValue(value: string | null | undefined) {
   return String(value ?? "")
@@ -77,15 +109,18 @@ function buildGraphData(nodes: A16zCompanyGraphNode[], edges: A16zCompanyGraphEd
 
   const visNodes = nodes.map((node) => {
     const isDimmed = hasSearchFilter && !matchedNodeIds.has(node.id);
+    const logoUrl = buildLogoDevUrl(node.website, 72);
 
     return {
       id: node.id,
       label: node.companyName,
-      shape: "dot",
-      size: Math.max(18, Math.min(node.size, 38)),
+      shape: logoUrl ? "circularImage" : "dot",
+      image: logoUrl ?? undefined,
+      borderWidth: logoUrl ? 3 : 4,
+      size: Math.max(22, Math.min(node.size + 4, 44)),
       title: `${node.companyName}\n${node.vertical ?? "Unassigned vertical"}\n${node.locationRegion ?? "Unknown region"}`,
       color: {
-        background: isDimmed ? "#e2e8f0" : node.colorHex ?? "#f8fafc",
+        background: isDimmed ? "#e2e8f0" : logoUrl ? "#ffffff" : node.colorHex ?? "#f8fafc",
         border: isDimmed ? "#cbd5e1" : "#334155",
         highlight: {
           background: "#ffffff",
@@ -98,10 +133,10 @@ function buildGraphData(nodes: A16zCompanyGraphNode[], edges: A16zCompanyGraphEd
       },
       font: {
         color: isDimmed ? "#94a3b8" : "#0f172a",
-        size: 14,
+        size: 11,
         face: "Avenir Next",
-        vadjust: 16,
-        strokeWidth: 5,
+        vadjust: 18,
+        strokeWidth: 4,
         strokeColor: "#ffffff",
       },
     };
@@ -144,20 +179,23 @@ function formatTagLabel(tag: string) {
 
 function companyOverview(node: A16zCompanyGraphNode) {
   const location = node.location && node.location !== "Unknown" ? node.location : node.locationRegion;
-  const opening = [node.companyName, "is currently mapped in the Meshed a16z crypto network as"]
-    .concat(node.vertical ? [node.vertical] : ["an active portfolio company"])
-    .join(" ");
-  const context = [node.stage, location].filter(Boolean).join(" in ");
+  const compactSignal = (node.peopleConnectionSummary ?? node.peoplePainPointOverview ?? "")
+    .split("|")[0]
+    .replace(/\s+Importance.*$/i, "")
+    .trim();
 
-  if (node.peopleConnectionSummary) {
-    return `${opening}${context ? ` operating ${context}` : ""}. ${node.peopleConnectionSummary.replace(/\s*\|\s*/g, " ")}`;
-  }
+  const parts = [
+    node.vertical ? `${node.vertical}` : "Portfolio company",
+    node.stage,
+    location && location !== "Unknown" ? location : null,
+  ].filter(Boolean);
 
-  if (node.peoplePainPointOverview) {
-    return `${opening}${context ? ` operating ${context}` : ""}. ${node.peoplePainPointOverview}`;
-  }
-
-  return `${opening}${context ? ` operating ${context}` : ""}. This node is connected to ${formatRelativeCount(node.degree, "company", "companies")} and ${formatRelativeCount(node.peopleCount, "person")} in the current graph.`;
+  return [
+    parts.join(" | "),
+    compactSignal || `${formatRelativeCount(node.peopleCount, "person")} mapped with ${formatRelativeCount(node.degree, "bridge")}.`,
+  ]
+    .filter(Boolean)
+    .join(". ");
 }
 
 function personAvatarUrl(person: A16zCompanyGraphPerson) {
@@ -165,15 +203,7 @@ function personAvatarUrl(person: A16zCompanyGraphPerson) {
 }
 
 function getWebsiteLabel(website: string | null) {
-  if (!website) {
-    return null;
-  }
-
-  try {
-    return new URL(website).hostname.replace(/^www\./, "");
-  } catch {
-    return website.replace(/^https?:\/\//, "");
-  }
+  return extractDomainFromWebsite(website);
 }
 
 function PersonDetailModal({
@@ -542,6 +572,12 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
     resetView();
   }
 
+  function clearSelection() {
+    setSelectedNodeId(null);
+    setSelectedEdgeId(null);
+    setSelectedPersonId(null);
+  }
+
   const searchStatus = graphData.searchTerms.length
     ? graphData.matchedNodeIds.length
       ? `${formatRelativeCount(graphData.matchedNodeIds.length, "matching company", "matching companies")} in focus.`
@@ -549,10 +585,11 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
     : "No search filter active.";
 
   const selectedNodeWebsiteLabel = selectedNode ? getWebsiteLabel(selectedNode.website) : null;
+  const selectedNodeLogoUrl = selectedNode ? buildLogoDevUrl(selectedNode.website, 160) : null;
 
   return (
     <>
-      <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
+      <div className="space-y-5">
         <div className="rounded-[1.6rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(255,255,255,0.98))] p-4 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -590,257 +627,300 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
           </div>
 
           <div
-            ref={graphRef}
-            data-testid="company-network-graph"
-            className={cn(
-              "mt-4 h-[480px] rounded-[1.45rem] border border-slate-200 bg-white sm:h-[560px]",
-              !isReady && "animate-pulse bg-[linear-gradient(135deg,#f8fafc,#eef2f7)]",
-            )}
-          />
-        </div>
+            data-testid="company-network-stage"
+            className="relative mt-4 overflow-hidden rounded-[1.45rem] border border-slate-200 bg-white"
+          >
+            <div
+              ref={graphRef}
+              data-testid="company-network-graph"
+              className={cn(
+                "h-[660px] bg-white sm:h-[720px] xl:h-[780px]",
+                !isReady && "animate-pulse bg-[linear-gradient(135deg,#f8fafc,#eef2f7)]",
+              )}
+            />
 
-        <aside
-          data-testid="company-network-details"
-          className="rounded-[1.6rem] border border-slate-200 bg-white/92 p-5 shadow-[0_18px_50px_rgba(21,38,58,0.08)]"
-        >
-          {!selectedNode && !selectedEdge ? (
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">
-                <Workflow className="h-3.5 w-3.5" />
-                Network details
-              </div>
-              <h3 className="mt-4 font-display text-2xl tracking-tight text-ink">Select a company or bridge</h3>
-              <p className="mt-3 text-sm leading-7 text-slate">
-                Click a node to inspect the company summary, its mapped people, and the strongest redeployment bridges.
-                Click a person inside the node panel to open a deeper modal with their details.
-              </p>
-
-              <div className="mt-5 rounded-[1.35rem] border border-slate-200 bg-mist/50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Quick scan</p>
-                <p className="mt-2 text-sm text-ink">
-                  {formatRelativeCount(nodes.length, "company", "companies")} and{" "}
-                  {formatRelativeCount(edges.length, "bridge")} are currently loaded into this graph.
-                </p>
-                {graphData.searchTerms.length ? (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Search matches</p>
-                    {matchingNodes.slice(0, 5).map((node) => (
-                      <div key={node.id} className="rounded-xl border border-white/80 bg-white px-3 py-2">
-                        <p className="text-sm font-medium text-ink">{node.companyName}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate">
-                          {node.vertical ?? "Unassigned vertical"}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          {selectedNode ? (
-            <div className="space-y-5">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(243,247,252,0.94))] p-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Selected company</p>
-
-                <div className="mt-4 flex items-start gap-4">
-                  <div className="flex h-24 w-24 flex-none items-center justify-center rounded-[1.6rem] border-[3px] border-emerald-500 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.92),rgba(190,242,100,0.45),rgba(14,116,144,0.36))] text-3xl font-semibold tracking-tight text-ink">
-                    {selectedNode.companyName
-                      .split(/\s+/)
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((part) => part[0])
-                      .join("")}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-4xl tracking-tight text-ink">{selectedNode.companyName}</h3>
-                    <p className="mt-2 text-lg leading-8 text-slate">
-                      {selectedNode.vertical ?? "Portfolio company"}
-                      {selectedNode.location ? ` connecting through ${selectedNode.location}` : ""}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {selectedNode.vertical ? (
-                        <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-sm font-semibold text-violet-900">
-                          {selectedNode.vertical}
-                        </span>
-                      ) : null}
-                      {selectedNode.locationRegion ? (
-                        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate">
-                          {selectedNode.locationRegion}
-                        </span>
-                      ) : null}
-                      {selectedNode.stage ? (
-                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-800">
-                          {selectedNode.stage}
-                        </span>
-                      ) : null}
-                      {selectedNodeWebsiteLabel ? (
-                        <a
-                          href={selectedNode.website ?? "#"}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700 hover:text-sky-800"
-                        >
-                          {selectedNodeWebsiteLabel}
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      ) : null}
+            <div className="pointer-events-none absolute inset-x-3 bottom-3 top-auto sm:bottom-4 sm:left-auto sm:right-4 sm:top-4">
+              <section
+                data-testid="company-network-details"
+                className="pointer-events-auto flex max-h-[50%] w-full flex-col overflow-hidden rounded-[1.35rem] border border-white/80 bg-white/96 shadow-[0_24px_60px_rgba(15,23,42,0.18)] backdrop-blur sm:h-full sm:max-h-none sm:w-[380px] xl:w-[410px]"
+              >
+                <div className="flex items-start justify-between gap-3 border-b border-slate-200/90 bg-white/96 px-4 py-3">
+                  <div className="min-w-0">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">
+                      <Workflow className="h-3.5 w-3.5" />
+                      Network details
                     </div>
+                    <p className="mt-2 text-sm font-semibold text-ink">
+                      {selectedNode ? "Selected company" : selectedEdge ? "Selected bridge" : "Select a company or bridge"}
+                    </p>
                   </div>
+
+                  {selectedNode || selectedEdge ? (
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-slate transition-colors hover:bg-mist"
+                      aria-label="Clear selection"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
 
-                <p className="mt-5 text-lg leading-9 text-slate">{companyOverview(selectedNode)}</p>
+                <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                  {!selectedNode && !selectedEdge ? (
+                    <div>
+                      <h3 className="font-display text-xl tracking-tight text-ink">Select a company or bridge</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate">
+                        Click a node to inspect the company summary, mapped people, and strongest bridges. Click a bridge to inspect the relationship itself.
+                      </p>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[1.15rem] border border-white/85 bg-white/92 px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Mapped people</p>
-                    <p className="mt-2 text-3xl font-semibold tracking-tight text-ink">{selectedNode.peopleCount}</p>
-                  </div>
-                  <div className="rounded-[1.15rem] border border-white/85 bg-white/92 px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Company bridges</p>
-                    <p className="mt-2 text-3xl font-semibold tracking-tight text-ink">{selectedNode.degree}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3">
-                <div className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Current pain points</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {selectedNode.currentPainPointTags.length ? (
-                      selectedNode.currentPainPointTags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-800"
-                        >
-                          {formatTagLabel(tag)}
-                        </span>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate">No current pain points mapped.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Resolved pain points</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {selectedNode.resolvedPainPointTags.length ? (
-                      selectedNode.resolvedPainPointTags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-800"
-                        >
-                          {formatTagLabel(tag)}
-                        </span>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate">No resolved pain points mapped.</p>
-                    )}
-                  </div>
-                </div>
-
-                {selectedNode.peopleTrustSignalOverview ? (
-                  <div className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Trust signal overview</p>
-                    <p className="mt-2 text-sm leading-6 text-ink">{selectedNode.peopleTrustSignalOverview}</p>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">People in this node</p>
-                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">
-                    Click for details
-                  </span>
-                </div>
-                {selectedNode.people.length ? (
-                  <div className="mt-4 grid gap-3">
-                    {selectedNode.people.map((person) => (
-                      <button
-                        key={person.id}
-                        type="button"
-                        onClick={() => setSelectedPersonId(person.id)}
-                        className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,248,252,0.92))] px-4 py-4 text-left transition-colors hover:border-sky-300 hover:bg-sky-50/40"
-                      >
-                        <img
-                          src={personAvatarUrl(person)}
-                          alt={person.name}
-                          className="h-12 w-12 rounded-2xl border border-slate-200 object-cover"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-sm font-semibold text-ink">{person.name}</p>
-                            <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
-                              Score {person.networkImportanceScore}
-                            </span>
+                      <div className="mt-4 rounded-[1.2rem] border border-slate-200 bg-mist/50 px-4 py-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Quick scan</p>
+                        <p className="mt-2 text-sm text-ink">
+                          {formatRelativeCount(nodes.length, "company", "companies")} and{" "}
+                          {formatRelativeCount(edges.length, "bridge")} are currently loaded into this graph.
+                        </p>
+                        {graphData.searchTerms.length ? (
+                          <div className="mt-4 space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Search matches</p>
+                            {matchingNodes.slice(0, 5).map((node) => (
+                              <div key={node.id} className="rounded-xl border border-white/80 bg-white px-3 py-2">
+                                <p className="text-sm font-medium text-ink">{node.companyName}</p>
+                                <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">
+                                  {node.vertical ?? "Unassigned vertical"}
+                                </p>
+                              </div>
+                            ))}
                           </div>
-                          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate">
-                            {person.suggestedRole ? titleCase(person.suggestedRole) : "Operator"}
-                            {person.currentPainPointLabel ? ` | ${person.currentPainPointLabel}` : ""}
-                          </p>
-                          <p className="mt-2 text-sm leading-6 text-slate">
-                            {person.connectionSummary ?? "No connection summary available."}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-6 text-slate">No people records are currently attached to this company node.</p>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Strongest bridges</p>
-                {selectedNodeBridges.map((bridge) => (
-                  <details key={bridge.id} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3">
-                    <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-ink">
-                            {bridge.sourceName} to {bridge.targetName}
-                          </p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate">{bridge.reason}</p>
-                        </div>
-                        <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-700">
-                          {bridge.score.toFixed(2)}
-                        </span>
+                        ) : null}
                       </div>
-                    </summary>
-                    <p className="mt-3 text-sm leading-6 text-slate">{bridge.explanation}</p>
-                  </details>
-                ))}
-              </div>
-            </div>
-          ) : null}
+                    </div>
+                  ) : null}
 
-          {selectedEdge ? (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Selected bridge</p>
-              <h3 className="mt-2 font-display text-3xl tracking-tight text-ink">
-                {selectedEdge.sourceName} to {selectedEdge.targetName}
-              </h3>
-              <div className="mt-4 inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-700">
-                Score {selectedEdge.score.toFixed(2)}
-              </div>
+                  {selectedNode ? (
+                    <div className="space-y-4">
+                      <div className="rounded-[1.25rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(243,247,252,0.94))] p-4 shadow-sm">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-[1.15rem] border-[3px] border-emerald-500 bg-white">
+                            {selectedNodeLogoUrl ? (
+                              <img
+                                src={selectedNodeLogoUrl}
+                                alt={`${selectedNode.companyName} logo`}
+                                className="h-full w-full object-contain p-2.5"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.92),rgba(190,242,100,0.45),rgba(14,116,144,0.36))] text-lg font-semibold tracking-tight text-ink">
+                                {selectedNode.companyName
+                                  .split(/\s+/)
+                                  .filter(Boolean)
+                                  .slice(0, 2)
+                                  .map((part) => part[0])
+                                  .join("")}
+                              </div>
+                            )}
+                          </div>
 
-              <div className="mt-5 space-y-3">
-                <div className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Reason</p>
-                  <p className="mt-2 text-sm leading-6 text-ink">{selectedEdge.reason}</p>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-display text-[1.75rem] leading-none tracking-tight text-ink">
+                              {selectedNode.companyName}
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-slate">
+                              {selectedNode.vertical ?? "Portfolio company"}
+                              {selectedNode.location ? ` in ${selectedNode.location}` : ""}
+                            </p>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {selectedNode.vertical ? (
+                                <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-semibold text-violet-900">
+                                  {selectedNode.vertical}
+                                </span>
+                              ) : null}
+                              {selectedNode.locationRegion ? (
+                                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate">
+                                  {selectedNode.locationRegion}
+                                </span>
+                              ) : null}
+                              {selectedNode.stage ? (
+                                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-800">
+                                  {selectedNode.stage}
+                                </span>
+                              ) : null}
+                              {selectedNodeWebsiteLabel ? (
+                                <a
+                                  href={selectedNode.website ?? "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700 hover:text-sky-800"
+                                >
+                                  {selectedNodeWebsiteLabel}
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                </a>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="mt-3 text-[13px] leading-5 text-slate">{companyOverview(selectedNode)}</p>
+
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                          <div className="rounded-[1rem] border border-white/85 bg-white/92 px-3 py-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Mapped people</p>
+                            <p className="mt-1 text-xl font-semibold tracking-tight text-ink">{selectedNode.peopleCount}</p>
+                          </div>
+                          <div className="rounded-[1rem] border border-white/85 bg-white/92 px-3 py-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Company bridges</p>
+                            <p className="mt-1 text-xl font-semibold tracking-tight text-ink">{selectedNode.degree}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3">
+                        <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Current pain points</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {selectedNode.currentPainPointTags.length ? (
+                              selectedNode.currentPainPointTags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800"
+                                >
+                                  {formatTagLabel(tag)}
+                                </span>
+                              ))
+                            ) : (
+                              <p className="text-sm text-slate">No current pain points mapped.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Resolved pain points</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {selectedNode.resolvedPainPointTags.length ? (
+                              selectedNode.resolvedPainPointTags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-800"
+                                >
+                                  {formatTagLabel(tag)}
+                                </span>
+                              ))
+                            ) : (
+                              <p className="text-sm text-slate">No resolved pain points mapped.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {selectedNode.peopleTrustSignalOverview ? (
+                          <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Trust signal overview</p>
+                            <p className="mt-2 text-sm leading-6 text-ink">{selectedNode.peopleTrustSignalOverview}</p>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">People in this node</p>
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
+                            Click for details
+                          </span>
+                        </div>
+                        {selectedNode.people.length ? (
+                          <div className="mt-4 grid gap-3">
+                            {selectedNode.people.map((person) => (
+                              <button
+                                key={person.id}
+                                type="button"
+                                onClick={() => setSelectedPersonId(person.id)}
+                                className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,248,252,0.92))] px-3 py-3 text-left transition-colors hover:border-sky-300 hover:bg-sky-50/40"
+                              >
+                                <img
+                                  src={personAvatarUrl(person)}
+                                  alt={person.name}
+                                  className="h-11 w-11 rounded-2xl border border-slate-200 object-cover"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="text-sm font-semibold text-ink">{person.name}</p>
+                                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
+                                      Score {person.networkImportanceScore}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">
+                                    {person.suggestedRole ? titleCase(person.suggestedRole) : "Operator"}
+                                    {person.currentPainPointLabel ? ` | ${person.currentPainPointLabel}` : ""}
+                                  </p>
+                                  <p className="mt-2 line-clamp-3 text-sm leading-5 text-slate">
+                                    {person.connectionSummary ?? "No connection summary available."}
+                                  </p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-sm leading-6 text-slate">
+                            No people records are currently attached to this company node.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Strongest bridges</p>
+                        {selectedNodeBridges.map((bridge) => (
+                          <details key={bridge.id} className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3">
+                            <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-ink">
+                                    {bridge.sourceName} to {bridge.targetName}
+                                  </p>
+                                  <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">{bridge.reason}</p>
+                                </div>
+                                <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
+                                  {bridge.score.toFixed(2)}
+                                </span>
+                              </div>
+                            </summary>
+                            <p className="mt-3 text-sm leading-6 text-slate">{bridge.explanation}</p>
+                          </details>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {selectedEdge ? (
+                    <div>
+                      <h3 className="font-display text-2xl tracking-tight text-ink">
+                        {selectedEdge.sourceName} to {selectedEdge.targetName}
+                      </h3>
+                      <div className="mt-3 inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
+                        Score {selectedEdge.score.toFixed(2)}
+                      </div>
+
+                      <div className="mt-4 space-y-3">
+                        <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Reason</p>
+                          <p className="mt-2 text-sm leading-6 text-ink">{selectedEdge.reason}</p>
+                        </div>
+                        <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Explanation</p>
+                          <p className="mt-2 text-sm leading-6 text-ink">{selectedEdge.explanation}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Explanation</p>
-                  <p className="mt-2 text-sm leading-6 text-ink">{selectedEdge.explanation}</p>
-                </div>
-              </div>
+              </section>
             </div>
-          ) : null}
-        </aside>
+          </div>
+          <p className="mt-3 text-xs text-slate">
+            <a href="https://logo.dev" className="font-medium text-slate underline underline-offset-2">
+              Logos provided by Logo.dev
+            </a>
+          </p>
+        </div>
       </div>
 
       {selectedPerson ? <PersonDetailModal person={selectedPerson} onClose={() => setSelectedPersonId(null)} /> : null}
