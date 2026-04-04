@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { env } from "@/lib/config/env";
 import { ApiError } from "@/lib/server/http";
 import { worldVerificationNullifierRepository } from "@/lib/server/repositories/world-verification-nullifier-repository";
+import { worldOnboardingContractService } from "@/lib/server/services/world-onboarding-contract-service";
 import { worldVerifySchema } from "@/lib/server/validation/auth-schemas";
 import type { UserSummary } from "@/lib/types";
 
@@ -160,6 +161,7 @@ export const worldVerificationService = {
       action: replayKey.action,
       nullifier: replayKey.nullifier,
     });
+    await worldOnboardingContractService.ensureWorldVerifiedContract(updatedUser);
 
     return {
       user: updatedUser,

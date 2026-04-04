@@ -35,6 +35,19 @@ enum OnboardingMode {
   INDIVIDUAL
 }
 
+enum OnboardingContractStep {
+  VC_COMPANY_REGISTERED
+  PORTFOLIO_COMPANY_REGISTERED
+  COMPANY_ACCESS_REGISTERED
+  INDIVIDUAL_PROFILE_REGISTERED
+  WORLD_VERIFIED
+}
+
+enum ContractGenerationMode {
+  MOCK
+  REAL
+}
+
 model User {
   id                          String              @id
   name                        String
@@ -56,6 +69,7 @@ model User {
   lastActiveAt                DateTime?
   companiesOwned              Company[]           @relation("CompanyOwner")
   memberships                 CompanyMembership[]
+  onboardingContractArtifacts OnboardingContractArtifact[]
   worldVerificationNullifiers WorldVerificationNullifier[]
 }
 
@@ -76,6 +90,7 @@ model Company {
   updatedAt                   DateTime            @updatedAt
   owner                       User                @relation("CompanyOwner", fields: [ownerUserId], references: [id])
   memberships                 CompanyMembership[]
+  onboardingContractArtifacts OnboardingContractArtifact[]
 }
 
 model CompanyMembership {
@@ -105,6 +120,25 @@ model OnboardingProfile {
   teamCsvUploadedAt     DateTime?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+}
+
+model OnboardingContractArtifact {
+  id             String                 @id
+  userId         String
+  companyId      String?
+  contractStep   OnboardingContractStep
+  contractName   String
+  contractAddress String
+  network        String
+  generationMode ContractGenerationMode @default(MOCK)
+  metadata       Json?
+  createdAt      DateTime               @default(now())
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company        Company?               @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, contractStep])
+  @@index([userId])
+  @@index([companyId])
 }
 
 model WorldVerificationNullifier {
