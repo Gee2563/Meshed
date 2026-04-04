@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/lib/server/http";
+
 const mocks = vi.hoisted(() => ({
-  markWorldVerified: vi.fn(),
+  reserveAndMarkVerified: vi.fn(),
   signRequest: vi.fn(),
   hashSignal: vi.fn(),
 }));
@@ -13,9 +15,9 @@ vi.mock("@/lib/config/env", () => ({
   },
 }));
 
-vi.mock("@/lib/server/repositories/user-repository", () => ({
-  userRepository: {
-    markWorldVerified: mocks.markWorldVerified,
+vi.mock("@/lib/server/repositories/world-verification-nullifier-repository", () => ({
+  worldVerificationNullifierRepository: {
+    reserveAndMarkVerified: mocks.reserveAndMarkVerified,
   },
 }));
 
@@ -26,7 +28,7 @@ vi.mock("@worldcoin/idkit-core", () => ({
 
 describe("worldVerificationService", () => {
   beforeEach(() => {
-    mocks.markWorldVerified.mockReset();
+    mocks.reserveAndMarkVerified.mockReset();
     mocks.signRequest.mockReset();
     mocks.hashSignal.mockReset();
     mocks.hashSignal.mockReturnValue("0xexpected");
@@ -89,11 +91,11 @@ describe("worldVerificationService", () => {
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(mocks.markWorldVerified).not.toHaveBeenCalled();
+    expect(mocks.reserveAndMarkVerified).not.toHaveBeenCalled();
   });
 
-  it("verifies the proof remotely and marks the user once the signal hash matches", async () => {
-    mocks.markWorldVerified.mockResolvedValue({
+  it("verifies the proof remotely and reserves the World replay key before marking the user", async () => {
+    mocks.reserveAndMarkVerified.mockResolvedValue({
       id: "usr_world",
       worldVerified: true,
     });
@@ -103,6 +105,7 @@ describe("worldVerificationService", () => {
           success: true,
           environment: "staging",
           message: "Verified",
+          nullifier: "0xverifiednullifier",
         }),
         {
           status: 200,
@@ -129,6 +132,7 @@ describe("worldVerificationService", () => {
           {
             identifier: "orb",
             signal_hash: "0xexpected",
+            nullifier: "0xpayloadnullifier",
           },
         ],
       },
@@ -151,11 +155,16 @@ describe("worldVerificationService", () => {
           {
             identifier: "orb",
             signal_hash: "0xexpected",
+            nullifier: "0xpayloadnullifier",
           },
         ],
       }),
     });
-    expect(mocks.markWorldVerified).toHaveBeenCalledWith("usr_world");
+    expect(mocks.reserveAndMarkVerified).toHaveBeenCalledWith({
+      userId: "usr_world",
+      action: "meshed-network-access",
+      nullifier: "0xverifiednullifier",
+    });
     expect(result).toEqual({
       user: {
         id: "usr_world",
@@ -165,7 +174,61 @@ describe("worldVerificationService", () => {
         success: true,
         environment: "staging",
         message: "Verified",
+        nullifier: "0xverifiednullifier",
       },
+    });
+  });
+
+  it("surfaces a conflict when the World nullifier was already reserved for this action", async () => {
+    mocks.reserveAndMarkVerified.mockRejectedValue(
+      new ApiError(409, "World verification for this action was already used."),
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          environment: "staging",
+          message: "Verified",
+          nullifier: "0xverifiednullifier",
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      ),
+    );
+
+    const { worldVerificationService } = await import("@/lib/server/services/world-verification-service");
+
+    await expect(
+      worldVerificationService.verifyUser(
+        {
+          id: "usr_world",
+          walletAddress: "0x1234567890",
+          worldVerified: false,
+        },
+        {
+          protocol_version: "3.0",
+          nonce: "0xnonce",
+          action: "meshed-network-access",
+          environment: "staging",
+          responses: [
+            {
+              identifier: "orb",
+              signal_hash: "0xexpected",
+              nullifier: "0xpayloadnullifier",
+            },
+          ],
+        },
+        {
+          fetch: fetchMock,
+        },
+      ),
+    ).rejects.toMatchObject({
+      status: 409,
+      message: "World verification for this action was already used.",
     });
   });
 });

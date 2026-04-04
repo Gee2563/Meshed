@@ -154,4 +154,40 @@ describe("POST /api/auth/world/verify", () => {
       detail: null,
     });
   });
+
+  it("returns a 409 response when the World proof was already used for this action", async () => {
+    mocks.requireCurrentUser.mockResolvedValue({
+      id: "usr_world",
+      worldVerified: false,
+    });
+    mocks.verifyUser.mockRejectedValue(new ApiError(409, "World verification for this action was already used."));
+
+    const { POST } = await import("@/app/api/auth/world/verify/route");
+    const response = await POST(
+      new Request("http://localhost/api/auth/world/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          protocol_version: "3.0",
+          nonce: "0xnonce",
+          action: "meshed-network-access",
+          environment: "staging",
+          responses: [
+            {
+              identifier: "orb",
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "World verification for this action was already used.",
+      detail: null,
+    });
+  });
 });
