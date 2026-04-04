@@ -18,3 +18,18 @@ export async function buildSessionResponse(input: SessionResponseInput) {
 
   return response;
 }
+
+export function buildSessionClearedResponse() {
+  const response = new Response(JSON.stringify({ ok: true }), {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  response.headers.append(
+    "Set-Cookie",
+    `${getSessionCookieName()}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax`,
+  );
+
+  return response;
+}

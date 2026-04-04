@@ -40,4 +40,18 @@ describe("buildSessionResponse", () => {
     });
     expect(response.headers.get("set-cookie")).toContain("meshed_session=signed-token");
   });
+
+  it("creates an ok response that clears the Meshed session cookie", async () => {
+    const { buildSessionClearedResponse } = await import("@/lib/server/session-response");
+
+    const response = buildSessionClearedResponse();
+
+    expect(mocks.createSessionToken).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+    });
+    expect(response.headers.get("set-cookie")).toContain("meshed_session=;");
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
+  });
 });
