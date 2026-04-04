@@ -1,7 +1,7 @@
 import {
   type Company,
   type User,
-} from "@prisma/client";
+} from "@/lib/server/prisma-client";
 
 import type {
   CompanySummary,
@@ -32,6 +32,8 @@ export function toUserSummary(user: User): UserSummary {
     dynamicUserId: user.dynamicUserId,
     engagementScore: user.engagementScore,
     reliabilityScore: user.reliabilityScore,
+    verificationBadges: user.verificationBadges as UserSummary["verificationBadges"],
+    outsideNetworkAccessEnabled: user.outsideNetworkAccessEnabled,
     createdAt: user.createdAt.toISOString(),
     lastActiveAt: iso(user.lastActiveAt),
   };
@@ -53,4 +55,3 @@ export function toCompanySummary(company: Company): CompanySummary {
     outsideNetworkAccessEnabled: company.outsideNetworkAccessEnabled,
   };
 }
-
