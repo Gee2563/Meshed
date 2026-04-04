@@ -17,7 +17,7 @@ type RootLayoutProps = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
-      <body>
+      <body className="min-h-screen bg-transparent text-ink antialiased">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
