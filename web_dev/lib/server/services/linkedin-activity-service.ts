@@ -63,6 +63,52 @@ export interface LinkedInSimulationResult {
 const notificationByUserId = new Map<string, LinkedInMeshedNotification[]>();
 const processedEventIds = new Set<string>();
 
+const linkedinSimulationFixtures: Array<{
+  id: string;
+  name: string;
+  email: string;
+  role: "CONSULTANT" | "MENTOR" | "OPERATOR";
+  bio: string;
+  skills: string[];
+  sectors: string[];
+  linkedinUrl: string;
+  outsideNetworkAccessEnabled: boolean;
+}> = [
+  {
+    id: "usr_consultant_nina",
+    name: "Nina Volkov",
+    email: "nina@northmesh.io",
+    role: "CONSULTANT" as const,
+    bio: "Pricing and monetization consultant for Series A and B fintech teams.",
+    skills: ["pricing", "ops", "revenue"],
+    sectors: ["fintech", "payments"],
+    linkedinUrl: "https://www.linkedin.com/in/nina-volkov-meshed",
+    outsideNetworkAccessEnabled: true,
+  },
+  {
+    id: "usr_mentor_theo",
+    name: "Theo Mercer",
+    email: "theo@orbitpartners.io",
+    role: "MENTOR" as const,
+    bio: "Operator-mentor for go-to-market and portfolio growth systems.",
+    skills: ["go-to-market", "pricing", "ops"],
+    sectors: ["fintech", "saas"],
+    linkedinUrl: "https://www.linkedin.com/in/theo-mercer-meshed",
+    outsideNetworkAccessEnabled: true,
+  },
+  {
+    id: "usr_operator_iris",
+    name: "Iris Shaw",
+    email: "iris@opsmesh.io",
+    role: "OPERATOR" as const,
+    bio: "Fractional operator for onboarding, retention, and milestone delivery.",
+    skills: ["ops", "onboarding", "retention"],
+    sectors: ["saas", "healthtech"],
+    linkedinUrl: "https://www.linkedin.com/in/iris-shaw-meshed",
+    outsideNetworkAccessEnabled: false,
+  },
+];
+
 function normalizeLinkedInUrl(value: string) {
   return value.trim().toLowerCase();
 }
@@ -137,6 +183,45 @@ function defaultMessageForAction(action: LinkedInAction) {
 
 function connectionRelationshipType(action: LinkedInAction) {
   return action === "connect_request" ? "LINKEDIN_CONNECT_REQUEST" : "LINKEDIN_MESSAGE";
+}
+
+function isSimulationCandidate(user: UserSummary, currentUserId: string) {
+  return user.id !== currentUserId && user.role !== "company" && user.role !== "admin";
+}
+
+async function ensureSimulationCounterpart(currentUser: UserSummary) {
+  const existingUsers = await userRepository.listDemoUsers();
+  const existingCandidates = existingUsers.filter((user: UserSummary) => isSimulationCandidate(user, currentUser.id));
+  if (existingCandidates.length > 0) {
+    return existingCandidates;
+  }
+
+  for (const fixture of linkedinSimulationFixtures) {
+    if (fixture.id === currentUser.id || fixture.email === currentUser.email) {
+      continue;
+    }
+
+    const existing = await userRepository.findByEmail(fixture.email);
+    if (existing) {
+      if (!isSimulationCandidate(existing, currentUser.id)) {
+        continue;
+      }
+
+      const hydrated = existing.linkedinUrl
+        ? existing
+        : await userRepository.updateProfile(existing.id, {
+            linkedinUrl: fixture.linkedinUrl,
+            outsideNetworkAccessEnabled: fixture.outsideNetworkAccessEnabled,
+          });
+
+      return [hydrated];
+    }
+
+    const created = await userRepository.create(fixture);
+    return [created];
+  }
+
+  return [];
 }
 
 async function createBilateralNotifications(input: {
@@ -283,10 +368,7 @@ export const linkedinActivityService = {
       throw new ApiError(404, "Current user is unavailable for LinkedIn simulation.");
     }
 
-    const users = await userRepository.listDemoUsers();
-    const candidates = users
-      .filter((user: UserSummary) => user.id !== currentUser.id)
-      .filter((user: UserSummary) => user.role !== "company" && user.role !== "admin");
+    let candidates = await ensureSimulationCounterpart(currentUser);
 
     if (candidates.length === 0) {
       throw new ApiError(409, "No Meshed counterpart is available to simulate a LinkedIn alert.");

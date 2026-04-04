@@ -109,15 +109,15 @@ function buildGraphData(nodes: A16zCompanyGraphNode[], edges: A16zCompanyGraphEd
 
   const visNodes = nodes.map((node) => {
     const isDimmed = hasSearchFilter && !matchedNodeIds.has(node.id);
-    const logoUrl = buildLogoDevUrl(node.website, 72);
+    const logoUrl = buildLogoDevUrl(node.website, 112);
 
     return {
       id: node.id,
       label: node.companyName,
       shape: logoUrl ? "circularImage" : "dot",
       image: logoUrl ?? undefined,
-      borderWidth: logoUrl ? 3 : 4,
-      size: Math.max(22, Math.min(node.size + 4, 44)),
+      borderWidth: logoUrl ? 4 : 5,
+      size: Math.max(34, Math.min(node.size + 16, 68)),
       title: `${node.companyName}\n${node.vertical ?? "Unassigned vertical"}\n${node.locationRegion ?? "Unknown region"}`,
       color: {
         background: isDimmed ? "#e2e8f0" : logoUrl ? "#ffffff" : node.colorHex ?? "#f8fafc",
@@ -133,9 +133,9 @@ function buildGraphData(nodes: A16zCompanyGraphNode[], edges: A16zCompanyGraphEd
       },
       font: {
         color: isDimmed ? "#94a3b8" : "#0f172a",
-        size: 11,
+        size: 14,
         face: "Avenir Next",
-        vadjust: 18,
+        vadjust: 28,
         strokeWidth: 4,
         strokeColor: "#ffffff",
       },
@@ -461,17 +461,17 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
             minVelocity: 0.18,
             timestep: 0.48,
             barnesHut: {
-              gravitationalConstant: -6200,
-              centralGravity: 0.1,
-              springLength: 220,
-              springConstant: 0.018,
-              damping: 0.4,
-              avoidOverlap: 1,
+              gravitationalConstant: -7600,
+              centralGravity: 0.08,
+              springLength: 290,
+              springConstant: 0.015,
+              damping: 0.42,
+              avoidOverlap: 1.2,
             },
           },
           nodes: {
-            borderWidth: 4,
-            borderWidthSelected: 4.4,
+            borderWidth: 5,
+            borderWidthSelected: 5.4,
             labelHighlightBold: false,
           },
           edges: {
@@ -674,7 +674,7 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
               ref={graphRef}
               data-testid="company-network-graph"
               className={cn(
-                "h-[660px] bg-white sm:h-[720px] xl:h-[780px]",
+                "h-[760px] bg-white sm:h-[860px] xl:h-[940px]",
                 !isReady && "animate-pulse bg-[linear-gradient(135deg,#f8fafc,#eef2f7)]",
               )}
             />

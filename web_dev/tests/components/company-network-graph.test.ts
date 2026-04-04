@@ -239,8 +239,21 @@ describe("CompanyNetworkGraph", () => {
     const detailPanel = container.querySelector('[data-testid="company-network-details"]');
     expect(graphStage?.contains(detailPanel ?? null)).toBe(true);
     expect(mocks.instances).toHaveLength(1);
+    expect(container.querySelector('[data-testid="company-network-graph"]')?.className).toContain("h-[760px]");
 
     const network = mocks.instances[0];
+    const visData = network.data as {
+      nodes: Array<{
+        id: string;
+        size: number;
+        font: {
+          size: number;
+        };
+      }>;
+    };
+    const battleboundNode = visData.nodes.find((node) => node.id === "co_1");
+    expect(battleboundNode?.size).toBeGreaterThanOrEqual(44);
+    expect(battleboundNode?.font.size).toBe(14);
 
     await act(async () => {
       network.handlers.click?.({ nodes: ["co_1"], edges: ["edge_1"] });
