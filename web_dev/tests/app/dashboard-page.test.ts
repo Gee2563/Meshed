@@ -19,6 +19,10 @@ vi.mock("@/components/LogoutButton", () => ({
   LogoutButton: () => "LogoutButton",
 }));
 
+vi.mock("@/components/dashboard/CompanyNetworkGraph", () => ({
+  CompanyNetworkGraph: () => "CompanyNetworkGraph",
+}));
+
 vi.mock("@/components/ui/Button", () => ({
   Button: (props: { children: React.ReactNode }) => props.children,
 }));
@@ -111,6 +115,39 @@ describe("dashboard page", () => {
           count: 12,
         },
       ],
+      companyGraph: {
+        nodes: [
+          {
+            id: "co_1",
+            companyId: "co_1",
+            companyName: "Battlebound",
+            vertical: "Gaming",
+            stage: "Series A",
+            location: "Los Angeles, California, USA",
+            locationRegion: "United States",
+            degree: 8,
+            peopleCount: 6,
+            colorHex: "#0f766e",
+            size: 28,
+            peoplePainPointOverview: "Current: Hiring Bottlenecks (2)",
+            peopleConnectionSummary: "Shared GTM support routes.",
+          },
+        ],
+        edges: [
+          {
+            id: "edge_1",
+            sourceId: "co_1",
+            targetId: "co_2",
+            sourceName: "Battlebound",
+            targetName: "Alchemy",
+            score: 0.78,
+            reason: "shared current pain points",
+            explanation: "Shared current pain points: Go-To-Market Execution.",
+            color: "#16a34a",
+            width: 2.5,
+          },
+        ],
+      },
     });
 
     const { default: DashboardPage } = await import("@/app/dashboard/page");
@@ -120,6 +157,8 @@ describe("dashboard page", () => {
     expect(markup).toContain("Signed in as Avery Collins");
     expect(markup).toContain("Battlebound");
     expect(markup).toContain("Strongest company bridges");
+    expect(markup).toContain("Interactive company graph");
+    expect(markup).toContain("CompanyNetworkGraph");
     expect(markup).toContain("Jordan Patel");
     expect(markup).toContain("LogoutButton");
   });
