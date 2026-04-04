@@ -16,7 +16,9 @@ if str(SRC) not in sys.path:
 from network_pipeline.a16z_crypto import (  # noqa: E402
     get_a16z_crypto_artifacts_root,
     get_a16z_crypto_fetch_root,
+    get_a16z_crypto_normalized_path,
     get_a16z_crypto_publish_root,
+    load_a16z_crypto_normalized_companies,
     load_a16z_crypto_stage_bundle,
     load_a16z_crypto_dashboard_snapshot,
     publish_a16z_crypto_bundle,
@@ -108,13 +110,55 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
             self.assertEqual(stage_bundle.get("dashboard_snapshot", {}).get("company_count"), 125)
             self.assertEqual(stage_bundle.get("dashboard_snapshot", {}).get("top_companies", [])[0].get("company_name"), "Battlebound")
 
-    def test_pipeline_runner_executes_source_registry_fetch_raw_scrape_and_publish(self) -> None:
+    def test_normalize_schema_stage_writes_flat_company_list(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            raw_root = root / "data" / "raw" / "a16z-crypto"
+            raw_root.mkdir(parents=True, exist_ok=True)
+            for file_name in (
+                "company_network_data.json",
+                "company_network_summary.json",
+                "people_network_data.json",
+            ):
+                (raw_root / file_name).write_text(
+                    (get_a16z_crypto_artifacts_root() / file_name).read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+
+            stage_path = root / "data" / "staging" / "a16z-crypto" / "portfolio_snapshot.json"
+            normalized_path = root / "data" / "staging" / "a16z-crypto" / "companies_normalized.json"
+            runner = PipelineRunner(workdir=root)
+            results = runner.run(
+                stages=["scrape_portfolio", "normalize_schema"],
+                overrides={
+                    "scrape_portfolio": {
+                        "input_root": raw_root,
+                        "output_path": stage_path,
+                    },
+                    "normalize_schema": {
+                        "input_path": stage_path,
+                        "output_path": normalized_path,
+                    },
+                },
+            )
+
+            self.assertEqual([result.name for result in results], ["scrape_portfolio", "normalize_schema"])
+            self.assertTrue(normalized_path.exists())
+
+            normalized_companies = load_a16z_crypto_normalized_companies(normalized_path)
+            self.assertEqual(len(normalized_companies), 125)
+            self.assertEqual(normalized_companies[0].get("company_name_raw"), "Alchemy")
+            self.assertEqual(normalized_companies[0].get("company_name_norm"), "alchemy")
+            self.assertEqual(normalized_companies[0].get("website_domain"), "alchemy.com")
+
+    def test_pipeline_runner_executes_source_registry_fetch_raw_scrape_normalize_and_publish(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
             sources_path = root / "data" / "sources" / "a16z_crypto_sources.csv"
             raw_root = root / "data" / "raw" / "a16z-crypto"
             metadata_path = root / "data" / "raw" / "a16z_crypto_fetch_metadata.csv"
             stage_path = root / "data" / "staging" / "a16z-crypto" / "portfolio_snapshot.json"
+            normalized_path = root / "data" / "staging" / "a16z-crypto" / "companies_normalized.json"
             publish_root = root / "public" / "a16z-crypto"
 
             runner = PipelineRunner(workdir=root)
@@ -135,22 +179,34 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
                         "input_root": raw_root,
                         "output_path": stage_path,
                     },
+                    "normalize_schema": {
+                        "input_path": stage_path,
+                        "output_path": normalized_path,
+                    },
                     "dashboard_publish": {
+                        "normalized_path": normalized_path,
                         "stage_path": stage_path,
                         "output_root": publish_root,
                     },
                 }
             )
 
-            self.assertEqual([result.name for result in results], ["source_registry", "fetch_raw", "scrape_portfolio", "dashboard_publish"])
+            self.assertEqual(
+                [result.name for result in results],
+                ["source_registry", "fetch_raw", "scrape_portfolio", "normalize_schema", "dashboard_publish"],
+            )
             self.assertTrue(sources_path.exists())
             self.assertTrue(metadata_path.exists())
             self.assertTrue((raw_root / "company_network_data.json").exists())
             self.assertTrue(stage_path.exists())
+            self.assertTrue(normalized_path.exists())
             self.assertTrue((publish_root / "dashboard_snapshot.json").exists())
             self.assertEqual(results[1].outputs.get("raw_root"), str(raw_root))
             self.assertEqual(results[2].outputs.get("portfolio_snapshot_path"), str(stage_path))
-            self.assertEqual(results[3].outputs.get("stage_path"), str(stage_path))
+            self.assertEqual(results[3].outputs.get("normalized_path"), str(normalized_path))
+            self.assertEqual(results[4].outputs.get("stage_path"), str(stage_path))
+            self.assertEqual(results[4].outputs.get("normalized_path"), str(normalized_path))
+            self.assertEqual(results[4].outputs.get("normalized_company_count"), 125)
 
             with sources_path.open("r", encoding="utf-8", newline="") as handle:
                 source_rows = list(csv.DictReader(handle))
@@ -188,7 +244,12 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
                                 "input_root": "data/raw/a16z-crypto",
                                 "output_path": "data/staging/a16z-crypto/portfolio_snapshot.json",
                             },
+                            "normalize_schema": {
+                                "input_path": "data/staging/a16z-crypto/portfolio_snapshot.json",
+                                "output_path": "data/staging/a16z-crypto/companies_normalized.json",
+                            },
                             "dashboard_publish": {
+                                "normalized_path": "data/staging/a16z-crypto/companies_normalized.json",
                                 "stage_path": "data/staging/a16z-crypto/portfolio_snapshot.json",
                                 "output_root": "public/a16z-crypto",
                             },
@@ -202,10 +263,14 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
             runner = PipelineRunner.from_file(config_path, workdir=root)
             results = runner.run()
 
-            self.assertEqual([result.name for result in results], ["source_registry", "fetch_raw", "scrape_portfolio", "dashboard_publish"])
+            self.assertEqual(
+                [result.name for result in results],
+                ["source_registry", "fetch_raw", "scrape_portfolio", "normalize_schema", "dashboard_publish"],
+            )
             self.assertTrue((root / "data" / "sources" / "a16z_crypto_sources.csv").exists())
             self.assertTrue((root / "data" / "raw" / "a16z-crypto" / "company_network_data.json").exists())
             self.assertTrue((root / "data" / "staging" / "a16z-crypto" / "portfolio_snapshot.json").exists())
+            self.assertTrue((root / "data" / "staging" / "a16z-crypto" / "companies_normalized.json").exists())
             self.assertTrue((root / "public" / "a16z-crypto" / "dashboard_snapshot.json").exists())
 
 

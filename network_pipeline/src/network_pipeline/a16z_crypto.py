@@ -30,6 +30,10 @@ def get_a16z_crypto_stage_path() -> Path:
     return get_a16z_crypto_staging_root() / "portfolio_snapshot.json"
 
 
+def get_a16z_crypto_normalized_path() -> Path:
+    return get_a16z_crypto_staging_root() / "companies_normalized.json"
+
+
 def get_a16z_crypto_publish_root() -> Path:
     return Path(__file__).resolve().parents[2] / "public" / "a16z-crypto"
 
@@ -79,6 +83,22 @@ def _as_string_list(value: object) -> list[str]:
     if isinstance(value, str):
         return [entry.strip() for entry in value.split("|") if entry.strip()]
     return []
+
+
+def _as_float(value: object) -> float | None:
+    if isinstance(value, bool):
+        return float(int(value))
+    if isinstance(value, int):
+        return float(value)
+    if isinstance(value, float):
+        return float(value)
+    return None
+
+
+def _normalize_company_name(value: object) -> str:
+    text = _as_text(value).lower()
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    return text.strip("-")
 
 
 @dataclass(frozen=True)
@@ -247,6 +267,65 @@ def write_a16z_crypto_stage_bundle(
 
 def load_a16z_crypto_stage_bundle(stage_path: Path) -> dict[str, object]:
     return json.loads(stage_path.read_text(encoding="utf-8"))
+
+
+def build_a16z_crypto_normalized_companies(stage_path: Path) -> list[dict[str, object]]:
+    stage_bundle = load_a16z_crypto_stage_bundle(stage_path)
+    company_network_data = stage_bundle.get("company_network_data", {})
+    company_nodes = company_network_data.get("nodes", []) if isinstance(company_network_data, dict) else []
+
+    normalized: list[dict[str, object]] = []
+    for node in company_nodes:
+        if not isinstance(node, dict):
+            continue
+
+        company_name = _as_text(node.get("company_name")) or _as_text(node.get("label")) or "Unknown company"
+        website = _as_text(node.get("website"))
+        normalized.append(
+          {
+            "source_id": "a16z-crypto",
+            "investor_name": _as_text(node.get("investor_names_label")) or "a16z crypto",
+            "source_type": "crypto_ecosystem",
+            "company_id": _as_text(node.get("company_id")) or _as_text(node.get("id")) or company_name,
+            "company_name_raw": company_name,
+            "company_name_norm": _normalize_company_name(company_name),
+            "website": website or None,
+            "website_domain": _as_text(node.get("website_domain")) or None,
+            "vertical_raw": _as_text(node.get("vertical")) or None,
+            "stage_raw": _as_text(node.get("stage")) or None,
+            "location_raw": _as_text(node.get("location")) or None,
+            "location_region": _as_text(node.get("location_region")) or None,
+            "employees": _as_float(node.get("employees")),
+            "amount_raised": _as_float(node.get("amount_raised")),
+            "revenue": _as_float(node.get("revenue")),
+            "current_pain_point_tags": _as_text(node.get("current_pain_point_tags")) or None,
+            "resolved_pain_point_tags": _as_text(node.get("resolved_pain_point_tags")) or None,
+            "investor_count": _as_int(node.get("investor_count")),
+            "degree": _as_int(node.get("degree")),
+            "people_count": _as_int(node.get("people_count")),
+          }
+        )
+
+    return normalized
+
+
+def write_a16z_crypto_normalized_companies(
+    output_path: Path | None = None,
+    *,
+    stage_path: Path,
+) -> Path:
+    normalized_path = output_path or get_a16z_crypto_normalized_path()
+    normalized_path.parent.mkdir(parents=True, exist_ok=True)
+    normalized_path.write_text(
+      json.dumps(build_a16z_crypto_normalized_companies(stage_path), indent=2, ensure_ascii=True),
+      encoding="utf-8",
+    )
+    return normalized_path
+
+
+def load_a16z_crypto_normalized_companies(path: Path) -> list[dict[str, object]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, list) else []
 
 
 def publish_a16z_crypto_bundle(

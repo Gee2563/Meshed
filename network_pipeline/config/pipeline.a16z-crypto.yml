@@ -12,6 +12,10 @@ pipeline:
   scrape_portfolio:
     input_root: data/raw/a16z-crypto
     output_path: data/staging/a16z-crypto/portfolio_snapshot.json
+  normalize_schema:
+    input_path: data/staging/a16z-crypto/portfolio_snapshot.json
+    output_path: data/staging/a16z-crypto/companies_normalized.json
   dashboard_publish:
+    normalized_path: data/staging/a16z-crypto/companies_normalized.json
     stage_path: data/staging/a16z-crypto/portfolio_snapshot.json
     output_root: public/a16z-crypto
