@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+// Reuse one logo component for both the hero section and tighter nav-style layouts.
 type MeshedLogoProps = {
   compact?: boolean;
 };

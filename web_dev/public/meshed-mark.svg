@@ -1,4 +1,5 @@
 <svg width="256" height="160" viewBox="0 0 256 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shared brand mark used by MeshedLogo and by the Dynamic provider's app logo setting. -->
   <defs>
     <linearGradient id="meshedGradient" x1="16" y1="80" x2="240" y2="80" gradientUnits="userSpaceOnUse">
       <stop stop-color="#1293C9"/>

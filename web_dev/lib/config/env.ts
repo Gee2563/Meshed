@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { parseBooleanEnv } from "@/lib/config/env-parsers";
 
+// Parse environment variables once so the rest of the app can depend on typed config objects.
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().default("postgresql://postgres:postgres@localhost:5432/meshed"),
@@ -62,6 +63,7 @@ export const env = envSchema.parse({
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 });
 
+// Browser code only receives public values plus derived mock defaults, never server-only secrets.
 export function buildClientEnv(input: {
   NEXT_PUBLIC_DYNAMIC_ENV_ID?: string;
   NEXT_PUBLIC_USE_MOCK_DYNAMIC?: boolean;
