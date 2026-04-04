@@ -1,0 +1,247 @@
+// @vitest-environment jsdom
+
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/components/ui/Button", () => ({
+  Button: (props: {
+    children: React.ReactNode;
+    disabled?: boolean;
+    onClick?: () => void;
+    variant?: string;
+  }) =>
+    React.createElement(
+      "button",
+      {
+        disabled: props.disabled,
+        onClick: props.onClick,
+        type: "button",
+        "data-variant": props.variant ?? "primary",
+      },
+      props.children,
+    ),
+}));
+
+vi.mock("@/components/dashboard/SimulateLinkedInAlertButton", () => ({
+  SimulateLinkedInAlertButton: () => React.createElement("div", null, "SimulateLinkedInAlertButton"),
+}));
+
+describe("ConnectionsPanel", () => {
+  let container: HTMLDivElement;
+  let root: Root;
+
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+    vi.stubGlobal("React", React);
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  });
+
+  afterEach(async () => {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    vi.unstubAllGlobals();
+  });
+
+  it("sends a Meshed request for an available contact", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            ok: true,
+            data: {
+              request: {
+                id: "req_1",
+                requesterUserId: "usr_current",
+                recipientUserId: "usr_mentor",
+                status: "pending",
+              },
+            },
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json",
+            },
+          },
+        ),
+      ),
+    );
+
+    const { ConnectionsPanel } = await import("@/components/dashboard/ConnectionsPanel");
+
+    await act(async () => {
+      root.render(
+        React.createElement(ConnectionsPanel, {
+          contacts: [
+            {
+              id: "usr_mentor",
+              name: "Theo Mercer",
+              company: "SignalStack",
+              role: "mentor",
+              why: "Strong portfolio operator match.",
+              contact: "theo@signalstack.io",
+              linkedinUrl: "https://linkedin.com/in/theo",
+              suggestedConnectionType: "mentorship",
+            },
+          ],
+          notifications: [],
+          pendingIncomingRequests: [],
+          connectedContactIds: [],
+          outgoingPendingContactIds: [],
+        }),
+      );
+    });
+
+    const sendButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Send Meshed Request",
+    );
+
+    await act(async () => {
+      sendButton?.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/connections/requests", expect.objectContaining({ method: "POST" }));
+    expect(container.textContent).toContain("Sent a Meshed connection request to Theo Mercer.");
+  });
+
+  it("accepts an incoming request and marks the contact connected", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            ok: true,
+            data: {
+              request: {
+                id: "req_2",
+                requesterUserId: "usr_consultant",
+                recipientUserId: "usr_current",
+                status: "accepted",
+                contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                contractTxHash: "0xflaretx",
+              },
+            },
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json",
+            },
+          },
+        ),
+      ),
+    );
+
+    const { ConnectionsPanel } = await import("@/components/dashboard/ConnectionsPanel");
+
+    await act(async () => {
+      root.render(
+        React.createElement(ConnectionsPanel, {
+          contacts: [
+            {
+              id: "usr_consultant",
+              name: "Nina Volkov",
+              company: "MeshPay",
+              role: "consultant",
+              why: "Already collaborated on pricing work.",
+              contact: "nina@meshpay.io",
+              linkedinUrl: "https://linkedin.com/in/nina",
+              suggestedConnectionType: "consulting",
+            },
+          ],
+          notifications: [],
+          pendingIncomingRequests: [
+            {
+              id: "req_2",
+              requesterUserId: "usr_consultant",
+              recipientUserId: "usr_current",
+              requesterName: "Nina Volkov",
+              requesterRole: "consultant",
+              requesterCompany: "MeshPay",
+              requesterContact: "nina@meshpay.io",
+              requesterLinkedinUrl: "https://linkedin.com/in/nina",
+              type: "consulting",
+              status: "pending",
+              message: "Let's formalize this consulting relationship.",
+              acceptedConnectionId: null,
+              contractAddress: null,
+              contractNetwork: null,
+              generationMode: null,
+              contractTxHash: null,
+              metadata: null,
+              createdAt: "2026-04-01T09:00:00.000Z",
+              respondedAt: null,
+            },
+          ],
+          connectedContactIds: [],
+          outgoingPendingContactIds: [],
+        }),
+      );
+    });
+
+    const acceptButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Accept on Flare",
+    );
+
+    await act(async () => {
+      acceptButton?.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/connections/requests/req_2/accept", {
+      method: "POST",
+    });
+    expect(container.textContent).toContain("Accepted Nina Volkov's connection request on Flare.");
+    expect(container.textContent).toContain("Connected on Meshed");
+  });
+
+  it("opens a graph profile handoff in the connections panel", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+
+    const { ConnectionsPanel } = await import("@/components/dashboard/ConnectionsPanel");
+
+    await act(async () => {
+      root.render(
+        React.createElement(ConnectionsPanel, {
+          contacts: [],
+          notifications: [],
+          pendingIncomingRequests: [],
+          connectedContactIds: [],
+          outgoingPendingContactIds: [],
+        }),
+      );
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: {
+            type: "meshed:graph-connect-request",
+            payload: {
+              id: "graph_person_1",
+              name: "Alex Wilson",
+              company: "Battlebound",
+              role: "mentor",
+              linkedinUrl: "https://linkedin.com/in/alex-wilson",
+            },
+          },
+          origin: "http://localhost:3000",
+        }),
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain("Alex Wilson");
+    expect(container.textContent).toContain("Graph profile only");
+  });
+});

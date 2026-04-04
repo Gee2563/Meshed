@@ -11,11 +11,10 @@ type TopNavProps = {
 };
 
 export function TopNav({ currentUser }: TopNavProps) {
-  // The profile route only makes sense once Meshed knows which user record belongs to this session.
   const links: Array<{ href: Route; label: string }> = [
     { href: "/", label: "Home" },
     { href: "/dashboard", label: "Dashboard" },
-    ...(currentUser ? [{ href: `/people/${currentUser.id}` as Route, label: "My Profile" }] : []),
+    ...(currentUser ? [{ href: "/profile", label: "Profile" }] : []),
   ];
 
   return (

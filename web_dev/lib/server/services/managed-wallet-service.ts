@@ -1,11 +1,17 @@
-import { Prisma, VerificationStatus, VerificationType } from "@prisma/client";
-
 import { getWalletLinkService } from "@/lib/server/adapters/dynamic";
 import type { WalletLinkService } from "@/lib/server/adapters/dynamic/types";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { userRepository } from "@/lib/server/repositories/user-repository";
 import type { UserSummary } from "@/lib/types";
+
+const verificationType = {
+  WALLET_LINK: "WALLET_LINK",
+} as const;
+
+const verificationStatus = {
+  VERIFIED: "VERIFIED",
+} as const;
 
 // Provision managed wallets only when a user does not already have one linked.
 type ManagedWalletServiceDependencies = {
@@ -64,23 +70,58 @@ export const managedWalletService = createManagedWalletService({
   userRepository,
   verificationRepository: {
     async findWalletVerification(userId: string) {
-      return prisma.verificationRecord.findFirst({
+      const prismaClient = prisma as unknown as {
+        verificationRecord?: {
+          findFirst(args: {
+            where: {
+              userId: string;
+              type: string;
+              status: string;
+            };
+          }): Promise<unknown | null>;
+        };
+      };
+
+      if (!prismaClient.verificationRecord) {
+        return null;
+      }
+
+      return prismaClient.verificationRecord.findFirst({
         where: {
           userId,
-          type: VerificationType.WALLET_LINK,
-          status: VerificationStatus.VERIFIED,
+          type: verificationType.WALLET_LINK,
+          status: verificationStatus.VERIFIED,
         },
       });
     },
     async createWalletVerification(userId: string, providerRef: string, metadata: Record<string, unknown>) {
-      return prisma.verificationRecord.create({
+      const prismaClient = prisma as unknown as {
+        verificationRecord?: {
+          create(args: {
+            data: {
+              id: string;
+              userId: string;
+              type: string;
+              status: string;
+              providerRef: string;
+              metadata: Record<string, unknown>;
+            };
+          }): Promise<unknown>;
+        };
+      };
+
+      if (!prismaClient.verificationRecord) {
+        return null;
+      }
+
+      return prismaClient.verificationRecord.create({
         data: {
           id: `ver_wallet_passive_${Date.now()}`,
           userId,
-          type: VerificationType.WALLET_LINK,
-          status: VerificationStatus.VERIFIED,
+          type: verificationType.WALLET_LINK,
+          status: verificationStatus.VERIFIED,
           providerRef,
-          metadata: metadata as Prisma.InputJsonValue,
+          metadata,
         },
       });
     },

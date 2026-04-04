@@ -48,6 +48,20 @@ enum ContractGenerationMode {
   REAL
 }
 
+enum ConnectionType {
+  INTRO
+  CONSULTING
+  MENTORSHIP
+  INVESTMENT
+  ENDORSEMENT
+}
+
+enum ConnectionRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
 model User {
   id                          String              @id
   name                        String
@@ -69,6 +83,10 @@ model User {
   lastActiveAt                DateTime?
   companiesOwned              Company[]           @relation("CompanyOwner")
   memberships                 CompanyMembership[]
+  outboundConnections         Connection[]        @relation("ConnectionSource")
+  inboundConnections          Connection[]        @relation("ConnectionTarget")
+  sentConnectionRequests      ConnectionRequest[] @relation("ConnectionRequester")
+  receivedConnectionRequests  ConnectionRequest[] @relation("ConnectionRecipient")
   onboardingContractArtifacts OnboardingContractArtifact[]
   worldVerificationNullifiers WorldVerificationNullifier[]
 }
@@ -139,6 +157,46 @@ model OnboardingContractArtifact {
   @@unique([userId, contractStep])
   @@index([userId])
   @@index([companyId])
+}
+
+model Connection {
+  id           String         @id
+  sourceUserId String
+  targetUserId String
+  type         ConnectionType
+  verified     Boolean        @default(false)
+  note         String?
+  createdAt    DateTime       @default(now())
+  sourceUser   User           @relation("ConnectionSource", fields: [sourceUserId], references: [id], onDelete: Cascade)
+  targetUser   User           @relation("ConnectionTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  acceptedRequests ConnectionRequest[] @relation("AcceptedConnection")
+
+  @@index([sourceUserId])
+  @@index([targetUserId])
+}
+
+model ConnectionRequest {
+  id                  String                  @id
+  requesterUserId     String
+  recipientUserId     String
+  type                ConnectionType
+  status              ConnectionRequestStatus @default(PENDING)
+  message             String?
+  acceptedConnectionId String?
+  contractAddress     String?
+  contractNetwork     String?
+  generationMode      ContractGenerationMode?
+  contractTxHash      String?
+  metadata            Json?
+  createdAt           DateTime                @default(now())
+  respondedAt         DateTime?
+  requester           User                    @relation("ConnectionRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  recipient           User                    @relation("ConnectionRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  acceptedConnection  Connection?             @relation("AcceptedConnection", fields: [acceptedConnectionId], references: [id], onDelete: SetNull)
+
+  @@index([requesterUserId])
+  @@index([recipientUserId])
+  @@index([acceptedConnectionId])
 }
 
 model WorldVerificationNullifier {

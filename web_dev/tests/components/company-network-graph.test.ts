@@ -204,6 +204,7 @@ describe("CompanyNetworkGraph", () => {
 
     vi.stubGlobal("React", React);
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.spyOn(window, "postMessage").mockImplementation(() => undefined);
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       callback(0);
       return 1;
@@ -217,6 +218,7 @@ describe("CompanyNetworkGraph", () => {
       root.unmount();
     });
     container.remove();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -266,6 +268,26 @@ describe("CompanyNetworkGraph", () => {
     expect(container.textContent).toContain("People details");
     expect(container.textContent).toContain("alex.wilson19@battlebound.example");
     expect(container.textContent).toContain("Trusted Mentor");
+
+    const connectButton = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("Connect on Meshed"),
+    );
+    expect(connectButton).toBeDefined();
+
+    await act(async () => {
+      connectButton?.click();
+    });
+
+    expect(window.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "meshed:graph-connect-request",
+        payload: expect.objectContaining({
+          id: "p_1",
+          name: "Alex Wilson",
+        }),
+      }),
+      "http://localhost:3000",
+    );
   });
 
   it("renders bridge details only when the click targets an edge without a node", async () => {

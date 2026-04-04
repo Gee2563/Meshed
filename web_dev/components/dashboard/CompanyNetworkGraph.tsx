@@ -206,12 +206,41 @@ function getWebsiteLabel(website: string | null) {
   return extractDomainFromWebsite(website);
 }
 
+function dispatchGraphConnectRequest(person: A16zCompanyGraphPerson) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.postMessage(
+    {
+      type: "meshed:graph-connect-request",
+      payload: {
+        id: person.id,
+        name: person.name,
+        company: person.company,
+        role: person.suggestedRole,
+        linkedinUrl: person.linkedinUrl ?? undefined,
+        contact: person.contact ?? undefined,
+        why: person.connectionSummary ?? person.relationshipSummary[0] ?? `${person.name} was surfaced from the graph.`,
+      },
+    },
+    window.location.origin,
+  );
+
+  document.getElementById("meshed-connections-panel")?.scrollIntoView?.({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
 function PersonDetailModal({
   person,
   onClose,
+  onConnect,
 }: {
   person: A16zCompanyGraphPerson;
   onClose: () => void;
+  onConnect: (person: A16zCompanyGraphPerson) => void;
 }) {
   return (
     <div
@@ -337,6 +366,13 @@ function PersonDetailModal({
             <p className="mt-2 text-sm leading-6 text-ink">{person.connectionSummary}</p>
           </div>
         ) : null}
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button onClick={() => onConnect(person)}>Connect on Meshed</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -576,6 +612,10 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
     setSelectedPersonId(null);
+  }
+
+  function connectPerson(person: A16zCompanyGraphPerson) {
+    dispatchGraphConnectRequest(person);
   }
 
   const searchStatus = graphData.searchTerms.length
@@ -827,36 +867,48 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
                             Click for details
                           </span>
                         </div>
-                        {selectedNode.people.length ? (
+                            {selectedNode.people.length ? (
                           <div className="mt-4 grid gap-3">
                             {selectedNode.people.map((person) => (
-                              <button
+                              <div
                                 key={person.id}
-                                type="button"
-                                onClick={() => setSelectedPersonId(person.id)}
-                                className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,248,252,0.92))] px-3 py-3 text-left transition-colors hover:border-sky-300 hover:bg-sky-50/40"
+                                className="rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,248,252,0.92))] px-3 py-3"
                               >
-                                <img
-                                  src={personAvatarUrl(person)}
-                                  alt={person.name}
-                                  className="h-11 w-11 rounded-2xl border border-slate-200 object-cover"
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <p className="text-sm font-semibold text-ink">{person.name}</p>
-                                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
-                                      Score {person.networkImportanceScore}
-                                    </span>
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPersonId(person.id)}
+                                    className="flex min-w-0 flex-1 items-start gap-3 text-left transition-colors hover:opacity-90"
+                                  >
+                                    <img
+                                      src={personAvatarUrl(person)}
+                                      alt={person.name}
+                                      className="h-11 w-11 rounded-2xl border border-slate-200 object-cover"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-sm font-semibold text-ink">{person.name}</p>
+                                        <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
+                                          Score {person.networkImportanceScore}
+                                        </span>
+                                      </div>
+                                      <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">
+                                        {person.suggestedRole ? titleCase(person.suggestedRole) : "Operator"}
+                                        {person.currentPainPointLabel ? ` | ${person.currentPainPointLabel}` : ""}
+                                      </p>
+                                      <p className="mt-2 line-clamp-3 text-sm leading-5 text-slate">
+                                        {person.connectionSummary ?? "No connection summary available."}
+                                      </p>
+                                    </div>
+                                  </button>
+                                  <div className="flex shrink-0 flex-col gap-2">
+                                    <Button variant="secondary" onClick={() => setSelectedPersonId(person.id)}>
+                                      View
+                                    </Button>
+                                    <Button onClick={() => connectPerson(person)}>Connect</Button>
                                   </div>
-                                  <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">
-                                    {person.suggestedRole ? titleCase(person.suggestedRole) : "Operator"}
-                                    {person.currentPainPointLabel ? ` | ${person.currentPainPointLabel}` : ""}
-                                  </p>
-                                  <p className="mt-2 line-clamp-3 text-sm leading-5 text-slate">
-                                    {person.connectionSummary ?? "No connection summary available."}
-                                  </p>
                                 </div>
-                              </button>
+                              </div>
                             ))}
                           </div>
                         ) : (
@@ -923,7 +975,13 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
         </div>
       </div>
 
-      {selectedPerson ? <PersonDetailModal person={selectedPerson} onClose={() => setSelectedPersonId(null)} /> : null}
+      {selectedPerson ? (
+        <PersonDetailModal
+          person={selectedPerson}
+          onClose={() => setSelectedPersonId(null)}
+          onConnect={(person) => connectPerson(person)}
+        />
+      ) : null}
     </>
   );
 }

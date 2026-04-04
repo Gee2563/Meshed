@@ -37,6 +37,7 @@ export type OnboardingContractStep =
   | "world_verified";
 
 export type ContractGenerationMode = "mock" | "real";
+export type ConnectionRequestStatus = "pending" | "accepted" | "declined";
 
 // Summary interfaces represent the stable, serialized shapes passed between layers.
 export interface UserSummary {
@@ -72,6 +73,36 @@ export interface CompanySummary {
   companyKind?: CompanyKind;
   parentCompanyId?: string | null;
   outsideNetworkAccessEnabled?: boolean;
+}
+
+export interface ConnectionSummary {
+  id: string;
+  sourceUserId: string;
+  targetUserId: string;
+  type: "intro" | "consulting" | "mentorship" | "investment" | "endorsement";
+  verified: boolean;
+}
+
+export interface ConnectionRequestSummary {
+  id: string;
+  requesterUserId: string;
+  recipientUserId: string;
+  requesterName: string;
+  requesterRole: UserRole;
+  requesterCompany: string | null;
+  requesterContact: string;
+  requesterLinkedinUrl?: string | null;
+  type: ConnectionSummary["type"];
+  status: ConnectionRequestStatus;
+  message?: string | null;
+  acceptedConnectionId?: string | null;
+  contractAddress?: string | null;
+  contractNetwork?: string | null;
+  generationMode?: ContractGenerationMode | null;
+  contractTxHash?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  respondedAt?: string | null;
 }
 
 // UI onboarding steps include wallet/world/team states that may span more than one persisted record.

@@ -5,6 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   loadA16zCryptoDashboardData: vi.fn(),
+  ensureDemoState: vi.fn(),
+  listDemoUsers: vi.fn(),
+  listNotificationsForUser: vi.fn(),
+  findMany: vi.fn(),
 }));
 
 vi.mock("@/lib/server/current-user", () => ({
@@ -15,12 +19,42 @@ vi.mock("@/lib/server/meshed-network/a16z-crypto-dashboard", () => ({
   loadA16zCryptoDashboardData: mocks.loadA16zCryptoDashboardData,
 }));
 
+vi.mock("@/lib/server/services/connection-request-service", () => ({
+  connectionRequestService: {
+    ensureDemoState: mocks.ensureDemoState,
+  },
+}));
+
+vi.mock("@/lib/server/repositories/user-repository", () => ({
+  userRepository: {
+    listDemoUsers: mocks.listDemoUsers,
+  },
+}));
+
+vi.mock("@/lib/server/services/linkedin-activity-service", () => ({
+  linkedinActivityService: {
+    listNotificationsForUser: mocks.listNotificationsForUser,
+  },
+}));
+
+vi.mock("@/lib/server/prisma", () => ({
+  prisma: {
+    companyMembership: {
+      findMany: mocks.findMany,
+    },
+  },
+}));
+
 vi.mock("@/components/LogoutButton", () => ({
   LogoutButton: () => "LogoutButton",
 }));
 
 vi.mock("@/components/dashboard/CompanyNetworkGraph", () => ({
   CompanyNetworkGraph: () => "CompanyNetworkGraph",
+}));
+
+vi.mock("@/components/dashboard/ConnectionsPanel", () => ({
+  ConnectionsPanel: () => "ConnectionsPanel",
 }));
 
 vi.mock("@/components/ui/Button", () => ({
@@ -32,6 +66,10 @@ describe("dashboard page", () => {
     vi.stubGlobal("React", React);
     mocks.getCurrentUser.mockReset();
     mocks.loadA16zCryptoDashboardData.mockReset();
+    mocks.ensureDemoState.mockReset();
+    mocks.listDemoUsers.mockReset();
+    mocks.listNotificationsForUser.mockReset();
+    mocks.findMany.mockReset();
   });
 
   it("sends signed-out visitors back to the trust entrypoint", async () => {
@@ -174,6 +212,66 @@ describe("dashboard page", () => {
         ],
       },
     });
+    mocks.ensureDemoState.mockResolvedValue({
+      pendingIncomingRequests: [],
+      connectedContactIds: ["usr_mentor_theo"],
+      outgoingPendingContactIds: ["usr_operator_iris"],
+    });
+    mocks.listDemoUsers.mockResolvedValue([
+      {
+        id: "usr_mentor_theo",
+        name: "Theo Mercer",
+        email: "theo@signalstack.example",
+        role: "mentor",
+        bio: "",
+        skills: ["Partnerships"],
+        sectors: ["fintech"],
+        linkedinUrl: "https://www.linkedin.com/in/theo-mercer",
+        walletAddress: null,
+        worldVerified: true,
+        dynamicUserId: null,
+        engagementScore: 88,
+        reliabilityScore: 91,
+        verificationBadges: ["world_verified"],
+        outsideNetworkAccessEnabled: false,
+        createdAt: "2025-01-01T00:00:00.000Z",
+      },
+      {
+        id: "usr_operator_iris",
+        name: "Iris Hale",
+        email: "iris@orbitflow.example",
+        role: "operator",
+        bio: "",
+        skills: ["Operations"],
+        sectors: ["infra"],
+        linkedinUrl: "https://www.linkedin.com/in/iris-hale",
+        walletAddress: null,
+        worldVerified: true,
+        dynamicUserId: null,
+        engagementScore: 82,
+        reliabilityScore: 86,
+        verificationBadges: ["world_verified"],
+        outsideNetworkAccessEnabled: false,
+        createdAt: "2025-01-01T00:00:00.000Z",
+      },
+    ]);
+    mocks.listNotificationsForUser.mockResolvedValue([]);
+    mocks.findMany.mockResolvedValue([
+      {
+        id: "mem_1",
+        userId: "usr_mentor_theo",
+        company: {
+          name: "SignalStack",
+        },
+      },
+      {
+        id: "mem_2",
+        userId: "usr_operator_iris",
+        company: {
+          name: "OrbitFlow",
+        },
+      },
+    ]);
 
     const { default: DashboardPage } = await import("@/app/dashboard/page");
     const markup = renderToStaticMarkup(await DashboardPage());
@@ -184,6 +282,8 @@ describe("dashboard page", () => {
     expect(markup).toContain("Strongest company bridges");
     expect(markup).toContain("Interactive company graph");
     expect(markup).toContain("CompanyNetworkGraph");
+    expect(markup).toContain("Meshed people connections");
+    expect(markup).toContain("ConnectionsPanel");
     expect(markup).toContain("Jordan Patel");
     expect(markup).toContain("LogoutButton");
   });

@@ -1,0 +1,387 @@
+import { createHash } from "node:crypto";
+
+import { env } from "@/lib/config/env";
+import { getFlareAdapters } from "@/lib/server/adapters/flare";
+import { ApiError } from "@/lib/server/http";
+import { userRepository } from "@/lib/server/repositories/user-repository";
+import {
+  getMeshingContractsService,
+  getRealMeshingConfig,
+  type MeshingContractCallTrace,
+} from "@/lib/server/services/meshing-contract-service";
+import type { UserSummary } from "@/lib/types";
+
+export type LinkedInAction = "connect_request" | "message";
+
+export interface LinkedInWebhookEventInput {
+  senderLinkedInUrl: string;
+  recipientLinkedInUrl: string;
+  action: LinkedInAction;
+  messagePreview?: string | null;
+}
+
+export interface LinkedInMeshedNotification {
+  id: string;
+  eventId: string;
+  userId: string;
+  counterpartUserId: string;
+  counterpartName: string;
+  counterpartLinkedInUrl: string | null;
+  action: LinkedInAction;
+  direction: "incoming" | "outgoing";
+  messagePreview: string;
+  receivedAt: string;
+  attestationRef: string;
+  title: string;
+  body: string;
+}
+
+export interface LinkedInIngestionResult {
+  status: "ignored" | "attested";
+  reason?: string;
+  eventId: string;
+  senderMeshedUserId?: string;
+  recipientMeshedUserId?: string;
+  attestationRef?: string;
+  notificationsCreated: number;
+  relationshipId?: string;
+  contractCall?: MeshingContractCallTrace;
+}
+
+export interface LinkedInSimulationResult {
+  action: LinkedInAction;
+  direction: "incoming" | "outgoing";
+  senderName: string;
+  recipientName: string;
+  counterpartName: string;
+  messagePreview: string;
+  senderLinkedInUrl: string;
+  recipientLinkedInUrl: string;
+  ingestion: LinkedInIngestionResult;
+}
+
+const notificationByUserId = new Map<string, LinkedInMeshedNotification[]>();
+const processedEventIds = new Set<string>();
+
+function normalizeLinkedInUrl(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function syntheticLinkedInUrl(name: string, userId: string) {
+  const handle = `${slugify(name)}-${userId.slice(-4)}`;
+  return `https://www.linkedin.com/in/${handle}`;
+}
+
+function assertRealLinkedInRuntime() {
+  if (env.USE_MOCK_FLARE) {
+    throw new ApiError(409, "USE_MOCK_FLARE is enabled. Disable it to run real LinkedIn attestation flow.");
+  }
+  if (env.USE_MOCK_MESHING) {
+    throw new ApiError(409, "USE_MOCK_MESHING is enabled. Disable it to run real on-chain meshing writes.");
+  }
+  if (!getRealMeshingConfig()) {
+    throw new ApiError(
+      500,
+      "Missing real meshing contract configuration. Set RELATIONSHIP_REGISTRY_ADDRESS, PORTFOLIO_REGISTRY_ADDRESS, OPPORTUNITY_ALERT_ADDRESS, FLARE_RPC_URL, and PRIVATE_KEY.",
+    );
+  }
+}
+
+async function ensureLinkedInIdentity(userId: string) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    return null;
+  }
+
+  if (user.linkedinUrl) {
+    return user;
+  }
+
+  return userRepository.updateProfile(user.id, {
+    linkedinUrl: syntheticLinkedInUrl(user.name, user.id),
+  });
+}
+
+function buildEventId(input: LinkedInWebhookEventInput) {
+  const digest = createHash("sha256")
+    .update(
+      [
+        normalizeLinkedInUrl(input.senderLinkedInUrl),
+        normalizeLinkedInUrl(input.recipientLinkedInUrl),
+        input.action,
+        (input.messagePreview ?? "").trim().toLowerCase(),
+      ].join("|"),
+    )
+    .digest("hex");
+
+  return `li_evt_${digest.slice(0, 24)}`;
+}
+
+function pushNotification(notification: LinkedInMeshedNotification) {
+  const existing = notificationByUserId.get(notification.userId) ?? [];
+  notificationByUserId.set(notification.userId, [notification, ...existing].slice(0, 50));
+}
+
+function defaultMessageForAction(action: LinkedInAction) {
+  return action === "connect_request"
+    ? "Sent a LinkedIn connection request."
+    : "Sent you a LinkedIn direct message.";
+}
+
+function connectionRelationshipType(action: LinkedInAction) {
+  return action === "connect_request" ? "LINKEDIN_CONNECT_REQUEST" : "LINKEDIN_MESSAGE";
+}
+
+async function createBilateralNotifications(input: {
+  eventId: string;
+  sender: Awaited<ReturnType<typeof userRepository.findById>>;
+  recipient: Awaited<ReturnType<typeof userRepository.findById>>;
+  action: LinkedInAction;
+  messagePreview: string;
+  attestationRef: string;
+}) {
+  if (!input.sender || !input.recipient) {
+    return;
+  }
+
+  const receivedAt = new Date().toISOString();
+
+  const incoming: LinkedInMeshedNotification = {
+    id: `${input.eventId}_incoming`,
+    eventId: input.eventId,
+    userId: input.recipient.id,
+    counterpartUserId: input.sender.id,
+    counterpartName: input.sender.name,
+    counterpartLinkedInUrl: input.sender.linkedinUrl ?? null,
+    action: input.action,
+    direction: "incoming",
+    messagePreview: input.messagePreview,
+    receivedAt,
+    attestationRef: input.attestationRef,
+    title: `${input.sender.name} contacted you on LinkedIn`,
+    body: `${input.sender.name} is already available on Meshed. You can connect and continue the conversation here.`,
+  };
+
+  const outgoing: LinkedInMeshedNotification = {
+    id: `${input.eventId}_outgoing`,
+    eventId: input.eventId,
+    userId: input.sender.id,
+    counterpartUserId: input.recipient.id,
+    counterpartName: input.recipient.name,
+    counterpartLinkedInUrl: input.recipient.linkedinUrl ?? null,
+    action: input.action,
+    direction: "outgoing",
+    messagePreview: input.messagePreview,
+    receivedAt,
+    attestationRef: input.attestationRef,
+    title: `${input.recipient.name} is on Meshed`,
+    body: `Your LinkedIn outreach was attested on Flare. ${input.recipient.name} is available on Meshed for direct connection.`,
+  };
+
+  pushNotification(incoming);
+  pushNotification(outgoing);
+}
+
+export const linkedinActivityService = {
+  async ingestWebhookEvent(input: LinkedInWebhookEventInput): Promise<LinkedInIngestionResult> {
+    assertRealLinkedInRuntime();
+
+    const eventId = buildEventId(input);
+    const sender = await userRepository.findByLinkedinUrl(input.senderLinkedInUrl);
+    const recipient = await userRepository.findByLinkedinUrl(input.recipientLinkedInUrl);
+
+    if (!sender || !recipient) {
+      return {
+        status: "ignored",
+        reason: "One or both LinkedIn profiles are not registered Meshed users.",
+        eventId,
+        notificationsCreated: 0,
+      };
+    }
+
+    if (processedEventIds.has(eventId)) {
+      return {
+        status: "attested",
+        eventId,
+        senderMeshedUserId: sender.id,
+        recipientMeshedUserId: recipient.id,
+        attestationRef: `flare:linkedin:cached:${eventId}`,
+        notificationsCreated: 0,
+      };
+    }
+
+    const flare = getFlareAdapters();
+    const messagePreview = (input.messagePreview ?? "").trim() || defaultMessageForAction(input.action);
+    const verification = await flare.external.verifyExternalEvent({
+      milestoneId: `linkedin_${eventId}`,
+      evidenceReference: JSON.stringify({
+        source: "linkedin_api_webhook",
+        action: input.action,
+        senderLinkedInUrl: normalizeLinkedInUrl(input.senderLinkedInUrl),
+        recipientLinkedInUrl: normalizeLinkedInUrl(input.recipientLinkedInUrl),
+      }),
+    });
+
+    if (!verification.verified) {
+      return {
+        status: "ignored",
+        reason: "Flare attestation rejected the LinkedIn event.",
+        eventId,
+        senderMeshedUserId: sender.id,
+        recipientMeshedUserId: recipient.id,
+        attestationRef: verification.providerRef,
+        notificationsCreated: 0,
+      };
+    }
+
+    const relationshipType = connectionRelationshipType(input.action);
+    const meshingContracts = getMeshingContractsService();
+    const relationshipWrite = await meshingContracts.recordRelationship({
+      entityA: sender.name,
+      entityB: recipient.name,
+      relationshipType,
+    });
+
+    await createBilateralNotifications({
+      eventId,
+      sender,
+      recipient,
+      action: input.action,
+      messagePreview,
+      attestationRef: verification.providerRef,
+    });
+
+    processedEventIds.add(eventId);
+    return {
+      status: "attested",
+      eventId,
+      senderMeshedUserId: sender.id,
+      recipientMeshedUserId: recipient.id,
+      attestationRef: verification.providerRef,
+      notificationsCreated: 2,
+      relationshipId: relationshipWrite.relationship.relationshipId,
+      contractCall: relationshipWrite.contractCall,
+    };
+  },
+
+  async listNotificationsForUser(userId: string) {
+    return notificationByUserId.get(userId) ?? [];
+  },
+
+  async simulateAlertForUser(currentUserId: string): Promise<LinkedInSimulationResult> {
+    assertRealLinkedInRuntime();
+
+    const currentUser = await ensureLinkedInIdentity(currentUserId);
+    if (!currentUser?.linkedinUrl) {
+      throw new ApiError(404, "Current user is unavailable for LinkedIn simulation.");
+    }
+
+    const users = await userRepository.listDemoUsers();
+    const candidates = users
+      .filter((user: UserSummary) => user.id !== currentUser.id)
+      .filter((user: UserSummary) => user.role !== "company" && user.role !== "admin");
+
+    if (candidates.length === 0) {
+      throw new ApiError(409, "No Meshed counterpart is available to simulate a LinkedIn alert.");
+    }
+
+    const now = new Date();
+    const unixBucket = Math.floor(now.getTime() / 1000);
+    const candidateIndex = unixBucket % candidates.length;
+    const selectedCandidate = candidates[candidateIndex];
+    const candidate = await ensureLinkedInIdentity(selectedCandidate.id);
+    if (!candidate?.linkedinUrl) {
+      throw new ApiError(409, "Counterpart LinkedIn identity could not be prepared for simulation.");
+    }
+
+    const direction: "incoming" | "outgoing" = unixBucket % 2 === 0 ? "incoming" : "outgoing";
+    const action: LinkedInAction = unixBucket % 3 === 0 ? "message" : "connect_request";
+    const messagePreview =
+      direction === "incoming"
+        ? `${candidate.name} reached out on LinkedIn about a collaboration opportunity (${now.toISOString()}).`
+        : `${currentUser.name} initiated LinkedIn outreach to ${candidate.name} (${now.toISOString()}).`;
+
+    const senderLinkedInUrl = direction === "incoming" ? candidate.linkedinUrl : currentUser.linkedinUrl;
+    const recipientLinkedInUrl = direction === "incoming" ? currentUser.linkedinUrl : candidate.linkedinUrl;
+    const senderName = direction === "incoming" ? candidate.name : currentUser.name;
+    const recipientName = direction === "incoming" ? currentUser.name : candidate.name;
+    const ingestion = await this.ingestWebhookEvent({
+      senderLinkedInUrl,
+      recipientLinkedInUrl,
+      action,
+      messagePreview,
+    });
+
+    return {
+      action,
+      direction,
+      senderName,
+      recipientName,
+      counterpartName: candidate.name,
+      messagePreview,
+      senderLinkedInUrl,
+      recipientLinkedInUrl,
+      ingestion,
+    };
+  },
+
+  async seedDummyDataForUser(currentUserId: string) {
+    let currentUser = await userRepository.findById(currentUserId);
+    if (!currentUser) {
+      return [];
+    }
+
+    if (!currentUser.linkedinUrl) {
+      currentUser = await userRepository.updateProfile(currentUser.id, {
+        linkedinUrl: syntheticLinkedInUrl(currentUser.name, currentUser.id),
+      });
+    }
+    const currentUserLinkedInUrl = currentUser.linkedinUrl ?? syntheticLinkedInUrl(currentUser.name, currentUser.id);
+
+    const users = await userRepository.listDemoUsers();
+    const candidates = users
+      .filter((user: UserSummary) => user.id !== currentUser.id)
+      .filter((user: UserSummary) => user.role !== "company" && user.role !== "admin")
+      .slice(0, 3);
+
+    const hydratedCandidates: UserSummary[] = [];
+    for (const candidate of candidates) {
+      if (candidate.linkedinUrl) {
+        hydratedCandidates.push(candidate);
+        continue;
+      }
+      const updated = await userRepository.updateProfile(candidate.id, {
+        linkedinUrl: syntheticLinkedInUrl(candidate.name, candidate.id),
+      });
+      hydratedCandidates.push(updated);
+    }
+
+    const results: LinkedInIngestionResult[] = [];
+    for (const [index, candidate] of hydratedCandidates.entries()) {
+      const candidateLinkedInUrl = candidate.linkedinUrl ?? syntheticLinkedInUrl(candidate.name, candidate.id);
+      if (!candidateLinkedInUrl || !currentUserLinkedInUrl) {
+        continue;
+      }
+
+      const result = await this.ingestWebhookEvent({
+        senderLinkedInUrl: index % 2 === 0 ? candidateLinkedInUrl : currentUserLinkedInUrl,
+        recipientLinkedInUrl: index % 2 === 0 ? currentUserLinkedInUrl : candidateLinkedInUrl,
+        action: index % 2 === 0 ? "connect_request" : "message",
+        messagePreview:
+          index % 2 === 0
+            ? `${candidate.name} requested to connect about a portfolio opportunity.`
+            : `${currentUser.name} followed up to continue the discussion on Meshed.`,
+      });
+      results.push(result);
+    }
+
+    return results;
+  },
+};

@@ -1,9 +1,15 @@
 import { CompanyNetworkGraph } from "@/components/dashboard/CompanyNetworkGraph";
+import { ConnectionsPanel } from "@/components/dashboard/ConnectionsPanel";
 import { CollapsibleCard } from "@/components/dashboard/CollapsibleCard";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
 import { loadA16zCryptoDashboardData } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
 import { getCurrentUser } from "@/lib/server/current-user";
+import { prisma } from "@/lib/server/prisma";
+import { userRepository } from "@/lib/server/repositories/user-repository";
+import { connectionRequestService } from "@/lib/server/services/connection-request-service";
+import { linkedinActivityService, type LinkedInMeshedNotification } from "@/lib/server/services/linkedin-activity-service";
+import type { ConnectionSummary, UserSummary } from "@/lib/types";
 import { formatRelativeCount, titleCase } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +22,38 @@ function MetricTile({ label, value, caption }: { label: string; value: number; c
       <p className="mt-2 text-sm text-slate">{caption}</p>
     </div>
   );
+}
+
+function suggestedConnectionType(role: UserSummary["role"]): ConnectionSummary["type"] {
+  if (role === "mentor") {
+    return "mentorship";
+  }
+  if (role === "consultant") {
+    return "consulting";
+  }
+  if (role === "investor") {
+    return "investment";
+  }
+  if (role === "admin") {
+    return "endorsement";
+  }
+  return "intro";
+}
+
+function buildContactReason(user: UserSummary, notification?: { counterpartName: string; messagePreview: string } | null) {
+  if (notification) {
+    return `${notification.counterpartName} already has an attested LinkedIn signal in Meshed. Latest preview: ${notification.messagePreview}`;
+  }
+
+  if (user.skills.length > 0 && user.sectors.length > 0) {
+    return `${user.name} is active around ${user.sectors[0]} and brings ${user.skills[0]} into the Meshed network.`;
+  }
+
+  if (user.skills.length > 0) {
+    return `${user.name} is already active on Meshed with a visible ${user.skills[0]} skill signal.`;
+  }
+
+  return `${user.name} is already present in the verified Meshed network and ready for direct connection.`;
 }
 
 export default async function DashboardPage() {
@@ -62,12 +100,79 @@ export default async function DashboardPage() {
     );
   }
 
+  const connectionState = await connectionRequestService.ensureDemoState(currentUser.id);
+  const demoUsers: UserSummary[] = await userRepository.listDemoUsers();
+  const notifications: LinkedInMeshedNotification[] = await linkedinActivityService.listNotificationsForUser(currentUser.id);
+  const memberships = await prisma.companyMembership.findMany({
+    where: {
+      userId: {
+        in: [currentUser.id],
+      },
+    },
+    include: {
+      company: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  const extraMemberships = await prisma.companyMembership.findMany({
+    where: {
+      userId: {
+        in: demoUsers.map((user) => user.id),
+      },
+    },
+    include: {
+      company: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  const membershipLookup = new Map<string, string>();
+  for (const membership of [...memberships, ...extraMemberships]) {
+    if (!membershipLookup.has(membership.userId)) {
+      membershipLookup.set(membership.userId, membership.company.name);
+    }
+  }
+
+  const notificationsByCounterpart = new Map<string, LinkedInMeshedNotification>(
+    notifications.map((notification: LinkedInMeshedNotification) => [notification.counterpartUserId, notification]),
+  );
+  const contacts = demoUsers
+    .filter((user: UserSummary) => user.id !== currentUser.id)
+    .filter((user: UserSummary) => user.role !== "company" && user.role !== "admin")
+    .sort((left: UserSummary, right: UserSummary) => {
+      const leftSignal = notificationsByCounterpart.has(left.id) ? 1 : 0;
+      const rightSignal = notificationsByCounterpart.has(right.id) ? 1 : 0;
+      if (leftSignal !== rightSignal) {
+        return rightSignal - leftSignal;
+      }
+      return right.engagementScore - left.engagementScore;
+    })
+    .slice(0, 8)
+    .map((user: UserSummary) => ({
+      id: user.id,
+      name: user.name,
+      company: membershipLookup.get(user.id) ?? titleCase(user.role),
+      role: user.role,
+      why: buildContactReason(user, notificationsByCounterpart.get(user.id)),
+      contact: user.email,
+      linkedinUrl: user.linkedinUrl ?? null,
+      suggestedConnectionType: suggestedConnectionType(user.role),
+    }));
+
   const { snapshot, strongestBridges, topVerticals, companyGraph } = dashboard;
   const statusItems = [
     { label: "Role", value: titleCase(currentUser.role) },
     { label: "Wallet", value: currentUser.walletAddress ? "Connected" : "Pending" },
     { label: "Human IDV", value: currentUser.worldVerified ? "Verified" : "Pending" },
     { label: "Trust badges", value: formatRelativeCount(currentUser.verificationBadges.length, "badge") },
+    { label: "Company", value: membershipLookup.get(currentUser.id) ?? "No company linked yet" },
   ];
 
   return (
@@ -211,6 +316,30 @@ export default async function DashboardPage() {
           description="The old Rho result was a live network first. This slice brings that same end-state into /dashboard with search, focus, and detail inspection built from the generated a16z graph payload."
         >
           <CompanyNetworkGraph nodes={companyGraph.nodes} edges={companyGraph.edges} />
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          eyebrow="People connections"
+          title="Meshed people connections"
+          description="This ports the existing LinkedIn simulation and people-connection flow into the current repo: attested LinkedIn handoff, seeded connection requests, and Flare-backed request acceptance without chat."
+        >
+          <ConnectionsPanel
+            contacts={contacts}
+            notifications={notifications.map((notification: LinkedInMeshedNotification) => ({
+              id: notification.id,
+              counterpartUserId: notification.counterpartUserId,
+              counterpartName: notification.counterpartName,
+              action: notification.action,
+              direction: notification.direction,
+              messagePreview: notification.messagePreview,
+              receivedAt: notification.receivedAt,
+              title: notification.title,
+              body: notification.body,
+            }))}
+            pendingIncomingRequests={connectionState.pendingIncomingRequests}
+            connectedContactIds={connectionState.connectedContactIds}
+            outgoingPendingContactIds={connectionState.outgoingPendingContactIds}
+          />
         </CollapsibleCard>
 
         <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
