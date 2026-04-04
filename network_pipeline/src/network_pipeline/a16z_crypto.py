@@ -22,6 +22,14 @@ def get_a16z_crypto_fetch_root() -> Path:
     return Path(__file__).resolve().parents[2] / "data" / "raw" / "a16z-crypto"
 
 
+def get_a16z_crypto_staging_root() -> Path:
+    return Path(__file__).resolve().parents[2] / "data" / "staging" / "a16z-crypto"
+
+
+def get_a16z_crypto_stage_path() -> Path:
+    return get_a16z_crypto_staging_root() / "portfolio_snapshot.json"
+
+
 def get_a16z_crypto_publish_root() -> Path:
     return Path(__file__).resolve().parents[2] / "public" / "a16z-crypto"
 
@@ -207,19 +215,61 @@ def build_a16z_crypto_dashboard_document(input_root: Path | None = None) -> dict
     }
 
 
-def publish_a16z_crypto_bundle(
-    output_root: Path | None = None,
-    *,
-    input_root: Path | None = None,
-) -> Path:
-    publish_root = output_root or get_a16z_crypto_publish_root()
-    publish_root.mkdir(parents=True, exist_ok=True)
-
+def build_a16z_crypto_stage_bundle(input_root: Path | None = None) -> dict[str, object]:
     source_root = resolve_a16z_crypto_input_root(input_root)
     company_network_data = _read_json("company_network_data.json", input_root=source_root)
     company_network_summary = _read_json("company_network_summary.json", input_root=source_root)
     people_network_data = _read_json("people_network_data.json", input_root=source_root)
-    dashboard_snapshot = build_a16z_crypto_dashboard_document(source_root)
+
+    return {
+      "scope": "a16z-crypto",
+      "source_root": str(source_root),
+      "company_network_data": company_network_data,
+      "company_network_summary": company_network_summary,
+      "people_network_data": people_network_data,
+      "dashboard_snapshot": build_a16z_crypto_dashboard_document(source_root),
+    }
+
+
+def write_a16z_crypto_stage_bundle(
+    output_path: Path | None = None,
+    *,
+    input_root: Path | None = None,
+) -> Path:
+    stage_path = output_path or get_a16z_crypto_stage_path()
+    stage_path.parent.mkdir(parents=True, exist_ok=True)
+    stage_path.write_text(
+      json.dumps(build_a16z_crypto_stage_bundle(input_root), indent=2, ensure_ascii=True),
+      encoding="utf-8",
+    )
+    return stage_path
+
+
+def load_a16z_crypto_stage_bundle(stage_path: Path) -> dict[str, object]:
+    return json.loads(stage_path.read_text(encoding="utf-8"))
+
+
+def publish_a16z_crypto_bundle(
+    output_root: Path | None = None,
+    *,
+    input_root: Path | None = None,
+    stage_path: Path | None = None,
+) -> Path:
+    publish_root = output_root or get_a16z_crypto_publish_root()
+    publish_root.mkdir(parents=True, exist_ok=True)
+
+    if stage_path is not None:
+        stage_bundle = load_a16z_crypto_stage_bundle(stage_path)
+        company_network_data = stage_bundle.get("company_network_data", {})
+        company_network_summary = stage_bundle.get("company_network_summary", {})
+        people_network_data = stage_bundle.get("people_network_data", {})
+        dashboard_snapshot = stage_bundle.get("dashboard_snapshot", {})
+    else:
+        source_root = resolve_a16z_crypto_input_root(input_root)
+        company_network_data = _read_json("company_network_data.json", input_root=source_root)
+        company_network_summary = _read_json("company_network_summary.json", input_root=source_root)
+        people_network_data = _read_json("people_network_data.json", input_root=source_root)
+        dashboard_snapshot = build_a16z_crypto_dashboard_document(source_root)
 
     bundle_payloads = {
       "company_network_data.json": company_network_data,

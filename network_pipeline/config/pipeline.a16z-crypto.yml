@@ -9,6 +9,9 @@ pipeline:
     output_dir: data/raw/a16z-crypto
     metadata_path: data/raw/a16z_crypto_fetch_metadata.csv
     overwrite: false
-  dashboard_publish:
+  scrape_portfolio:
     input_root: data/raw/a16z-crypto
+    output_path: data/staging/a16z-crypto/portfolio_snapshot.json
+  dashboard_publish:
+    stage_path: data/staging/a16z-crypto/portfolio_snapshot.json
     output_root: public/a16z-crypto
