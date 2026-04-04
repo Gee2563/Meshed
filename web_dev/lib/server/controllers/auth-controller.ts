@@ -1,0 +1,86 @@
+import { NextResponse } from "next/server";
+
+import { authService } from "@/lib/server/services/auth-service";
+import { dynamicRegistrationService } from "@/lib/server/services/dynamic-registration-service";
+import { registrationService } from "@/lib/server/services/registration-service";
+import { createSessionToken, getSessionCookieName } from "@/lib/server/session";
+
+async function buildSessionResponse(userId: string, data: unknown) {
+  const token = await createSessionToken(userId);
+  const response = NextResponse.json({ ok: true, data });
+  response.cookies.set(getSessionCookieName(), token, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: false,
+  });
+  return response;
+}
+
+export const authController = {
+  async demoLogin(userId: string) {
+    const user = await authService.loginAsDemoUser(userId);
+    return buildSessionResponse(user.id, user);
+  },
+
+  async logout() {
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(getSessionCookieName(), "", {
+      expires: new Date(0),
+      httpOnly: true,
+      maxAge: 0,
+      path: "/",
+      sameSite: "lax",
+      secure: false,
+    });
+    return response;
+  },
+
+  async linkWallet(userId: string, payload: { walletAddress: string; dynamicUserId?: string | null }) {
+    const user = await authService.linkWallet(userId, payload);
+    return NextResponse.json({ ok: true, data: user });
+  },
+
+  async registerWithDynamic(payload: Parameters<typeof dynamicRegistrationService.register>[0]) {
+    const result = await dynamicRegistrationService.register(payload);
+    return buildSessionResponse(result.user.id, result);
+  },
+
+  async verifyWorld(userId: string, payload: { signal: string; proof?: unknown }) {
+    const user = await authService.verifyWorld(userId, payload);
+    return NextResponse.json({ ok: true, data: user });
+  },
+
+  async registerCompany(payload: Parameters<typeof registrationService.registerCompany>[0]) {
+    const result = await registrationService.registerCompany(payload);
+    return buildSessionResponse(result.user.id, result);
+  },
+
+  async registerVcDemoCompany(payload: Parameters<typeof registrationService.registerVcDemoCompany>[0]) {
+    const result = await registrationService.registerVcDemoCompany(payload);
+    return buildSessionResponse(result.user.id, result);
+  },
+
+  async registerIndividual(payload: Parameters<typeof registrationService.registerIndividual>[0]) {
+    const result = await registrationService.registerIndividual(payload);
+    return buildSessionResponse(result.user.id, result);
+  },
+
+  async registerPortfolioCompany(userId: string, payload: Parameters<typeof registrationService.registerPortfolioCompany>[1]) {
+    const result = await registrationService.registerPortfolioCompany(userId, payload);
+    return NextResponse.json({ ok: true, data: result });
+  },
+
+  async registerForCompany(userId: string, payload: Parameters<typeof registrationService.registerForCompany>[1]) {
+    const result = await registrationService.registerForCompany(userId, payload);
+    return NextResponse.json({ ok: true, data: result });
+  },
+
+  async completeIndividualProfile(
+    userId: string,
+    payload: Parameters<typeof registrationService.completeIndividualProfile>[1],
+  ) {
+    const result = await registrationService.completeIndividualProfile(userId, payload);
+    return NextResponse.json({ ok: true, data: result });
+  },
+};
