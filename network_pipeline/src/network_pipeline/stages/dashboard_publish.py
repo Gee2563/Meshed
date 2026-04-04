@@ -9,11 +9,14 @@ from ..core import PipelineContext, StageResult
 def run(
     context: PipelineContext,
     *,
-    input_root: Path | None = None,
-    output_root: Path | None = None,
+    input_root: str | Path | None = None,
+    output_root: str | Path | None = None,
 ) -> StageResult:
-    resolved_input_root = resolve_a16z_crypto_input_root(input_root)
-    publish_root = publish_a16z_crypto_bundle(output_root, input_root=resolved_input_root)
+    resolved_input_root = resolve_a16z_crypto_input_root(context.resolve_path(input_root) if input_root else None)
+    publish_root = publish_a16z_crypto_bundle(
+        context.resolve_path(output_root) if output_root else None,
+        input_root=resolved_input_root,
+    )
     return StageResult(
       name="dashboard_publish",
       outputs={

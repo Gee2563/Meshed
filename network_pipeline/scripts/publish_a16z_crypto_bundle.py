@@ -17,6 +17,12 @@ from network_pipeline.runner import PipelineRunner
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Publish the a16z-crypto public bundle.")
     parser.add_argument(
+      "--config",
+      type=Path,
+      default=ROOT / "config" / "pipeline.a16z-crypto.yml",
+      help="Path to the a16z-crypto pipeline config.",
+    )
+    parser.add_argument(
       "--output-root",
       type=Path,
       default=ROOT / "public" / "a16z-crypto",
@@ -27,7 +33,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    runner = PipelineRunner(workdir=ROOT)
+    runner = PipelineRunner.from_file(args.config.resolve(), workdir=ROOT)
     results = runner.run(
       stages=None,
       overrides={"dashboard_publish": {"output_root": args.output_root.resolve()}},

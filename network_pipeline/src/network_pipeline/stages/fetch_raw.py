@@ -16,15 +16,15 @@ def _is_active(value: str) -> bool:
 def run(
     context: PipelineContext,
     *,
-    sources_path: Path | None = None,
-    output_dir: Path | None = None,
-    metadata_path: Path | None = None,
+    sources_path: str | Path | None = None,
+    output_dir: str | Path | None = None,
+    metadata_path: str | Path | None = None,
     overwrite: bool = False,
 ) -> StageResult:
-    registry_path = sources_path or (context.workdir / "data" / "sources" / "a16z_crypto_sources.csv")
-    raw_root = output_dir or get_a16z_crypto_fetch_root()
+    registry_path = context.resolve_path(sources_path) if sources_path else (context.workdir / "data" / "sources" / "a16z_crypto_sources.csv")
+    raw_root = context.resolve_path(output_dir) if output_dir else get_a16z_crypto_fetch_root()
     raw_root.mkdir(parents=True, exist_ok=True)
-    fetch_metadata_path = metadata_path or (context.workdir / "data" / "raw" / "a16z_crypto_fetch_metadata.csv")
+    fetch_metadata_path = context.resolve_path(metadata_path) if metadata_path else (context.workdir / "data" / "raw" / "a16z_crypto_fetch_metadata.csv")
     fetch_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
     if not registry_path.exists():
@@ -43,7 +43,7 @@ def run(
 
     for row in active_rows:
         source_id = str(row.get("source_id", "")).strip()
-        source_root = Path(str(row.get("source_root", "")).strip())
+        source_root = context.resolve_path(str(row.get("source_root", "")).strip())
         copied_files: list[str] = []
         status = "success"
         error = ""

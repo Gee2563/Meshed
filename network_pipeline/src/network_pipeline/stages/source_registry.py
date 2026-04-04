@@ -24,11 +24,11 @@ def _read_rows(path: Path) -> list[dict[str, str]]:
 def run(
     context: PipelineContext,
     *,
-    output_path: Path | None = None,
-    source_root: Path | None = None,
+    output_path: str | Path | None = None,
+    source_root: str | Path | None = None,
     overwrite: bool = False,
 ) -> StageResult:
-    registry_path = output_path or (context.workdir / "data" / "sources" / "a16z_crypto_sources.csv")
+    registry_path = context.resolve_path(output_path) if output_path else (context.workdir / "data" / "sources" / "a16z_crypto_sources.csv")
     if registry_path.exists() and not overwrite:
         rows = _read_rows(registry_path)
         return StageResult(
@@ -42,7 +42,7 @@ def run(
         "source_id": "a16z-crypto",
         "investor_name": "a16z crypto",
         "source_type": "crypto_ecosystem",
-        "source_root": str(source_root or get_a16z_crypto_artifacts_root()),
+        "source_root": str(context.resolve_path(source_root) if source_root else get_a16z_crypto_artifacts_root()),
         "active": "true",
     }
     with registry_path.open("w", encoding="utf-8", newline="") as handle:

@@ -1,0 +1,14 @@
+version: 1
+pipeline:
+  source_registry:
+    output_path: data/sources/a16z_crypto_sources.csv
+    source_root: public/crypto_ecosystems/a16z-crypto
+    overwrite: false
+  fetch_raw:
+    sources_path: data/sources/a16z_crypto_sources.csv
+    output_dir: data/raw/a16z-crypto
+    metadata_path: data/raw/a16z_crypto_fetch_metadata.csv
+    overwrite: false
+  dashboard_publish:
+    input_root: data/raw/a16z-crypto
+    output_root: public/a16z-crypto

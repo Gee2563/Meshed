@@ -119,6 +119,45 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
             self.assertEqual(metadata_rows[0].get("status"), "success")
             self.assertEqual(metadata_rows[0].get("artifact_count"), "3")
 
+    def test_pipeline_runner_from_file_uses_yaml_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            config_path = root / "pipeline.a16z-crypto.yml"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "pipeline": {
+                            "source_registry": {
+                                "output_path": "data/sources/a16z_crypto_sources.csv",
+                                "source_root": str(get_a16z_crypto_artifacts_root()),
+                                "overwrite": True,
+                            },
+                            "fetch_raw": {
+                                "sources_path": "data/sources/a16z_crypto_sources.csv",
+                                "output_dir": "data/raw/a16z-crypto",
+                                "metadata_path": "data/raw/a16z_crypto_fetch_metadata.csv",
+                                "overwrite": True,
+                            },
+                            "dashboard_publish": {
+                                "input_root": "data/raw/a16z-crypto",
+                                "output_root": "public/a16z-crypto",
+                            },
+                        },
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            runner = PipelineRunner.from_file(config_path, workdir=root)
+            results = runner.run()
+
+            self.assertEqual([result.name for result in results], ["source_registry", "fetch_raw", "dashboard_publish"])
+            self.assertTrue((root / "data" / "sources" / "a16z_crypto_sources.csv").exists())
+            self.assertTrue((root / "data" / "raw" / "a16z-crypto" / "company_network_data.json").exists())
+            self.assertTrue((root / "public" / "a16z-crypto" / "dashboard_snapshot.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

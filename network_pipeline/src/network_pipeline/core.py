@@ -18,3 +18,7 @@ class StageResult:
 class PipelineContext:
     workdir: Path = field(default_factory=Path.cwd)
     logger: logging.Logger = field(default_factory=lambda: logging.getLogger("network_pipeline"))
+
+    def resolve_path(self, value: str | Path) -> Path:
+        path = Path(value)
+        return path if path.is_absolute() else self.workdir / path
