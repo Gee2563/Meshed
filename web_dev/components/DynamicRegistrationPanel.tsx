@@ -10,8 +10,8 @@ import { useRouter } from "next/navigation";
 import { getDynamicRegistrationGate } from "@/lib/auth/dynamic-registration-gate";
 import {
   buildDynamicRegistrationPayload,
-  normalizeDynamicNextRoute,
 } from "@/lib/auth/dynamic-onboarding";
+import { registerDynamicMeshedAccount } from "@/lib/auth/dynamic-registration-client";
 import { getDynamicProviderDiagnostics } from "@/lib/config/dynamic-provider";
 import { clientEnv } from "@/lib/config/env";
 
@@ -151,28 +151,14 @@ function DynamicRegistrationPanelInner() {
       target: "/api/auth/dynamic/register",
     });
 
-    void fetch("/api/auth/dynamic/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    })
-      .then(async (response) => {
-        const body = (await response.json().catch(() => null)) as
-          | { ok?: boolean; error?: string; data?: { nextRoute?: string | null } }
-          | null;
+    void registerDynamicMeshedAccount(payload)
+      .then((result) => {
         console.info("[meshed][dynamic-panel] Dynamic registration response.", {
-          status: response.status,
-          ok: response.ok,
-          body,
+          ok: true,
+          nextRoute: result.nextRoute,
         });
 
-        if (!response.ok || !body?.ok) {
-          throw new Error(body?.error ?? "Unable to register your Meshed account.");
-        }
-
-        router.replace(normalizeDynamicNextRoute(body.data?.nextRoute));
+        router.replace(result.nextRoute);
         router.refresh();
       })
       .catch((error: unknown) => {

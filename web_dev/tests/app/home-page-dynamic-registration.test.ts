@@ -1,3 +1,4 @@
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,6 +24,7 @@ vi.mock("@/components/LogoutButton", () => ({
 
 describe("home page Dynamic registration", () => {
   beforeEach(() => {
+    vi.stubGlobal("React", React);
     mocks.getCurrentUser.mockReset();
   });
 
