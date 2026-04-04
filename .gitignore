@@ -6,3 +6,6 @@
 
 # TypeScript
 *.tsbuildinfo
+
+*/.next/
+*/next-env.d.tss
