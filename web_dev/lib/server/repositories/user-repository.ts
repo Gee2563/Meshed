@@ -36,7 +36,9 @@ export const userRepository = {
       },
     });
 
-    const matched = users.find((user) => user.linkedinUrl?.trim().toLowerCase() === normalized) ?? null;
+    const matched =
+      users.find((user: { linkedinUrl: string | null }) => user.linkedinUrl?.trim().toLowerCase() === normalized) ??
+      null;
     return matched ? toUserSummary(matched) : null;
   },
 

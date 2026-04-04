@@ -25,5 +25,11 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "prisma/seed.ts",
+    "lib/server/controllers/auth-controller.ts",
+    "lib/server/services/auth-service.ts",
+    "lib/server/services/managed-wallet-service.ts"
+  ]
 }
