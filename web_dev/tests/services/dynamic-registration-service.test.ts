@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDynamicRegistrationService } from "@/lib/server/services/dynamic-registration-service";
 import type { BadgeKey, CompanySummary, OnboardingProfileSummary, UserSummary } from "@/lib/types";
 
+// Exercise invite-aware registration with in-memory repositories so the onboarding rules stay readable.
 function createUserSummary(overrides?: Partial<UserSummary>): UserSummary {
   return {
     id: "usr_dynamic",
@@ -48,6 +49,7 @@ function createRepoStubs() {
   const users = new Map<string, UserSummary>();
   const onboardingProfiles = new Map<string, OnboardingProfileSummary>();
   const companies = new Map<string, CompanySummary>();
+  // These collections mimic the side effects the real service performs across several repositories.
   const memberships: Array<{ companyId: string; userId: string; relation: string; title: string }> = [];
   const verificationRecords: Array<{
     userId: string;

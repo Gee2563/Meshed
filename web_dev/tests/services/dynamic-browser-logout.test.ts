@@ -12,6 +12,7 @@ vi.mock("@dynamic-labs-sdk/client", () => ({
   waitForClientInitialized,
 }));
 
+// Protect logout against SDK initialization edge cases that only appear in the browser.
 describe("clearDynamicBrowserSession", () => {
   beforeEach(() => {
     vi.resetModules();

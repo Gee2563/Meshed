@@ -6,6 +6,7 @@ import {
   normalizeDynamicNextRoute,
 } from "@/lib/auth/dynamic-onboarding";
 
+// These helpers sit on the boundary between Dynamic data and Meshed-specific assumptions.
 describe("dynamic onboarding helpers", () => {
   it("builds a Meshed registration payload from a Dynamic user and wallet", () => {
     const payload = buildDynamicRegistrationPayload({

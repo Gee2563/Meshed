@@ -6,6 +6,7 @@ import {
   getDynamicProviderSettings,
 } from "@/lib/config/dynamic-provider";
 
+// Keep invalid Dynamic config from crashing the UI by asserting the fallback decisions directly.
 describe("dynamic provider settings", () => {
   it("returns null when Dynamic is in mock mode", () => {
     expect(

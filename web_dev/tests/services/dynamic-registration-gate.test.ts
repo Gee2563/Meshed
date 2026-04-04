@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getDynamicRegistrationGate } from "@/lib/auth/dynamic-registration-gate";
 
+// Lock the panel state machine to Dynamic's auth -> wallet -> register progression.
 describe("dynamic registration gate", () => {
   it("waits for Dynamic auth when no authenticated user is available yet", () => {
     expect(

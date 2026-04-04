@@ -4,6 +4,7 @@ import path from "node:path";
 
 const webDevRoot = path.resolve(__dirname, "..", "..");
 
+// SDK changes should never push Meshed back into manually creating embedded wallets here.
 describe("dynamic registration panel regression", () => {
   it("does not manually invoke embedded wallet creation from the Meshed panel", () => {
     const panelPath = path.join(webDevRoot, "components", "DynamicRegistrationPanel.tsx");

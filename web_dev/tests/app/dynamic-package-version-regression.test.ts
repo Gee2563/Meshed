@@ -4,6 +4,7 @@ import path from "node:path";
 
 const webDevRoot = path.resolve(__dirname, "..", "..");
 
+// Dynamic packages need one exact shared version to avoid duplicate SDK internals at runtime.
 describe("dynamic package version regression", () => {
   it("pins direct Dynamic dependencies to one exact shared version", () => {
     const packageJsonPath = path.join(webDevRoot, "package.json");
