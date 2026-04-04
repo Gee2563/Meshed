@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { authService } from "@/lib/server/services/auth-service";
 import { dynamicRegistrationService } from "@/lib/server/services/dynamic-registration-service";
-import { registrationService } from "@/lib/server/services/registration-service";
 import { createSessionToken, getSessionCookieName } from "@/lib/server/session";
 
 // Controller layer translates service results into HTTP responses and session cookie changes.
@@ -51,38 +50,5 @@ export const authController = {
   async verifyWorld(userId: string, payload: { signal: string; proof?: unknown }) {
     const user = await authService.verifyWorld(userId, payload);
     return NextResponse.json({ ok: true, data: user });
-  },
-
-  async registerCompany(payload: Parameters<typeof registrationService.registerCompany>[0]) {
-    const result = await registrationService.registerCompany(payload);
-    return buildSessionResponse(result.user.id, result);
-  },
-
-  async registerVcDemoCompany(payload: Parameters<typeof registrationService.registerVcDemoCompany>[0]) {
-    const result = await registrationService.registerVcDemoCompany(payload);
-    return buildSessionResponse(result.user.id, result);
-  },
-
-  async registerIndividual(payload: Parameters<typeof registrationService.registerIndividual>[0]) {
-    const result = await registrationService.registerIndividual(payload);
-    return buildSessionResponse(result.user.id, result);
-  },
-
-  async registerPortfolioCompany(userId: string, payload: Parameters<typeof registrationService.registerPortfolioCompany>[1]) {
-    const result = await registrationService.registerPortfolioCompany(userId, payload);
-    return NextResponse.json({ ok: true, data: result });
-  },
-
-  async registerForCompany(userId: string, payload: Parameters<typeof registrationService.registerForCompany>[1]) {
-    const result = await registrationService.registerForCompany(userId, payload);
-    return NextResponse.json({ ok: true, data: result });
-  },
-
-  async completeIndividualProfile(
-    userId: string,
-    payload: Parameters<typeof registrationService.completeIndividualProfile>[1],
-  ) {
-    const result = await registrationService.completeIndividualProfile(userId, payload);
-    return NextResponse.json({ ok: true, data: result });
   },
 };
