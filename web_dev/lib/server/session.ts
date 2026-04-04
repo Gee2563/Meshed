@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 
 import { env } from "@/lib/config/env";
 
+// Session helpers sign and verify the lightweight cookie token used by the current MVP.
 const COOKIE_NAME = "meshed_session";
 const secret = new TextEncoder().encode(env.SESSION_SECRET);
 

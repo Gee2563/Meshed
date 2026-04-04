@@ -1,3 +1,4 @@
+// Shared contract between Dynamic adapters and the services that depend on them.
 export interface WalletLinkPayload {
   walletAddress: string;
   dynamicUserId?: string | null;

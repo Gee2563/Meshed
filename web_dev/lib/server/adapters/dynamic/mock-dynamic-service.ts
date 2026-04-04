@@ -7,6 +7,7 @@ import type {
   WalletLinkService,
 } from "@/lib/server/adapters/dynamic/types";
 
+// Deterministic mock implementation for local development and tests without live Dynamic calls.
 export class MockDynamicService implements WalletLinkService {
   async linkWallet(payload: WalletLinkPayload): Promise<WalletLinkResult> {
     return {
@@ -17,6 +18,7 @@ export class MockDynamicService implements WalletLinkService {
   }
 
   async provisionManagedWallet(payload: ManagedWalletProvisionPayload): Promise<WalletLinkResult> {
+    // Derive a stable fake wallet so repeated local runs behave predictably for the same user/email pair.
     const walletAddress = `0x${createHash("sha256")
       .update(`${payload.userId}:${payload.email}`)
       .digest("hex")

@@ -5,9 +5,11 @@ import { dynamicRegistrationService } from "@/lib/server/services/dynamic-regist
 import { registrationService } from "@/lib/server/services/registration-service";
 import { createSessionToken, getSessionCookieName } from "@/lib/server/session";
 
+// Controller layer translates service results into HTTP responses and session cookie changes.
 async function buildSessionResponse(userId: string, data: unknown) {
   const token = await createSessionToken(userId);
   const response = NextResponse.json({ ok: true, data });
+  // Keep cookie writing in one helper so login-like endpoints all share the same session settings.
   response.cookies.set(getSessionCookieName(), token, {
     httpOnly: true,
     sameSite: "lax",

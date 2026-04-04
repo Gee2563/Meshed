@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodSchema } from "zod";
 
+// Small HTTP helpers keep route handlers consistent about success/error payload shape.
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -40,6 +41,7 @@ export async function parseJson<T>(request: Request, schema: ZodSchema<T>) {
   const body = await request.json();
   const result = schema.safeParse(body);
 
+  // Surface flattened validation details so clients can map errors back onto form fields.
   if (!result.success) {
     throw new ApiError(400, "Invalid request payload", result.error.flatten());
   }

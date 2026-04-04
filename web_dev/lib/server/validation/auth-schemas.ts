@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-
+// Central request schemas for auth and onboarding-related route handlers.
 export const demoLoginSchema = z.object({
   userId: z.string().min(1),
 });
@@ -18,7 +18,6 @@ export const dynamicRegisterSchema = z.object({
   firstName: z.string().min(1).optional().nullable(),
   lastName: z.string().min(1).optional().nullable(),
 });
-
 
 export const companyRegisterSchema = z.object({
   name: z.string().min(2),
