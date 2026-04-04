@@ -309,7 +309,7 @@ async function getDefaultDynamicRegistrationService() {
       import("@/lib/server/repositories/user-repository"),
       import("@/lib/server/prisma"),
     ]).then(([companyModule, onboardingModule, userModule, prismaModule]) => {
-      const prismaClient = prismaModule.prisma as {
+      const prismaClient = prismaModule.prisma as unknown as {
         companyMembership: {
           create(args: { data: { id: string; companyId: string; userId: string; relation: string; title: string } }): Promise<unknown>;
           findMany(args: {
