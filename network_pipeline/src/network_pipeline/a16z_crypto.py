@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
 
 def get_a16z_crypto_artifacts_root() -> Path:
     return Path(__file__).resolve().parents[2] / "public" / "crypto_ecosystems" / "a16z-crypto"
+
+
+def get_a16z_crypto_publish_root() -> Path:
+    return Path(__file__).resolve().parents[2] / "public" / "a16z-crypto"
 
 
 def _sanitize_published_json(raw: str) -> str:
@@ -155,3 +159,47 @@ def load_a16z_crypto_dashboard_snapshot() -> A16zCryptoDashboardSnapshot:
       featured_people=featured_people,
       source_root=get_a16z_crypto_artifacts_root(),
     )
+
+
+def build_a16z_crypto_dashboard_document() -> dict[str, object]:
+    snapshot = load_a16z_crypto_dashboard_snapshot()
+
+    return {
+      "scope": snapshot.scope,
+      "scope_label": snapshot.scope_label,
+      "company_count": snapshot.company_count,
+      "company_edge_count": snapshot.company_edge_count,
+      "people_profile_count": snapshot.people_profile_count,
+      "vertical_count": snapshot.vertical_count,
+      "people_count": snapshot.people_count,
+      "people_company_count": snapshot.people_company_count,
+      "people_edge_count": snapshot.people_edge_count,
+      "generated_via": snapshot.generated_via,
+      "top_companies": [asdict(item) for item in snapshot.top_companies],
+      "featured_people": [asdict(item) for item in snapshot.featured_people],
+    }
+
+
+def publish_a16z_crypto_bundle(output_root: Path | None = None) -> Path:
+    publish_root = output_root or get_a16z_crypto_publish_root()
+    publish_root.mkdir(parents=True, exist_ok=True)
+
+    company_network_data = _read_json("company_network_data.json")
+    company_network_summary = _read_json("company_network_summary.json")
+    people_network_data = _read_json("people_network_data.json")
+    dashboard_snapshot = build_a16z_crypto_dashboard_document()
+
+    bundle_payloads = {
+      "company_network_data.json": company_network_data,
+      "company_network_summary.json": company_network_summary,
+      "people_network_data.json": people_network_data,
+      "network_data.json": company_network_data,
+      "dashboard_snapshot.json": dashboard_snapshot,
+    }
+    for file_name, payload in bundle_payloads.items():
+        (publish_root / file_name).write_text(
+          json.dumps(payload, indent=2, ensure_ascii=True),
+          encoding="utf-8",
+        )
+
+    return publish_root

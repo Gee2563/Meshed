@@ -1,0 +1,160 @@
+{
+  "scope": "a16z-crypto",
+  "scope_label": "a16z crypto",
+  "company_count": 125,
+  "company_edge_count": 360,
+  "people_profile_count": 499,
+  "vertical_count": 103,
+  "people_count": 499,
+  "people_company_count": 125,
+  "people_edge_count": 1988,
+  "generated_via": "build_crypto_ecosystem_networks.py",
+  "top_companies": [
+    {
+      "id": "co_61ab9fdf2c",
+      "company_name": "Battlebound",
+      "vertical": "Web3 gaming",
+      "location_region": "Unknown",
+      "degree": 15,
+      "people_count": 4
+    },
+    {
+      "id": "co_1a838f0036",
+      "company_name": "Forta",
+      "vertical": "Blockchain security monitoring",
+      "location_region": "Global",
+      "degree": 14,
+      "people_count": 5
+    },
+    {
+      "id": "co_15fc3950b7",
+      "company_name": "Entropy",
+      "vertical": "Crypto / web3",
+      "location_region": "Unknown",
+      "degree": 13,
+      "people_count": 6
+    },
+    {
+      "id": "co_249820ef83",
+      "company_name": "Incention",
+      "vertical": "Crypto / web3",
+      "location_region": "Unknown",
+      "degree": 12,
+      "people_count": 3
+    },
+    {
+      "id": "co_e3eca1cb2c",
+      "company_name": "Halliday",
+      "vertical": "Wallet / payment infrastructure",
+      "location_region": "United States",
+      "degree": 12,
+      "people_count": 2
+    },
+    {
+      "id": "co_f5a7924e62",
+      "company_name": "World",
+      "vertical": "Identity / crypto network",
+      "location_region": "Global",
+      "degree": 12,
+      "people_count": 2
+    }
+  ],
+  "featured_people": [
+    {
+      "id": "p_a16z-crypto_00017",
+      "name": "Alex Allen",
+      "company": "Angle",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Operational Scaling",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_a16z-crypto_00141",
+      "name": "Alex King",
+      "company": "Entropy",
+      "suggested_role": "operator",
+      "current_pain_point_label": "Operational Scaling",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "verified_operator"
+      ]
+    },
+    {
+      "id": "p_a16z-crypto_00241",
+      "name": "Alex Walker",
+      "company": "LayerZero",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Security Incidents",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_a16z-crypto_00001",
+      "name": "Alex Wilson",
+      "company": "Alchemy",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Security Incidents",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_a16z-crypto_00048",
+      "name": "Alex Wilson",
+      "company": "Babylon",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Operational Scaling",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_a16z-crypto_00432",
+      "name": "Alex Wilson",
+      "company": "Tally Labs",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Go-To-Market Execution",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_a16z-crypto_00138",
+      "name": "Ari Davis",
+      "company": "Entropy",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Go-To-Market Execution",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_a16z-crypto_00413",
+      "name": "Ari Davis",
+      "company": "Sovrun",
+      "suggested_role": "operator",
+      "current_pain_point_label": "Customer Churn",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "verified_operator"
+      ]
+    }
+  ]
+}
