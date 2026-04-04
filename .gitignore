@@ -11,3 +11,8 @@
 
 */.next/
 */next-env.d.tss
+
+*.pyc
+__pycache__/
+
+*.egg-info/

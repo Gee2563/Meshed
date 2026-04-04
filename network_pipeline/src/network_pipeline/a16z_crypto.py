@@ -1,0 +1,157 @@
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+
+def get_a16z_crypto_artifacts_root() -> Path:
+    return Path(__file__).resolve().parents[2] / "public" / "crypto_ecosystems" / "a16z-crypto"
+
+
+def _sanitize_published_json(raw: str) -> str:
+    return re.sub(r":\s*NaN(?=\s*[,}\]])", ": null", raw)
+
+
+def _read_json(file_name: str) -> Any:
+    root = get_a16z_crypto_artifacts_root()
+    payload_path = root / file_name
+    return json.loads(_sanitize_published_json(payload_path.read_text(encoding="utf-8")))
+
+
+def _as_text(value: object) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _as_int(value: object) -> int:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    return 0
+
+
+def _as_string_list(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [entry.strip() for entry in value if isinstance(entry, str) and entry.strip()]
+    if isinstance(value, str):
+        return [entry.strip() for entry in value.split("|") if entry.strip()]
+    return []
+
+
+@dataclass(frozen=True)
+class A16zCryptoCompanyPreview:
+    id: str
+    company_name: str
+    vertical: str | None
+    location_region: str | None
+    degree: int
+    people_count: int
+
+
+@dataclass(frozen=True)
+class A16zCryptoPersonPreview:
+    id: str
+    name: str
+    company: str | None
+    suggested_role: str | None
+    current_pain_point_label: str | None
+    network_importance_score: int
+    trust_signals: list[str]
+
+
+@dataclass(frozen=True)
+class A16zCryptoDashboardSnapshot:
+    scope: str
+    scope_label: str
+    company_count: int
+    company_edge_count: int
+    people_profile_count: int
+    vertical_count: int
+    people_count: int
+    people_company_count: int
+    people_edge_count: int
+    generated_via: str | None
+    top_companies: list[A16zCryptoCompanyPreview]
+    featured_people: list[A16zCryptoPersonPreview]
+    source_root: Path
+
+
+def _build_company_preview(node: dict[str, object]) -> A16zCryptoCompanyPreview:
+    company_name = _as_text(node.get("company_name")) or _as_text(node.get("label")) or "Unknown company"
+    identifier = _as_text(node.get("id")) or company_name
+
+    return A16zCryptoCompanyPreview(
+      id=identifier,
+      company_name=company_name,
+      vertical=_as_text(node.get("vertical")) or None,
+      location_region=_as_text(node.get("location_region")) or None,
+      degree=_as_int(node.get("degree")),
+      people_count=_as_int(node.get("people_count")),
+    )
+
+
+def _build_person_preview(node: dict[str, object]) -> A16zCryptoPersonPreview:
+    name = _as_text(node.get("name")) or _as_text(node.get("label")) or _as_text(node.get("id")) or "Unknown person"
+
+    return A16zCryptoPersonPreview(
+      id=_as_text(node.get("id")) or name,
+      name=name,
+      company=_as_text(node.get("company")) or None,
+      suggested_role=_as_text(node.get("suggested_role")) or None,
+      current_pain_point_label=_as_text(node.get("current_pain_point_label")) or None,
+      network_importance_score=_as_int(node.get("network_importance_score")),
+      trust_signals=_as_string_list(node.get("trust_signals")),
+    )
+
+
+def load_a16z_crypto_dashboard_snapshot() -> A16zCryptoDashboardSnapshot:
+    company_summary_payload = _read_json("company_network_summary.json")
+    company_data_payload = _read_json("company_network_data.json")
+    people_data_payload = _read_json("people_network_data.json")
+
+    company_summary = company_summary_payload.get("summary", {}) if isinstance(company_summary_payload, dict) else {}
+    people_summary = people_data_payload.get("summary", {}) if isinstance(people_data_payload, dict) else {}
+
+    company_nodes = company_data_payload.get("nodes", []) if isinstance(company_data_payload, dict) else []
+    people_nodes = people_data_payload.get("nodes", []) if isinstance(people_data_payload, dict) else []
+
+    company_previews = [
+      _build_company_preview(node)
+      for node in company_nodes
+      if isinstance(node, dict)
+    ]
+    people_previews = [
+      _build_person_preview(node)
+      for node in people_nodes
+      if isinstance(node, dict)
+    ]
+
+    top_companies = sorted(
+      company_previews,
+      key=lambda item: (-item.degree, -item.people_count, item.company_name.lower()),
+    )[:6]
+    featured_people = sorted(
+      people_previews,
+      key=lambda item: (-item.network_importance_score, item.name.lower(), (item.company or "").lower()),
+    )[:8]
+
+    return A16zCryptoDashboardSnapshot(
+      scope=_as_text(company_summary.get("scope")) or _as_text(company_data_payload.get("scope")) or "a16z-crypto",
+      scope_label=_as_text(company_summary.get("scope_label")) or _as_text(company_data_payload.get("scope_label")) or "a16z crypto",
+      company_count=_as_int(company_summary.get("company_count")) or len(company_previews),
+      company_edge_count=_as_int(company_summary.get("edge_count")),
+      people_profile_count=_as_int(company_summary.get("people_profile_count")),
+      vertical_count=_as_int(company_summary.get("vertical_count")),
+      people_count=_as_int(people_summary.get("people_count")) or len(people_previews),
+      people_company_count=_as_int(people_summary.get("company_count")),
+      people_edge_count=_as_int(people_summary.get("edge_count")),
+      generated_via=_as_text(company_summary.get("generated_via")) or None,
+      top_companies=top_companies,
+      featured_people=featured_people,
+      source_root=get_a16z_crypto_artifacts_root(),
+    )

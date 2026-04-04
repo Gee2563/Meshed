@@ -1,0 +1,11 @@
+{
+  "summary": {
+    "scope": "a16z-crypto",
+    "scope_label": "a16z crypto",
+    "company_count": 125,
+    "edge_count": 360,
+    "people_profile_count": 499,
+    "vertical_count": 103,
+    "generated_via": "build_crypto_ecosystem_networks.py"
+  }
+}
