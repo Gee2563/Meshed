@@ -19,10 +19,14 @@ from network_pipeline.a16z_crypto import (  # noqa: E402
     get_a16z_crypto_company_nodes_path,
     get_a16z_crypto_fetch_root,
     get_a16z_crypto_normalized_path,
+    get_a16z_crypto_people_edges_path,
+    get_a16z_crypto_people_nodes_path,
     get_a16z_crypto_publish_root,
     load_a16z_crypto_company_edges,
     load_a16z_crypto_company_nodes,
     load_a16z_crypto_normalized_companies,
+    load_a16z_crypto_people_edges,
+    load_a16z_crypto_people_nodes,
     load_a16z_crypto_stage_bundle,
     load_a16z_crypto_dashboard_snapshot,
     publish_a16z_crypto_bundle,
@@ -220,7 +224,80 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
                 },
             )
 
-    def test_pipeline_runner_executes_source_registry_fetch_raw_scrape_normalize_score_and_publish(self) -> None:
+    def test_people_synthesis_stage_writes_people_network_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            raw_root = root / "data" / "raw" / "a16z-crypto"
+            raw_root.mkdir(parents=True, exist_ok=True)
+            for file_name in (
+                "company_network_data.json",
+                "company_network_summary.json",
+                "people_network_data.json",
+            ):
+                (raw_root / file_name).write_text(
+                    (get_a16z_crypto_artifacts_root() / file_name).read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+
+            stage_path = root / "data" / "staging" / "a16z-crypto" / "portfolio_snapshot.json"
+            normalized_path = root / "data" / "staging" / "a16z-crypto" / "companies_normalized.json"
+            company_nodes_path = root / "data" / "network" / "a16z-crypto" / "company_nodes.json"
+            company_edges_path = root / "data" / "network" / "a16z-crypto" / "company_edges.json"
+            people_nodes_path = root / "data" / "network" / "a16z-crypto" / "people_nodes.json"
+            people_edges_path = root / "data" / "network" / "a16z-crypto" / "people_edges.json"
+            runner = PipelineRunner(workdir=root)
+            results = runner.run(
+                stages=["scrape_portfolio", "normalize_schema", "similarity_scoring", "people_synthesis"],
+                overrides={
+                    "scrape_portfolio": {
+                        "input_root": raw_root,
+                        "output_path": stage_path,
+                    },
+                    "normalize_schema": {
+                        "input_path": stage_path,
+                        "output_path": normalized_path,
+                    },
+                    "similarity_scoring": {
+                        "input_path": normalized_path,
+                        "nodes_output_path": company_nodes_path,
+                        "edges_output_path": company_edges_path,
+                        "top_k": 4,
+                        "min_score": 0.24,
+                        "include_shared_investor_bonus": False,
+                    },
+                    "people_synthesis": {
+                        "scope": "a16z-crypto",
+                        "company_nodes_path": company_nodes_path,
+                        "people_nodes_output_path": people_nodes_path,
+                        "people_edges_output_path": people_edges_path,
+                        "seed": 20260402,
+                        "min_people": 2,
+                        "max_people": 6,
+                    },
+                },
+            )
+
+            self.assertEqual(
+                [result.name for result in results],
+                ["scrape_portfolio", "normalize_schema", "similarity_scoring", "people_synthesis"],
+            )
+            self.assertTrue(people_nodes_path.exists())
+            self.assertTrue(people_edges_path.exists())
+
+            people_nodes = load_a16z_crypto_people_nodes(people_nodes_path)
+            people_edges = load_a16z_crypto_people_edges(people_edges_path)
+            company_nodes = load_a16z_crypto_company_nodes(company_nodes_path)
+            reference_people_network = json.loads(
+                (get_a16z_crypto_artifacts_root() / "people_network_data.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(len(people_nodes), 499)
+            self.assertEqual(len(people_edges), 1988)
+            self.assertEqual(len(company_nodes), 125)
+            self.assertEqual(sum(int(node.get("people_count", 0) or 0) for node in company_nodes), 499)
+            self.assertEqual(len(reference_people_network.get("nodes", [])), len(people_nodes))
+            self.assertEqual(len(reference_people_network.get("edges", [])), len(people_edges))
+
+    def test_pipeline_runner_executes_source_registry_fetch_raw_scrape_normalize_score_people_and_publish(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
             sources_path = root / "data" / "sources" / "a16z_crypto_sources.csv"
@@ -230,6 +307,8 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
             normalized_path = root / "data" / "staging" / "a16z-crypto" / "companies_normalized.json"
             nodes_path = root / "data" / "network" / "a16z-crypto" / "company_nodes.json"
             edges_path = root / "data" / "network" / "a16z-crypto" / "company_edges.json"
+            people_nodes_path = root / "data" / "network" / "a16z-crypto" / "people_nodes.json"
+            people_edges_path = root / "data" / "network" / "a16z-crypto" / "people_edges.json"
             publish_root = root / "public" / "a16z-crypto"
 
             runner = PipelineRunner(workdir=root)
@@ -262,11 +341,22 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
                         "min_score": 0.24,
                         "include_shared_investor_bonus": False,
                     },
+                    "people_synthesis": {
+                        "scope": "a16z-crypto",
+                        "company_nodes_path": nodes_path,
+                        "people_nodes_output_path": people_nodes_path,
+                        "people_edges_output_path": people_edges_path,
+                        "seed": 20260402,
+                        "min_people": 2,
+                        "max_people": 6,
+                    },
                     "dashboard_publish": {
                         "normalized_path": normalized_path,
                         "stage_path": stage_path,
                         "company_nodes_path": nodes_path,
                         "company_edges_path": edges_path,
+                        "people_nodes_path": people_nodes_path,
+                        "people_edges_path": people_edges_path,
                         "output_root": publish_root,
                     },
                 }
@@ -274,7 +364,15 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
 
             self.assertEqual(
                 [result.name for result in results],
-                ["source_registry", "fetch_raw", "scrape_portfolio", "normalize_schema", "similarity_scoring", "dashboard_publish"],
+                [
+                    "source_registry",
+                    "fetch_raw",
+                    "scrape_portfolio",
+                    "normalize_schema",
+                    "similarity_scoring",
+                    "people_synthesis",
+                    "dashboard_publish",
+                ],
             )
             self.assertTrue(sources_path.exists())
             self.assertTrue(metadata_path.exists())
@@ -283,6 +381,8 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
             self.assertTrue(normalized_path.exists())
             self.assertTrue(nodes_path.exists())
             self.assertTrue(edges_path.exists())
+            self.assertTrue(people_nodes_path.exists())
+            self.assertTrue(people_edges_path.exists())
             self.assertTrue((publish_root / "dashboard_snapshot.json").exists())
             self.assertEqual(results[1].outputs.get("raw_root"), str(raw_root))
             self.assertEqual(results[2].outputs.get("portfolio_snapshot_path"), str(stage_path))
@@ -291,15 +391,23 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
             self.assertEqual(results[4].outputs.get("edges_path"), str(edges_path))
             self.assertEqual(results[4].outputs.get("edge_count"), 360)
             self.assertEqual(results[5].outputs.get("company_nodes_path"), str(nodes_path))
-            self.assertEqual(results[5].outputs.get("company_edges_path"), str(edges_path))
-            self.assertEqual(results[5].outputs.get("stage_path"), str(stage_path))
-            self.assertEqual(results[5].outputs.get("normalized_path"), str(normalized_path))
-            self.assertEqual(results[5].outputs.get("normalized_company_count"), 125)
+            self.assertEqual(results[5].outputs.get("people_nodes_path"), str(people_nodes_path))
+            self.assertEqual(results[5].outputs.get("people_edge_count"), 1988)
+            self.assertEqual(results[6].outputs.get("company_nodes_path"), str(nodes_path))
+            self.assertEqual(results[6].outputs.get("company_edges_path"), str(edges_path))
+            self.assertEqual(results[6].outputs.get("people_nodes_path"), str(people_nodes_path))
+            self.assertEqual(results[6].outputs.get("people_edges_path"), str(people_edges_path))
+            self.assertEqual(results[6].outputs.get("stage_path"), str(stage_path))
+            self.assertEqual(results[6].outputs.get("normalized_path"), str(normalized_path))
+            self.assertEqual(results[6].outputs.get("normalized_company_count"), 125)
             published_company_network = json.loads((publish_root / "company_network_data.json").read_text(encoding="utf-8"))
+            published_people_network = json.loads((publish_root / "people_network_data.json").read_text(encoding="utf-8"))
             self.assertEqual(
                 [(edge.get("source_id"), edge.get("target_id"), edge.get("weight")) for edge in published_company_network.get("edges", [])[:5]],
                 [(edge.get("source_id"), edge.get("target_id"), edge.get("weight")) for edge in load_a16z_crypto_company_edges(edges_path)[:5]],
             )
+            self.assertEqual(len(published_people_network.get("nodes", [])), 499)
+            self.assertEqual(len(published_people_network.get("edges", [])), 1988)
 
             with sources_path.open("r", encoding="utf-8", newline="") as handle:
                 source_rows = list(csv.DictReader(handle))
@@ -349,11 +457,22 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
                                 "min_score": 0.24,
                                 "include_shared_investor_bonus": False,
                             },
+                            "people_synthesis": {
+                                "scope": "a16z-crypto",
+                                "company_nodes_path": "data/network/a16z-crypto/company_nodes.json",
+                                "people_nodes_output_path": "data/network/a16z-crypto/people_nodes.json",
+                                "people_edges_output_path": "data/network/a16z-crypto/people_edges.json",
+                                "seed": 20260402,
+                                "min_people": 2,
+                                "max_people": 6,
+                            },
                             "dashboard_publish": {
                                 "normalized_path": "data/staging/a16z-crypto/companies_normalized.json",
                                 "stage_path": "data/staging/a16z-crypto/portfolio_snapshot.json",
                                 "company_nodes_path": "data/network/a16z-crypto/company_nodes.json",
                                 "company_edges_path": "data/network/a16z-crypto/company_edges.json",
+                                "people_nodes_path": "data/network/a16z-crypto/people_nodes.json",
+                                "people_edges_path": "data/network/a16z-crypto/people_edges.json",
                                 "output_root": "public/a16z-crypto",
                             },
                         },
@@ -368,7 +487,15 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
 
             self.assertEqual(
                 [result.name for result in results],
-                ["source_registry", "fetch_raw", "scrape_portfolio", "normalize_schema", "similarity_scoring", "dashboard_publish"],
+                [
+                    "source_registry",
+                    "fetch_raw",
+                    "scrape_portfolio",
+                    "normalize_schema",
+                    "similarity_scoring",
+                    "people_synthesis",
+                    "dashboard_publish",
+                ],
             )
             self.assertTrue((root / "data" / "sources" / "a16z_crypto_sources.csv").exists())
             self.assertTrue((root / "data" / "raw" / "a16z-crypto" / "company_network_data.json").exists())
@@ -376,6 +503,8 @@ class A16zCryptoArtifactsTest(unittest.TestCase):
             self.assertTrue((root / "data" / "staging" / "a16z-crypto" / "companies_normalized.json").exists())
             self.assertTrue((root / "data" / "network" / "a16z-crypto" / "company_nodes.json").exists())
             self.assertTrue((root / "data" / "network" / "a16z-crypto" / "company_edges.json").exists())
+            self.assertTrue((root / "data" / "network" / "a16z-crypto" / "people_nodes.json").exists())
+            self.assertTrue((root / "data" / "network" / "a16z-crypto" / "people_edges.json").exists())
             self.assertTrue((root / "public" / "a16z-crypto" / "dashboard_snapshot.json").exists())
 
 

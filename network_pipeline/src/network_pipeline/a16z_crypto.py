@@ -48,6 +48,14 @@ def get_a16z_crypto_company_edges_path() -> Path:
     return get_a16z_crypto_network_root() / "company_edges.json"
 
 
+def get_a16z_crypto_people_nodes_path() -> Path:
+    return get_a16z_crypto_network_root() / "people_nodes.json"
+
+
+def get_a16z_crypto_people_edges_path() -> Path:
+    return get_a16z_crypto_network_root() / "people_edges.json"
+
+
 def get_a16z_crypto_publish_root() -> Path:
     return _project_root() / "public" / "a16z-crypto"
 
@@ -381,6 +389,16 @@ def load_a16z_crypto_company_edges(path: Path) -> list[dict[str, object]]:
     return payload if isinstance(payload, list) else []
 
 
+def load_a16z_crypto_people_nodes(path: Path) -> list[dict[str, object]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, list) else []
+
+
+def load_a16z_crypto_people_edges(path: Path) -> list[dict[str, object]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, list) else []
+
+
 def _build_company_network_legend(nodes: list[dict[str, object]]) -> list[dict[str, object]]:
     counts = Counter(_as_text(node.get("vertical")) or "Other" for node in nodes if isinstance(node, dict))
     colors = {
@@ -461,6 +479,39 @@ def _build_company_network_summary_payload(
     }
 
 
+def _build_people_network_payload(
+    stage_bundle: dict[str, object],
+    *,
+    people_nodes_path: Path | None = None,
+    people_edges_path: Path | None = None,
+) -> dict[str, object]:
+    people_network_data = stage_bundle.get("people_network_data", {})
+    if not isinstance(people_network_data, dict):
+        people_network_data = {}
+
+    if people_nodes_path is None or people_edges_path is None:
+        return people_network_data
+
+    nodes = load_a16z_crypto_people_nodes(people_nodes_path)
+    edges = load_a16z_crypto_people_edges(people_edges_path)
+    return {
+        "scope": _as_text(people_network_data.get("scope")) or "a16z-crypto",
+        "summary": {
+            "people_count": len(nodes),
+            "company_count": len(
+                {
+                    _as_text(node.get("company"))
+                    for node in nodes
+                    if isinstance(node, dict) and _as_text(node.get("company"))
+                }
+            ),
+            "edge_count": len(edges),
+        },
+        "nodes": nodes,
+        "edges": edges,
+    }
+
+
 def publish_a16z_crypto_bundle(
     output_root: Path | None = None,
     *,
@@ -468,13 +519,19 @@ def publish_a16z_crypto_bundle(
     stage_path: Path | None = None,
     company_nodes_path: Path | None = None,
     company_edges_path: Path | None = None,
+    people_nodes_path: Path | None = None,
+    people_edges_path: Path | None = None,
 ) -> Path:
     publish_root = output_root or get_a16z_crypto_publish_root()
     publish_root.mkdir(parents=True, exist_ok=True)
 
     if stage_path is not None:
         stage_bundle = load_a16z_crypto_stage_bundle(stage_path)
-        people_network_data = stage_bundle.get("people_network_data", {})
+        people_network_data = _build_people_network_payload(
+            stage_bundle,
+            people_nodes_path=people_nodes_path,
+            people_edges_path=people_edges_path,
+        )
         company_network_data = _build_company_network_payload(
             stage_bundle,
             company_nodes_path=company_nodes_path,

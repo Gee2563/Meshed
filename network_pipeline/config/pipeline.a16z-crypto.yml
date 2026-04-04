@@ -22,9 +22,19 @@ pipeline:
     top_k: 4
     min_score: 0.24
     include_shared_investor_bonus: false
+  people_synthesis:
+    scope: a16z-crypto
+    company_nodes_path: data/network/a16z-crypto/company_nodes.json
+    people_nodes_output_path: data/network/a16z-crypto/people_nodes.json
+    people_edges_output_path: data/network/a16z-crypto/people_edges.json
+    seed: 20260402
+    min_people: 2
+    max_people: 6
   dashboard_publish:
     normalized_path: data/staging/a16z-crypto/companies_normalized.json
     stage_path: data/staging/a16z-crypto/portfolio_snapshot.json
     company_nodes_path: data/network/a16z-crypto/company_nodes.json
     company_edges_path: data/network/a16z-crypto/company_edges.json
+    people_nodes_path: data/network/a16z-crypto/people_nodes.json
+    people_edges_path: data/network/a16z-crypto/people_edges.json
     output_root: public/a16z-crypto

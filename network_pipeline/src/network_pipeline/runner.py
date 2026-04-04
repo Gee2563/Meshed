@@ -8,7 +8,15 @@ from .core import PipelineContext, StageResult
 from .registry import STAGES
 
 
-PIPELINE_ORDER = ["source_registry", "fetch_raw", "scrape_portfolio", "normalize_schema", "similarity_scoring", "dashboard_publish"]
+PIPELINE_ORDER = [
+    "source_registry",
+    "fetch_raw",
+    "scrape_portfolio",
+    "normalize_schema",
+    "similarity_scoring",
+    "people_synthesis",
+    "dashboard_publish",
+]
 
 
 class PipelineRunner:
