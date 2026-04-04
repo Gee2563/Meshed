@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/lib/server/http";
+
 const mocks = vi.hoisted(() => ({
   register: vi.fn(),
   createSessionToken: vi.fn(),
@@ -100,6 +102,42 @@ describe("POST /api/auth/dynamic/register", () => {
     await expect(response.json()).resolves.toMatchObject({
       ok: false,
       error: "Invalid request payload",
+    });
+  });
+
+  it("returns a 403 response when the Dynamic registration service rejects the invite", async () => {
+    mocks.register.mockRejectedValue(
+      new ApiError(403, "This Meshed onboarding flow is invitation-only."),
+    );
+
+    const { POST } = await import("@/app/api/auth/dynamic/register/route");
+    const response = await POST(
+      new Request("http://localhost/api/auth/dynamic/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          walletAddress: "0x9999999999999999999999999999999999999999",
+          dynamicUserId: "dyn_unknown",
+          email: "unknown@example.com",
+          name: "Unknown",
+        }),
+      }),
+    );
+
+    expect(mocks.register).toHaveBeenCalledWith({
+      walletAddress: "0x9999999999999999999999999999999999999999",
+      dynamicUserId: "dyn_unknown",
+      email: "unknown@example.com",
+      name: "Unknown",
+    });
+    expect(mocks.createSessionToken).not.toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "This Meshed onboarding flow is invitation-only.",
+      detail: null,
     });
   });
 });
