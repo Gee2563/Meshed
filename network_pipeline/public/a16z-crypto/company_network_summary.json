@@ -6,6 +6,6 @@
     "edge_count": 360,
     "people_profile_count": 499,
     "vertical_count": 103,
-    "generated_via": "build_crypto_ecosystem_networks.py"
+    "generated_via": "network_pipeline.similarity_scoring"
   }
 }

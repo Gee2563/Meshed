@@ -15,7 +15,16 @@ pipeline:
   normalize_schema:
     input_path: data/staging/a16z-crypto/portfolio_snapshot.json
     output_path: data/staging/a16z-crypto/companies_normalized.json
+  similarity_scoring:
+    input_path: data/staging/a16z-crypto/companies_normalized.json
+    nodes_output_path: data/network/a16z-crypto/company_nodes.json
+    edges_output_path: data/network/a16z-crypto/company_edges.json
+    top_k: 4
+    min_score: 0.24
+    include_shared_investor_bonus: false
   dashboard_publish:
     normalized_path: data/staging/a16z-crypto/companies_normalized.json
     stage_path: data/staging/a16z-crypto/portfolio_snapshot.json
+    company_nodes_path: data/network/a16z-crypto/company_nodes.json
+    company_edges_path: data/network/a16z-crypto/company_edges.json
     output_root: public/a16z-crypto

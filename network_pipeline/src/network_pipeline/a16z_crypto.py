@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -15,15 +17,15 @@ REQUIRED_A16Z_CRYPTO_FILES = (
 
 
 def get_a16z_crypto_artifacts_root() -> Path:
-    return Path(__file__).resolve().parents[2] / "public" / "crypto_ecosystems" / "a16z-crypto"
+    return _project_root() / "public" / "crypto_ecosystems" / "a16z-crypto"
 
 
 def get_a16z_crypto_fetch_root() -> Path:
-    return Path(__file__).resolve().parents[2] / "data" / "raw" / "a16z-crypto"
+    return _project_root() / "data" / "raw" / "a16z-crypto"
 
 
 def get_a16z_crypto_staging_root() -> Path:
-    return Path(__file__).resolve().parents[2] / "data" / "staging" / "a16z-crypto"
+    return _project_root() / "data" / "staging" / "a16z-crypto"
 
 
 def get_a16z_crypto_stage_path() -> Path:
@@ -34,8 +36,38 @@ def get_a16z_crypto_normalized_path() -> Path:
     return get_a16z_crypto_staging_root() / "companies_normalized.json"
 
 
+def get_a16z_crypto_network_root() -> Path:
+    return _project_root() / "data" / "network" / "a16z-crypto"
+
+
+def get_a16z_crypto_company_nodes_path() -> Path:
+    return get_a16z_crypto_network_root() / "company_nodes.json"
+
+
+def get_a16z_crypto_company_edges_path() -> Path:
+    return get_a16z_crypto_network_root() / "company_edges.json"
+
+
 def get_a16z_crypto_publish_root() -> Path:
-    return Path(__file__).resolve().parents[2] / "public" / "a16z-crypto"
+    return _project_root() / "public" / "a16z-crypto"
+
+
+def _project_root() -> Path:
+    env_root = os.environ.get("NETWORK_PIPELINE_ROOT")
+    if env_root:
+        return Path(env_root).expanduser().resolve()
+
+    search_roots = [Path.cwd(), *Path.cwd().parents, *Path(__file__).resolve().parents]
+    seen: set[Path] = set()
+    for root in search_roots:
+        resolved = root.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if (resolved / "pyproject.toml").exists() and (resolved / "src" / "network_pipeline").exists():
+            return resolved
+
+    return Path.cwd().resolve()
 
 
 def _sanitize_published_json(raw: str) -> str:
@@ -287,20 +319,31 @@ def build_a16z_crypto_normalized_companies(stage_path: Path) -> list[dict[str, o
             "investor_name": _as_text(node.get("investor_names_label")) or "a16z crypto",
             "source_type": "crypto_ecosystem",
             "company_id": _as_text(node.get("company_id")) or _as_text(node.get("id")) or company_name,
+            "company_name": company_name,
             "company_name_raw": company_name,
             "company_name_norm": _normalize_company_name(company_name),
-            "website": website or None,
             "website_domain": _as_text(node.get("website_domain")) or None,
+            "website": website or None,
+            "vertical": _as_text(node.get("vertical")) or None,
             "vertical_raw": _as_text(node.get("vertical")) or None,
+            "stage": _as_text(node.get("stage")) or None,
             "stage_raw": _as_text(node.get("stage")) or None,
+            "location": _as_text(node.get("location")) or None,
             "location_raw": _as_text(node.get("location")) or None,
             "location_region": _as_text(node.get("location_region")) or None,
+            "flexpoint_logo_url": _as_text(node.get("flexpoint_logo_url")) or None,
+            "flexpoint_logo_path": _as_text(node.get("flexpoint_logo_path")) or None,
             "employees": _as_float(node.get("employees")),
             "amount_raised": _as_float(node.get("amount_raised")),
             "revenue": _as_float(node.get("revenue")),
             "current_pain_point_tags": _as_text(node.get("current_pain_point_tags")) or None,
+            "current_pain_point_count": _as_int(node.get("current_pain_point_count")),
             "resolved_pain_point_tags": _as_text(node.get("resolved_pain_point_tags")) or None,
+            "resolved_pain_point_count": _as_int(node.get("resolved_pain_point_count")),
+            "investor_names": _as_text(node.get("investor_names")) or "a16z crypto",
+            "investor_names_label": _as_text(node.get("investor_names_label")) or "a16z crypto",
             "investor_count": _as_int(node.get("investor_count")),
+            "taxonomy_tokens": _as_text(node.get("taxonomy_tokens")) or None,
             "degree": _as_int(node.get("degree")),
             "people_count": _as_int(node.get("people_count")),
           }
@@ -328,39 +371,138 @@ def load_a16z_crypto_normalized_companies(path: Path) -> list[dict[str, object]]
     return payload if isinstance(payload, list) else []
 
 
+def load_a16z_crypto_company_nodes(path: Path) -> list[dict[str, object]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, list) else []
+
+
+def load_a16z_crypto_company_edges(path: Path) -> list[dict[str, object]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, list) else []
+
+
+def _build_company_network_legend(nodes: list[dict[str, object]]) -> list[dict[str, object]]:
+    counts = Counter(_as_text(node.get("vertical")) or "Other" for node in nodes if isinstance(node, dict))
+    colors = {
+        _as_text(node.get("vertical")) or "Other": _as_text(node.get("color_hex")) or "#64748b"
+        for node in nodes
+        if isinstance(node, dict)
+    }
+    return [
+        {"vertical": vertical, "color": colors.get(vertical, "#64748b"), "count": counts.get(vertical, 0)}
+        for vertical in sorted(counts)
+    ]
+
+
+def _build_company_network_payload(
+    stage_bundle: dict[str, object],
+    *,
+    company_nodes_path: Path | None = None,
+    company_edges_path: Path | None = None,
+) -> dict[str, object]:
+    company_network_data = stage_bundle.get("company_network_data", {})
+    if not isinstance(company_network_data, dict):
+        company_network_data = {}
+
+    if company_nodes_path is None or company_edges_path is None:
+        return company_network_data
+
+    source_nodes = company_network_data.get("nodes", [])
+    source_nodes_by_company_id: dict[str, dict[str, object]] = {}
+    if isinstance(source_nodes, list):
+        for node in source_nodes:
+            if not isinstance(node, dict):
+                continue
+            company_id = _as_text(node.get("company_id")) or _as_text(node.get("id"))
+            if company_id:
+                source_nodes_by_company_id[company_id] = node
+
+    merged_nodes: list[dict[str, object]] = []
+    for node in load_a16z_crypto_company_nodes(company_nodes_path):
+        company_id = _as_text(node.get("company_id")) or _as_text(node.get("id"))
+        source_node = source_nodes_by_company_id.get(company_id, {})
+        merged_nodes.append({**source_node, **node})
+
+    edges = load_a16z_crypto_company_edges(company_edges_path)
+    return {
+        "scope": _as_text(company_network_data.get("scope")) or "a16z-crypto",
+        "scope_label": _as_text(company_network_data.get("scope_label")) or "a16z crypto",
+        "nodes": merged_nodes,
+        "edges": edges,
+        "legend": _build_company_network_legend(merged_nodes),
+    }
+
+
+def _build_company_network_summary_payload(
+    company_network_data: dict[str, object],
+    people_network_data: dict[str, object],
+) -> dict[str, object]:
+    company_nodes = company_network_data.get("nodes", []) if isinstance(company_network_data, dict) else []
+    company_edges = company_network_data.get("edges", []) if isinstance(company_network_data, dict) else []
+    people_summary = people_network_data.get("summary", {}) if isinstance(people_network_data, dict) else {}
+    vertical_count = len(
+        {
+            _as_text(node.get("vertical")) or "Other"
+            for node in company_nodes
+            if isinstance(node, dict)
+        }
+    )
+
+    return {
+        "summary": {
+            "scope": _as_text(company_network_data.get("scope")) or "a16z-crypto",
+            "scope_label": _as_text(company_network_data.get("scope_label")) or "a16z crypto",
+            "company_count": len(company_nodes),
+            "edge_count": len(company_edges),
+            "people_profile_count": _as_int(people_summary.get("people_count")),
+            "vertical_count": vertical_count,
+            "generated_via": "network_pipeline.similarity_scoring",
+        }
+    }
+
+
 def publish_a16z_crypto_bundle(
     output_root: Path | None = None,
     *,
     input_root: Path | None = None,
     stage_path: Path | None = None,
+    company_nodes_path: Path | None = None,
+    company_edges_path: Path | None = None,
 ) -> Path:
     publish_root = output_root or get_a16z_crypto_publish_root()
     publish_root.mkdir(parents=True, exist_ok=True)
 
     if stage_path is not None:
         stage_bundle = load_a16z_crypto_stage_bundle(stage_path)
-        company_network_data = stage_bundle.get("company_network_data", {})
-        company_network_summary = stage_bundle.get("company_network_summary", {})
         people_network_data = stage_bundle.get("people_network_data", {})
-        dashboard_snapshot = stage_bundle.get("dashboard_snapshot", {})
+        company_network_data = _build_company_network_payload(
+            stage_bundle,
+            company_nodes_path=company_nodes_path,
+            company_edges_path=company_edges_path,
+        )
+        company_network_summary = _build_company_network_summary_payload(company_network_data, people_network_data)
     else:
         source_root = resolve_a16z_crypto_input_root(input_root)
         company_network_data = _read_json("company_network_data.json", input_root=source_root)
         company_network_summary = _read_json("company_network_summary.json", input_root=source_root)
         people_network_data = _read_json("people_network_data.json", input_root=source_root)
-        dashboard_snapshot = build_a16z_crypto_dashboard_document(source_root)
 
     bundle_payloads = {
       "company_network_data.json": company_network_data,
       "company_network_summary.json": company_network_summary,
       "people_network_data.json": people_network_data,
       "network_data.json": company_network_data,
-      "dashboard_snapshot.json": dashboard_snapshot,
     }
     for file_name, payload in bundle_payloads.items():
         (publish_root / file_name).write_text(
           json.dumps(payload, indent=2, ensure_ascii=True),
           encoding="utf-8",
         )
+
+    dashboard_snapshot = build_a16z_crypto_dashboard_document(publish_root)
+    (publish_root / "dashboard_snapshot.json").write_text(
+      json.dumps(dashboard_snapshot, indent=2, ensure_ascii=True),
+      encoding="utf-8",
+    )
 
     return publish_root

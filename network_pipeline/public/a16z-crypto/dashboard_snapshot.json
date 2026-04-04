@@ -8,7 +8,7 @@
   "people_count": 499,
   "people_company_count": 125,
   "people_edge_count": 1988,
-  "generated_via": "build_crypto_ecosystem_networks.py",
+  "generated_via": "network_pipeline.similarity_scoring",
   "top_companies": [
     {
       "id": "co_61ab9fdf2c",
