@@ -30,6 +30,8 @@
     "@dynamic-labs/sdk-react-core": "4.75.0",
     "@dynamic-labs/waas-evm": "4.75.0",
     "@prisma/client": "^6.0.0",
+    "@worldcoin/idkit": "^4.0.11",
+    "@worldcoin/idkit-core": "^4.1.0",
     "clsx": "^2.1.1",
     "jose": "^5.9.6",
     "lucide-react": "^0.468.0",
