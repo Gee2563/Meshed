@@ -18,6 +18,7 @@
         "name": "next"
       }
     ],
+    // Keep @/ imports rooted at web_dev so app, components, and lib share one short alias.
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]

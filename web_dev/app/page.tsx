@@ -1,5 +1,6 @@
 import { MeshedLogo } from "@/components/MeshedLogo";
 
+// Public landing page for the current MVP and the first stop in the verified onboarding flow.
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
