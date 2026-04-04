@@ -140,4 +140,37 @@ describe("POST /api/auth/dynamic/register", () => {
       detail: null,
     });
   });
+
+  it("returns a 500 response when Dynamic registration fails unexpectedly", async () => {
+    mocks.register.mockRejectedValue(new Error("boom"));
+
+    const { POST } = await import("@/app/api/auth/dynamic/register/route");
+    const response = await POST(
+      new Request("http://localhost/api/auth/dynamic/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          walletAddress: "0x1111111111111111111111111111111111111111",
+          dynamicUserId: "dyn_error",
+          email: "georgegds92+1@gmail.com",
+          name: "George",
+        }),
+      }),
+    );
+
+    expect(mocks.register).toHaveBeenCalledWith({
+      walletAddress: "0x1111111111111111111111111111111111111111",
+      dynamicUserId: "dyn_error",
+      email: "georgegds92+1@gmail.com",
+      name: "George",
+    });
+    expect(mocks.createSessionToken).not.toHaveBeenCalled();
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Unexpected server error",
+    });
+  });
 });
