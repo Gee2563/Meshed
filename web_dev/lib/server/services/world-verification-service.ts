@@ -1,4 +1,4 @@
-import { signRequest } from "@worldcoin/idkit-core";
+import { hashSignal, signRequest } from "@worldcoin/idkit-core";
 import type { z } from "zod";
 
 import { env } from "@/lib/config/env";
@@ -25,6 +25,31 @@ type WorldVerifyApiResponse = {
 } | null;
 
 const WORLD_VERIFY_API_BASE_URL = "https://developer.world.org/api/v4/verify";
+
+function normalizeHex(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function requireMatchingSignal(
+  user: Pick<UserSummary, "id" | "walletAddress">,
+  payload: WorldVerifyPayload,
+) {
+  const signalHashes = payload.responses
+    .map((response) => ("signal_hash" in response && typeof response.signal_hash === "string" ? response.signal_hash : null))
+    .filter((value): value is string => Boolean(value));
+
+  if (signalHashes.length === 0) {
+    throw new ApiError(400, "World verification response did not include a signal hash.");
+  }
+
+  const expectedSignal = user.walletAddress ?? user.id;
+  const expectedSignalHash = normalizeHex(hashSignal(expectedSignal));
+  const matchesCurrentUser = signalHashes.some((signalHash) => normalizeHex(signalHash) === expectedSignalHash);
+
+  if (!matchesCurrentUser) {
+    throw new ApiError(400, "World verification signal did not match the current user.");
+  }
+}
 
 function requireRpSigningKey() {
   if (!env.WORLD_RP_SIGNING_KEY) {
@@ -58,7 +83,7 @@ export const worldVerificationService = {
   },
 
   async verifyUser(
-    user: Pick<UserSummary, "id" | "worldVerified">,
+    user: Pick<UserSummary, "id" | "walletAddress" | "worldVerified">,
     payload: WorldVerifyPayload,
     input: {
       fetch?: FetchLike;
@@ -74,6 +99,8 @@ export const worldVerificationService = {
         },
       };
     }
+
+    requireMatchingSignal(user, payload);
 
     const fetcher = input.fetch ?? fetch;
     const response = await fetcher(`${WORLD_VERIFY_API_BASE_URL}/${requireRpId()}`, {
