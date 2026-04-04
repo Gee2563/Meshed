@@ -7,9 +7,6 @@ import type {
 } from "@/lib/types";
 import { getDynamicInvitationAccess } from "@/lib/auth/invitation-access";
 import { ApiError } from "@/lib/server/http";
-import { companyRepository } from "@/lib/server/repositories/company-repository";
-import { onboardingRepository } from "@/lib/server/repositories/onboarding-repository";
-import { userRepository } from "@/lib/server/repositories/user-repository";
 
 const genericDynamicBio = "New Meshed member authenticated with Dynamic.";
 
@@ -302,23 +299,100 @@ export function createDynamicRegistrationService(deps: DynamicRegistrationDepend
   };
 }
 
-export const dynamicRegistrationService = createDynamicRegistrationService({
-  userRepository,
-  onboardingRepository,
-  companyRepository,
-  membershipRepository: {
-    create: async () => {
-      throw new ApiError(500, "Membership creation not implemented in dynamic registration.");
-    },
-    findByUserId: async () => [],
+let defaultServicePromise: Promise<ReturnType<typeof createDynamicRegistrationService>> | null = null;
+
+async function getDefaultDynamicRegistrationService() {
+  if (!defaultServicePromise) {
+    defaultServicePromise = Promise.all([
+      import("@/lib/server/repositories/company-repository"),
+      import("@/lib/server/repositories/onboarding-repository"),
+      import("@/lib/server/repositories/user-repository"),
+      import("@/lib/server/prisma"),
+    ]).then(([companyModule, onboardingModule, userModule, prismaModule]) => {
+      const prismaClient = prismaModule.prisma as {
+        companyMembership: {
+          create(args: { data: { id: string; companyId: string; userId: string; relation: string; title: string } }): Promise<unknown>;
+          findMany(args: {
+            where: { userId: string };
+            include: { company: { select: { name: true } } };
+          }): Promise<Array<{ companyId: string; relation: string; title: string; company?: { name: string } }>>;
+        };
+        verificationRecord?: {
+          findFirst(args: { where: { userId: string } }): Promise<unknown | null>;
+          create(args: {
+            data: {
+              id: string;
+              userId: string;
+              type: string;
+              status: string;
+              providerRef: string;
+              metadata: Record<string, unknown>;
+            };
+          }): Promise<unknown>;
+        };
+      };
+
+      return createDynamicRegistrationService({
+        userRepository: userModule.userRepository,
+        onboardingRepository: onboardingModule.onboardingRepository,
+        companyRepository: companyModule.companyRepository,
+        membershipRepository: {
+          create: async (data) => {
+            return prismaClient.companyMembership.create({ data });
+          },
+          findByUserId: async (userId) => {
+            return prismaClient.companyMembership.findMany({
+              where: { userId },
+              include: {
+                company: {
+                  select: { name: true },
+                },
+              },
+            });
+          },
+        },
+        verificationRepository: {
+          findWalletVerification: async (userId) => {
+            if (!prismaClient.verificationRecord) {
+              return null;
+            }
+
+            return prismaClient.verificationRecord.findFirst({
+              where: { userId },
+            });
+          },
+          createWalletVerification: async (userId, providerRef, metadata) => {
+            if (!prismaClient.verificationRecord) {
+              return null;
+            }
+
+            return prismaClient.verificationRecord.create({
+              data: {
+                id: `ver_dynamic_${Date.now()}`,
+                userId,
+                type: "WALLET_LINK",
+                status: "VERIFIED",
+                providerRef,
+                metadata,
+              },
+            });
+          },
+        },
+        idGenerator: {
+          userId: () => `user_${randomUUID()}`,
+          onboardingId: () => `onb_${randomUUID()}`,
+          membershipId: () => `mem_${randomUUID()}`,
+        },
+      });
+    });
+  }
+
+  return defaultServicePromise;
+}
+
+export const dynamicRegistrationService = {
+  async register(input: DynamicRegistrationInput) {
+    const service = await getDefaultDynamicRegistrationService();
+    return service.register(input);
   },
-  verificationRepository: {
-    findWalletVerification: async () => null,
-    createWalletVerification: async () => null,
-  },
-  idGenerator: {
-    userId: () => `user_${randomUUID()}`,
-    onboardingId: () => `onb_${randomUUID()}`,
-    membershipId: () => `mem_${randomUUID()}`,
-  },
-});
+};
