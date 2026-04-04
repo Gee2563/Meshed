@@ -14,6 +14,11 @@ vi.mock("@/components/LogoutButton", () => ({
   LogoutButton: () => "LogoutButton",
 }));
 
+vi.mock("@/components/WorldVerificationButton", () => ({
+  WorldVerificationButton: (props: { signal: string; verified: boolean }) =>
+    `WorldVerificationButton:${props.signal}:${props.verified ? "verified" : "pending"}`,
+}));
+
 vi.mock("@/components/ui/Button", () => ({
   Button: (props: { children: React.ReactNode }) => props.children,
 }));
@@ -59,6 +64,7 @@ describe("human IDV page", () => {
 
     expect(markup).toContain("Finish the trust checkpoint for Avery Collins.");
     expect(markup).toContain("Human verification is still pending.");
+    expect(markup).toContain("WorldVerificationButton:0x1234567890123456789012345678901234567890:pending");
     expect(markup).toContain("Return home");
     expect(markup).toContain("LogoutButton");
   });
