@@ -16,7 +16,6 @@ enum UserRole {
   ADMIN
 }
 
-
 enum CompanyKind {
   VC
   PORTFOLIO
@@ -31,61 +30,51 @@ enum RegistrationFlowStep {
   COMPLETE
 }
 
-enum OnboardingContractStep {
-  VC_COMPANY_REGISTERED
-  PORTFOLIO_COMPANY_REGISTERED
-  COMPANY_ACCESS_REGISTERED
-  INDIVIDUAL_PROFILE_REGISTERED
-  WORLD_VERIFIED
-}
-
-enum ContractGenerationMode {
-  MOCK
-  REAL
+enum OnboardingMode {
+  COMPANY
+  INDIVIDUAL
 }
 
 model User {
-  id                  String               @id
-  name                String
-  email               String               @unique
-  role                UserRole
-  bio                 String               @default("")
-  skills              String[]
-  sectors             String[]
-  linkedinUrl         String?
-  walletAddress       String?              @unique
-  worldVerified       Boolean              @default(false)
-  dynamicUserId       String?              @unique
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  lastActiveAt        DateTime?
-  companiesOwned      Company[]            @relation("CompanyOwner")
-  memberships         CompanyMembership[]
-  onboardingProfile   OnboardingProfile?
-  onboardingContracts OnboardingContractArtifact[]
+  id                          String              @id
+  name                        String
+  email                       String              @unique
+  role                        UserRole
+  bio                         String              @default("")
+  skills                      String[]
+  sectors                     String[]
+  linkedinUrl                 String?
+  walletAddress               String?             @unique
+  worldVerified               Boolean             @default(false)
+  dynamicUserId               String?             @unique
+  engagementScore             Int                 @default(0)
+  reliabilityScore            Int                 @default(0)
+  verificationBadges          String[]
+  outsideNetworkAccessEnabled Boolean             @default(false)
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
+  lastActiveAt                DateTime?
+  companiesOwned              Company[]           @relation("CompanyOwner")
+  memberships                 CompanyMembership[]
 }
 
 model Company {
-  id                        String                     @id
-  name                      String
-  description               String
-  sector                    String
-  stage                     String
-  website                   String
-  ownerUserId               String
-  currentPainTags           String[]
-  resolvedPainTags          String[]
-  companyKind               CompanyKind                @default(OPERATING)
-  parentCompanyId           String?
-  outsideNetworkAccessEnabled Boolean                  @default(false)
-  createdAt                 DateTime                   @default(now())
-  updatedAt                 DateTime                   @updatedAt
-  owner                     User                       @relation("CompanyOwner", fields: [ownerUserId], references: [id])
-  parentCompany             Company?                   @relation("CompanyHierarchy", fields: [parentCompanyId], references: [id], onDelete: SetNull)
-  portfolioCompanies        Company[]                  @relation("CompanyHierarchy")
-  memberships               CompanyMembership[]
-  onboardingProfiles        OnboardingProfile[]
-  onboardingContracts       OnboardingContractArtifact[]
+  id                          String              @id
+  name                        String
+  description                 String
+  sector                      String
+  stage                       String
+  website                     String
+  ownerUserId                 String
+  currentPainTags             String[]
+  resolvedPainTags            String[]
+  companyKind                 CompanyKind         @default(OPERATING)
+  parentCompanyId             String?
+  outsideNetworkAccessEnabled Boolean             @default(false)
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
+  owner                       User                @relation("CompanyOwner", fields: [ownerUserId], references: [id])
+  memberships                 CompanyMembership[]
 }
 
 model CompanyMembership {
@@ -99,4 +88,20 @@ model CompanyMembership {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, userId, relation])
+}
+
+model OnboardingProfile {
+  id                    String               @id
+  userId                String               @unique
+  companyId             String?
+  vcCompanyId           String?
+  portfolioCompanyId    String?
+  mode                  OnboardingMode
+  title                 String
+  isExecutive           Boolean
+  executiveSignoffEmail String?
+  currentStep           RegistrationFlowStep @default(VC_COMPANY)
+  teamCsvUploadedAt     DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
 }
