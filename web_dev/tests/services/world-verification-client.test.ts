@@ -89,11 +89,13 @@ describe("runWorldVerification", () => {
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
       );
+    const onConnectorReady = vi.fn();
 
     const { runWorldVerification } = await import("@/lib/auth/world-verification-client");
     const result = await runWorldVerification({
       signal: "0x1234567890",
       fetch: fetchMock,
+      onConnectorReady,
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/rp-signature", {
@@ -126,6 +128,7 @@ describe("runWorldVerification", () => {
       type: "OrbLegacy",
       signal: "0x1234567890",
     });
+    expect(onConnectorReady).toHaveBeenCalledWith("world://connector");
     expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/auth/world/verify", {
       method: "POST",
       headers: {

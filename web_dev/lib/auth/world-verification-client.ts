@@ -68,6 +68,7 @@ export async function runWorldVerification(
   input: {
     signal: string;
     fetch?: FetchLike;
+    onConnectorReady?: (connectorUri: string) => void | Promise<void>;
   },
 ) {
   const worldConfig = ensureWorldClientConfig();
@@ -109,6 +110,7 @@ export async function runWorldVerification(
     return_to: worldConfig.returnTo,
   });
   const request = await requestBuilder.preset(orbLegacy({ signal: input.signal }));
+  await input.onConnectorReady?.(request.connectorURI);
 
   const result = (await request.pollUntilCompletion()) as WorldIdKitCompletionResult;
   if (!result.success) {
