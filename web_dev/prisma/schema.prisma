@@ -56,6 +56,7 @@ model User {
   lastActiveAt                DateTime?
   companiesOwned              Company[]           @relation("CompanyOwner")
   memberships                 CompanyMembership[]
+  worldVerificationNullifiers WorldVerificationNullifier[]
 }
 
 model Company {
@@ -104,4 +105,16 @@ model OnboardingProfile {
   teamCsvUploadedAt     DateTime?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+}
+
+model WorldVerificationNullifier {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  nullifier  String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([action, nullifier])
+  @@index([userId])
 }

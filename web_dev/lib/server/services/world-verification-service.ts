@@ -3,7 +3,7 @@ import type { z } from "zod";
 
 import { env } from "@/lib/config/env";
 import { ApiError } from "@/lib/server/http";
-import { userRepository } from "@/lib/server/repositories/user-repository";
+import { worldVerificationNullifierRepository } from "@/lib/server/repositories/world-verification-nullifier-repository";
 import { worldVerifySchema } from "@/lib/server/validation/auth-schemas";
 import type { UserSummary } from "@/lib/types";
 
@@ -15,6 +15,8 @@ type WorldVerifyApiResponse = {
   success?: boolean;
   message?: string;
   environment?: string;
+  action?: string;
+  nullifier?: string;
   results?: Array<{
     identifier?: string;
     success?: boolean;
@@ -28,6 +30,10 @@ const WORLD_VERIFY_API_BASE_URL = "https://developer.world.org/api/v4/verify";
 
 function normalizeHex(value: string) {
   return value.trim().toLowerCase();
+}
+
+function asString(value: unknown) {
+  return typeof value === "string" ? value : null;
 }
 
 function requireMatchingSignal(
@@ -49,6 +55,30 @@ function requireMatchingSignal(
   if (!matchesCurrentUser) {
     throw new ApiError(400, "World verification signal did not match the current user.");
   }
+}
+
+function extractVerifiedReplayKey(payload: WorldVerifyPayload, verification: WorldVerifyApiResponse) {
+  const action = payload.action ?? verification?.action;
+  if (!action) {
+    throw new ApiError(400, "World verification did not include an action.");
+  }
+
+  const verifiedResultNullifier =
+    asString(verification?.results?.find((result) => result.success !== false)?.nullifier) ??
+    asString(verification?.results?.find((result) => asString(result.nullifier))?.nullifier);
+  const payloadNullifier = asString(
+    payload.responses.find((response) => "nullifier" in response && asString(response.nullifier))?.nullifier,
+  );
+  const nullifier = asString(verification?.nullifier) ?? verifiedResultNullifier ?? payloadNullifier;
+
+  if (!nullifier) {
+    throw new ApiError(502, "World verification succeeded without a reusable nullifier.");
+  }
+
+  return {
+    action,
+    nullifier: normalizeHex(nullifier),
+  };
 }
 
 function requireRpSigningKey() {
@@ -120,8 +150,12 @@ export const worldVerificationService = {
       throw new ApiError(400, verification?.message ?? "World verification failed.", verification);
     }
 
-    // Keep this slice minimal: verify with World, then only flip the local user flag.
-    const updatedUser = await userRepository.markWorldVerified(user.id);
+    const replayKey = extractVerifiedReplayKey(payload, verification);
+    const updatedUser = await worldVerificationNullifierRepository.reserveAndMarkVerified({
+      userId: user.id,
+      action: replayKey.action,
+      nullifier: replayKey.nullifier,
+    });
 
     return {
       user: updatedUser,
