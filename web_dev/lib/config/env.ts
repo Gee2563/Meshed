@@ -14,9 +14,13 @@ const envSchema = z.object({
   NEXT_PUBLIC_DYNAMIC_ENV_ID: z.string().optional(),
   NEXT_PUBLIC_USE_MOCK_DYNAMIC: z.boolean().optional(),
   NEXT_PUBLIC_WORLD_APP_ID: z.string().optional(),
+  NEXT_PUBLIC_WORLD_RP_ID: z.string().optional(),
   NEXT_PUBLIC_USE_MOCK_WORLD: z.boolean().optional(),
+  NEXT_PUBLIC_WORLD_ENVIRONMENT: z.enum(["production", "staging"]).optional(),
   NEXT_PUBLIC_WORLD_ACTION: z.string().optional(),
   WORLD_APP_ID: z.string().optional(),
+  WORLD_RP_ID: z.string().optional(),
+  WORLD_RP_SIGNING_KEY: z.string().optional(),
   WORLD_ACTION: z.string().default("meshed-network-access"),
   FLARE_RPC_URL: z.string().optional(),
   PRIVATE_KEY: z.string().optional(),
@@ -44,12 +48,16 @@ export const env = envSchema.parse({
       ? undefined
       : parseBooleanEnv(process.env.NEXT_PUBLIC_USE_MOCK_DYNAMIC, false),
   NEXT_PUBLIC_WORLD_APP_ID: process.env.NEXT_PUBLIC_WORLD_APP_ID,
+  NEXT_PUBLIC_WORLD_RP_ID: process.env.NEXT_PUBLIC_WORLD_RP_ID,
   NEXT_PUBLIC_USE_MOCK_WORLD:
     process.env.NEXT_PUBLIC_USE_MOCK_WORLD === undefined
       ? undefined
       : parseBooleanEnv(process.env.NEXT_PUBLIC_USE_MOCK_WORLD, false),
+  NEXT_PUBLIC_WORLD_ENVIRONMENT: process.env.NEXT_PUBLIC_WORLD_ENVIRONMENT as "production" | "staging" | undefined,
   NEXT_PUBLIC_WORLD_ACTION: process.env.NEXT_PUBLIC_WORLD_ACTION,
   WORLD_APP_ID: process.env.WORLD_APP_ID,
+  WORLD_RP_ID: process.env.WORLD_RP_ID,
+  WORLD_RP_SIGNING_KEY: process.env.WORLD_RP_SIGNING_KEY,
   WORLD_ACTION: process.env.WORLD_ACTION,
   FLARE_RPC_URL: process.env.FLARE_RPC_URL,
   PRIVATE_KEY: process.env.PRIVATE_KEY,
@@ -68,17 +76,23 @@ export function buildClientEnv(input: {
   NEXT_PUBLIC_DYNAMIC_ENV_ID?: string;
   NEXT_PUBLIC_USE_MOCK_DYNAMIC?: boolean;
   NEXT_PUBLIC_WORLD_APP_ID?: string;
+  NEXT_PUBLIC_WORLD_RP_ID?: string;
   NEXT_PUBLIC_USE_MOCK_WORLD?: boolean;
+  NEXT_PUBLIC_WORLD_ENVIRONMENT?: "production" | "staging";
   NEXT_PUBLIC_WORLD_ACTION?: string;
   WORLD_ACTION?: string;
   NEXT_PUBLIC_APP_URL: string;
 }) {
+  const hasLiveWorldConfig = Boolean(input.NEXT_PUBLIC_WORLD_APP_ID && input.NEXT_PUBLIC_WORLD_RP_ID);
+
   return {
     dynamicEnvironmentId: input.NEXT_PUBLIC_DYNAMIC_ENV_ID,
     worldAppId: input.NEXT_PUBLIC_WORLD_APP_ID,
+    worldRpId: input.NEXT_PUBLIC_WORLD_RP_ID,
+    worldEnvironment: input.NEXT_PUBLIC_WORLD_ENVIRONMENT ?? "staging",
     worldAction: input.NEXT_PUBLIC_WORLD_ACTION ?? input.WORLD_ACTION ?? "meshed-network-access",
     useMockDynamic: input.NEXT_PUBLIC_USE_MOCK_DYNAMIC ?? !Boolean(input.NEXT_PUBLIC_DYNAMIC_ENV_ID),
-    useMockWorld: input.NEXT_PUBLIC_USE_MOCK_WORLD ?? !Boolean(input.NEXT_PUBLIC_WORLD_APP_ID),
+    useMockWorld: input.NEXT_PUBLIC_USE_MOCK_WORLD ?? !hasLiveWorldConfig,
     appUrl: input.NEXT_PUBLIC_APP_URL,
   };
 }
@@ -87,7 +101,9 @@ export const clientEnv = buildClientEnv({
   NEXT_PUBLIC_DYNAMIC_ENV_ID: env.NEXT_PUBLIC_DYNAMIC_ENV_ID,
   NEXT_PUBLIC_USE_MOCK_DYNAMIC: env.NEXT_PUBLIC_USE_MOCK_DYNAMIC,
   NEXT_PUBLIC_WORLD_APP_ID: env.NEXT_PUBLIC_WORLD_APP_ID,
+  NEXT_PUBLIC_WORLD_RP_ID: env.NEXT_PUBLIC_WORLD_RP_ID,
   NEXT_PUBLIC_USE_MOCK_WORLD: env.NEXT_PUBLIC_USE_MOCK_WORLD,
+  NEXT_PUBLIC_WORLD_ENVIRONMENT: env.NEXT_PUBLIC_WORLD_ENVIRONMENT,
   NEXT_PUBLIC_WORLD_ACTION: env.NEXT_PUBLIC_WORLD_ACTION,
   WORLD_ACTION: env.WORLD_ACTION,
   NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL,

@@ -1,4 +1,5 @@
 import { LogoutButton } from "@/components/LogoutButton";
+import { WorldVerificationButton } from "@/components/WorldVerificationButton";
 import { Button } from "@/components/ui/Button";
 import { getCurrentUser } from "@/lib/server/current-user";
 
@@ -28,6 +29,7 @@ export default async function HumanIdvPage() {
   }
 
   const verificationStatus = currentUser.worldVerified ? "Verified" : "Pending";
+  const verificationSignal = currentUser.walletAddress ?? currentUser.id;
 
   return (
     <main className="px-6 py-16">
@@ -40,9 +42,8 @@ export default async function HumanIdvPage() {
                 Finish the trust checkpoint for {currentUser.name}.
               </h1>
               <p className="max-w-2xl text-base leading-7 text-slate-600">
-                Dynamic has already linked your Meshed account and embedded wallet. This page is the handoff into the
-                human IDV step we will wire up next, so the current slice focuses on surfacing the right signed-in context
-                instead of dropping users onto a missing route.
+                Dynamic has already linked your Meshed account and embedded wallet. This step now hands you into World ID
+                staging so Meshed can record the human verification result against the current signed-in account.
               </p>
             </div>
 
@@ -64,11 +65,10 @@ export default async function HumanIdvPage() {
             </div>
 
             <div className="rounded-[1.75rem] border border-sky-200 bg-sky-50/80 px-6 py-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Next implementation slice</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">World staging flow</p>
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                The next World verification slice can plug into this page without changing the current Dynamic registration
-                contract. Until then, this page keeps the signed-in context visible and gives you a stable destination for
-                the `/human-idv` redirect.
+                Meshed requests a signed RP context from the backend, launches the World connector in staging, then sends
+                the returned IDKit payload back to the server for verification and local account marking.
               </p>
             </div>
           </div>
@@ -81,8 +81,18 @@ export default async function HumanIdvPage() {
             <p className="text-base leading-7 text-slate-600">
               {currentUser.worldVerified
                 ? "Your account already carries the World verification flag, so this page can later hand off to the next onboarding checkpoint."
-                : "Your registration succeeded, and the remaining step is to attach a successful human verification result to this Meshed account."}
+                : "Your registration succeeded. The remaining trust step is to complete World ID and attach that verified result to this Meshed account."}
             </p>
+            <div className="rounded-[1.5rem] border border-slate-200 bg-mist/80 px-5 py-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Verification action</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Meshed binds the World proof to your current session using the same wallet-or-user signal that Dynamic just
+                established.
+              </p>
+              <div className="mt-4">
+                <WorldVerificationButton signal={verificationSignal} verified={currentUser.worldVerified} />
+              </div>
+            </div>
             <div className="flex flex-wrap gap-3 pt-2">
               <Button href="/" variant="secondary">
                 Return home

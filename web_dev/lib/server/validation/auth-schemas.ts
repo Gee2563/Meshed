@@ -19,6 +19,28 @@ export const dynamicRegisterSchema = z.object({
   lastName: z.string().min(1).optional().nullable(),
 });
 
+export const worldRpSignatureSchema = z.object({
+  action: z.string().min(1).optional(),
+});
+
+const worldVerifyResponseItemSchema = z
+  .object({
+    identifier: z.string().min(1),
+  })
+  .passthrough();
+
+export const worldVerifySchema = z
+  .object({
+    protocol_version: z.enum(["3.0", "4.0"]),
+    nonce: z.string().min(1),
+    action: z.string().min(1).optional(),
+    action_description: z.string().min(1).optional(),
+    session_id: z.string().min(1).optional(),
+    environment: z.enum(["production", "staging"]),
+    responses: z.array(worldVerifyResponseItemSchema).min(1),
+  })
+  .passthrough();
+
 export const companyRegisterSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
