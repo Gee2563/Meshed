@@ -74,5 +74,19 @@ function normalizeEmail(value: string) {
 
 export function getDynamicInvitationAccess(email: string) {
   const normalized = normalizeEmail(email);
-  return inviteRegistry.find((invite) => invite.email === normalized) ?? null;
+  const invite = inviteRegistry.find((record) => record.email === normalized);
+  if (invite) {
+    return invite;
+  }
+
+  return {
+    email: normalized,
+    kind: "vc_member",
+    nextRoute: "/human-idv",
+    role: "investor",
+    outsideNetworkAccessEnabled: true,
+    onboardingMode: "individual",
+    onboardingStep: "complete",
+    title: "Investor",
+  };
 }
