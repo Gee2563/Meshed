@@ -13,6 +13,8 @@ export function TopNav({ currentUser }: TopNavProps) {
   const links: Array<{ href: Route; label: string }> = [
     { href: "/", label: "Home" },
     { href: "/dashboard", label: "Dashboard" },
+    { href: "/upcycle", label: "Meshed Upcycle" },
+    { href: "/ai-summary", label: "AI Summary" },
     ...(currentUser ? [{ href: "/profile", label: "Profile" }] : []),
   ];
 
@@ -20,7 +22,7 @@ export function TopNav({ currentUser }: TopNavProps) {
     <header className="sticky top-0 z-30 border-b border-line bg-white/85 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
         <Link href="/" className="min-w-fit">
-          <img src="/meshed-logo.png" alt="Meshed" className="h-12 w-auto sm:h-14" />
+          <img src="/meshed-logo.png" alt="Meshed" className="h-14 w-auto sm:h-16" />
         </Link>
         <nav className="flex flex-1 flex-wrap items-center gap-3 sm:justify-center sm:gap-5">
           {links.map((link) => (

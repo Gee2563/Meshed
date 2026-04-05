@@ -312,7 +312,7 @@ describe("dynamic registration service", () => {
       name: "George VC",
     });
 
-    expect(result.nextRoute).toBe("/onboarding");
+    expect(result.nextRoute).toBe("/human-idv");
     expect(result.user.role).toBe("investor");
     expect(result.user.outsideNetworkAccessEnabled).toBe(true);
     expect(result.onboardingProfile.mode).toBe("company");

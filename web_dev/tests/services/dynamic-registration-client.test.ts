@@ -23,7 +23,7 @@ describe("dynamic registration client", () => {
         JSON.stringify({
           ok: true,
           data: {
-            nextRoute: "/onboarding",
+            nextRoute: "/human-idv",
           },
         }),
         {
@@ -46,7 +46,7 @@ describe("dynamic registration client", () => {
     );
 
     expect(result).toEqual({
-      nextRoute: "/onboarding",
+      nextRoute: "/human-idv",
     });
   });
 

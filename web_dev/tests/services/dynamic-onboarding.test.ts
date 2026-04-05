@@ -46,7 +46,7 @@ describe("dynamic onboarding helpers", () => {
   });
 
   it("normalizes invite-aware next routes coming back from the server", () => {
-    expect(normalizeDynamicNextRoute("/onboarding")).toBe("/onboarding");
+    expect(normalizeDynamicNextRoute("/onboarding")).toBe("/human-idv");
     expect(normalizeDynamicNextRoute("/human-idv")).toBe("/human-idv");
     expect(normalizeDynamicNextRoute("/unexpected")).toBe("/human-idv");
   });

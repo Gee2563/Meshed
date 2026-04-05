@@ -10,7 +10,7 @@ export default async function HomePage() {
   const currentUser = await getCurrentUser();
 
   return (
-    <main className="relative overflow-hidden px-4 py-8 sm:px-6 sm:py-12 lg:px-10">
+    <main className="relative overflow-hidden bg-gradient-to-b from-[#fffaf4] via-[#f8f4ee] to-[#f2f7ff] px-4 py-8 sm:px-6 sm:py-12 lg:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[34rem] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.92),transparent_58%)]" />
       <div className="pointer-events-none absolute left-[-8rem] top-24 -z-10 h-72 w-72 rounded-full bg-[rgba(207,106,47,0.18)] blur-3xl" />
       <div className="pointer-events-none absolute right-[-4rem] top-12 -z-10 h-80 w-80 rounded-full bg-[rgba(35,126,184,0.16)] blur-3xl" />
@@ -19,9 +19,11 @@ export default async function HomePage() {
         <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10">
           <div className="space-y-6">
             <div className="rounded-[2.2rem] border border-white/80 bg-[linear-gradient(135deg,rgba(255,250,244,0.98),rgba(247,240,229,0.72))] p-6 shadow-[0_18px_60px_rgba(21,38,58,0.08)] sm:p-8">
-              <img src="/meshed-logo.png" alt="Meshed" className="h-auto w-full max-w-[23rem]" />
+              <div className="flex justify-center">
+                <img src="/meshed-logo.png" alt="Meshed" className="h-auto w-full max-w-[23rem]" />
+              </div>
               <h1 className="mt-6 font-display text-3xl leading-tight tracking-tight text-ink sm:text-4xl">
-                AI-powered, investment intelligence and recommendation engine with a built-in trust layer
+                Meshed turns static VC portfolios into intelligent trust networks that drive better outcomes.
               </h1>
               <p className="mt-5 max-w-3xl text-base leading-7 text-slate">
                 By combining real-time data systems with verifiable identity and attestation layers, we built a
@@ -50,13 +52,13 @@ export default async function HomePage() {
                         <dd className="mt-2 text-sm font-medium text-ink">{titleCase(currentUser.role)}</dd>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                        <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Wallet</dt>
+                        <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Dynamic Wallet</dt>
                         <dd className="mt-2 text-sm font-medium text-ink">
                           {currentUser.walletAddress ? "Connected" : "Pending"}
                         </dd>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                        <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Human IDV</dt>
+                        <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">World ID</dt>
                         <dd className="mt-2 text-sm font-medium text-ink">
                           {currentUser.worldVerified ? "Verified" : "Pending"}
                         </dd>

@@ -166,11 +166,11 @@ export default async function DashboardPage() {
       suggestedConnectionType: suggestedConnectionType(user.role),
     }));
 
-  const { snapshot, strongestBridges, topVerticals, companyGraph } = dashboard;
+  const { snapshot, strongestBridges, companyGraph } = dashboard;
   const statusItems = [
     { label: "Role", value: titleCase(currentUser.role) },
-    { label: "Wallet", value: currentUser.walletAddress ? "Connected" : "Pending" },
-    { label: "Human IDV", value: currentUser.worldVerified ? "Verified" : "Pending" },
+    { label: "Dynamic wallet", value: currentUser.walletAddress ? "Connected" : "Pending" },
+    { label: "World ID", value: currentUser.worldVerified ? "Verified" : "Not verified" },
     { label: "Trust badges", value: formatRelativeCount(currentUser.verificationBadges.length, "badge") },
     { label: "Company", value: membershipLookup.get(currentUser.id) ?? "No company linked yet" },
   ];
@@ -181,8 +181,8 @@ export default async function DashboardPage() {
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <CollapsibleCard
             eyebrow="A16z crypto"
-            title="A16z crypto network dashboard"
-            description="This dashboard now reads the generated a16z pipeline bundle directly and puts the live company graph inside the page, not behind a separate export."
+            title="Welcome to your a16z meshed network"
+            description="Here's your daily AI-powered update on the Andreessen Horowitz Meshed network"
             className="bg-white/65 backdrop-blur"
           >
             <div className="space-y-5">
@@ -198,9 +198,14 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-sm font-medium text-slate">Signed in as {currentUser.name}</p>
                 <p className="mt-4 max-w-3xl text-lg leading-8 text-slate">
-                  Meshed UpCycle is easiest to explain with a live network in front of us. This page shows the shape of
-                  the a16z crypto ecosystem, the strongest company bridges, and the people layer we can surface for
-                  redeployment when teams become available.
+                  An AI Driven Network Intelligence for your Investments
+                  
+                  <br />
+                  From static portfolio lists to living AI graphs that amplify your investment portfolio communities
+                </p>
+                <p className="mt-3 max-w-3xl text-lg leading-8 text-slate">
+                  We&apos;re building an AI network intelligence layer for VC portfolios that discovers collaboration opportunities
+                  between startups using AI to identify enterprise-level pain points for post-investment value creation.
                 </p>
               </div>
 
@@ -231,8 +236,7 @@ export default async function DashboardPage() {
 
           <CollapsibleCard
             eyebrow="Session context"
-            title="Current trust posture"
-            description="The dashboard stays tied to the same registration and verification state the user established through Dynamic and World ID."
+            title="World ID and Dynamic Verified"
             className="bg-[linear-gradient(180deg,rgba(238,242,247,0.84),rgba(255,255,255,0.92))]"
           >
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
@@ -256,11 +260,44 @@ export default async function DashboardPage() {
           </CollapsibleCard>
         </div>
 
+        <CollapsibleCard
+          eyebrow="Network graph"
+          title="a16z's Meshed Network Interactive Graph"
+          description="Neural Portfolio Graphs for Modern Investors. Transform your portfolio data into actionable insights and strategic connections."
+        >
+          <CompanyNetworkGraph nodes={companyGraph.nodes} edges={companyGraph.edges} />
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          eyebrow="People connections"
+          title="Meshed people connections"
+          description="This ports the existing LinkedIn simulation and people-connection flow into the current repo: attested LinkedIn handoff, seeded connection requests, and Flare-backed request acceptance without chat."
+        >
+          <ConnectionsPanel
+            contacts={contacts}
+            notifications={notifications.map((notification: LinkedInMeshedNotification) => ({
+              id: notification.id,
+              counterpartUserId: notification.counterpartUserId,
+              counterpartName: notification.counterpartName,
+              action: notification.action,
+              direction: notification.direction,
+              messagePreview: notification.messagePreview,
+              receivedAt: notification.receivedAt,
+              title: notification.title,
+              body: notification.body,
+            }))}
+            pendingIncomingRequests={connectionState.pendingIncomingRequests}
+            connectedContactIds={connectionState.connectedContactIds}
+            outgoingPendingContactIds={connectionState.outgoingPendingContactIds}
+          />
+        </CollapsibleCard>
+
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
           <CollapsibleCard
             eyebrow="Top companies"
             title="Most connected companies"
             description="These are the most central companies in the current a16z graph, ranked by company bridge degree with people density as the tie-breaker."
+            defaultOpen={false}
           >
             <div className="grid gap-3 md:grid-cols-2">
               {snapshot.top_companies.map((company) => (
@@ -290,6 +327,7 @@ export default async function DashboardPage() {
             eyebrow="Network bridges"
             title="Strongest company bridges"
             description="These explanations come straight from the generated company-network payload and give the clearest handoff into redeployment opportunities."
+            defaultOpen={false}
           >
             <div className="space-y-3">
               {strongestBridges.map((bridge) => (
@@ -304,92 +342,6 @@ export default async function DashboardPage() {
                   </div>
                   <p className="mt-3 text-sm font-medium text-ink">{bridge.reason}</p>
                   <p className="mt-2 text-sm leading-6 text-slate">{bridge.explanation}</p>
-                </article>
-              ))}
-            </div>
-          </CollapsibleCard>
-        </div>
-
-        <CollapsibleCard
-          eyebrow="Network graph"
-          title="Interactive company graph"
-          description="The old Rho result was a live network first. This slice brings that same end-state into /dashboard with search, focus, and detail inspection built from the generated a16z graph payload."
-        >
-          <CompanyNetworkGraph nodes={companyGraph.nodes} edges={companyGraph.edges} />
-        </CollapsibleCard>
-
-        <CollapsibleCard
-          eyebrow="People connections"
-          title="Meshed people connections"
-          description="This ports the existing LinkedIn simulation and people-connection flow into the current repo: attested LinkedIn handoff, seeded connection requests, and Flare-backed request acceptance without chat."
-        >
-          <ConnectionsPanel
-            contacts={contacts}
-            notifications={notifications.map((notification: LinkedInMeshedNotification) => ({
-              id: notification.id,
-              counterpartUserId: notification.counterpartUserId,
-              counterpartName: notification.counterpartName,
-              action: notification.action,
-              direction: notification.direction,
-              messagePreview: notification.messagePreview,
-              receivedAt: notification.receivedAt,
-              title: notification.title,
-              body: notification.body,
-            }))}
-            pendingIncomingRequests={connectionState.pendingIncomingRequests}
-            connectedContactIds={connectionState.connectedContactIds}
-            outgoingPendingContactIds={connectionState.outgoingPendingContactIds}
-          />
-        </CollapsibleCard>
-
-        <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-          <CollapsibleCard
-            eyebrow="Vertical mix"
-            title="Top tracked verticals"
-            description="The graph colors map back to the same vertical labels generated in the published bundle."
-          >
-            <div className="space-y-3">
-              {topVerticals.map((vertical) => (
-                <div key={vertical.vertical} className="rounded-[1.4rem] border border-white/80 bg-white/92 px-4 py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: vertical.color }} />
-                      <span className="text-sm font-medium text-ink">{vertical.vertical}</span>
-                    </div>
-                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">
-                      {formatRelativeCount(vertical.count, "company")}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CollapsibleCard>
-
-          <CollapsibleCard
-            eyebrow="People layer"
-            title="Featured people signals"
-            description="This keeps the dashboard grounded in UpCycle: who might be surfaced for redeployment once a company starts to struggle."
-            tone="dark"
-          >
-            <div className="grid gap-3 md:grid-cols-2">
-              {snapshot.featured_people.map((person) => (
-                <article key={person.id} className="rounded-[1.5rem] border border-white/15 bg-white/10 px-5 py-5 backdrop-blur">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">{person.name}</h3>
-                      <p className="mt-1 text-sm text-sky-50/80">{person.company ?? "Unassigned company"}</p>
-                    </div>
-                    <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-50">
-                      {titleCase(person.suggested_role ?? "operator")}
-                    </span>
-                  </div>
-                  <p className="mt-4 text-sm leading-6 text-sky-50/90">
-                    Current signal: {person.current_pain_point_label ?? "General network support"}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-sky-50/75">
-                    Importance score {person.network_importance_score} with{" "}
-                    {person.trust_signals.length ? person.trust_signals.map(titleCase).join(", ") : "no trust badges yet"}.
-                  </p>
                 </article>
               ))}
             </div>
