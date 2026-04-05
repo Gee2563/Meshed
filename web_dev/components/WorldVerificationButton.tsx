@@ -14,11 +14,13 @@ const LiveWorldVerificationWidget = dynamic(
 type WorldVerificationButtonProps = {
   signal: string;
   verified: boolean;
+  action?: string;
 };
 
-export function WorldVerificationButton({ signal, verified }: WorldVerificationButtonProps) {
+export function WorldVerificationButton({ signal, verified, action }: WorldVerificationButtonProps) {
   const router = useRouter();
   const worldReady = Boolean(clientEnv.worldAppId && clientEnv.worldRpId) && !clientEnv.useMockWorld;
+  const worldAction = action ?? clientEnv.worldAction;
 
   if (verified) {
     return (
@@ -44,7 +46,7 @@ export function WorldVerificationButton({ signal, verified }: WorldVerificationB
     <LiveWorldVerificationWidget
       appId={clientEnv.worldAppId as `app_${string}`}
       rpId={clientEnv.worldRpId as string}
-      action={clientEnv.worldAction}
+      action={worldAction}
       signal={signal}
       environment={clientEnv.worldEnvironment}
       onSuccess={() => router.refresh()}

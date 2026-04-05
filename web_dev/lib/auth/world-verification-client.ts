@@ -108,17 +108,19 @@ function ensureWorldClientConfig() {
 export async function runWorldVerification(
   input: {
     signal: string;
+    action?: string;
     fetch?: FetchLike;
     onConnectorReady?: (connectorUri: string) => void | Promise<void>;
   },
 ) {
   const worldConfig = ensureWorldClientConfig();
+  const action = input.action ?? worldConfig.worldAction;
   const fetcher = input.fetch ?? fetch;
-  const rpSignature = await requestWorldRpSignature(worldConfig.worldAction, { fetch: fetcher });
+  const rpSignature = await requestWorldRpSignature(action, { fetch: fetcher });
 
   const requestBuilder = await IDKit.request({
     app_id: worldConfig.worldAppId as `app_${string}`,
-    action: worldConfig.worldAction,
+    action,
     rp_context: {
       rp_id: worldConfig.worldRpId,
       nonce: rpSignature.nonce,
