@@ -368,7 +368,7 @@ export const linkedinActivityService = {
       throw new ApiError(404, "Current user is unavailable for LinkedIn simulation.");
     }
 
-    let candidates = await ensureSimulationCounterpart(currentUser);
+    const candidates = await ensureSimulationCounterpart(currentUser);
 
     if (candidates.length === 0) {
       throw new ApiError(409, "No Meshed counterpart is available to simulate a LinkedIn alert.");

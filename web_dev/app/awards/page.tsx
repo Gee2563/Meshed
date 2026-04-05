@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, CheckCircle, ChevronRight, Crown, ExternalLink, Lock, Medal, Shield, Sparkles, Star, Target, Trophy, TrendingUp, Users, Zap, Code } from "lucide-react";
+import { Award, CheckCircle, Crown, ExternalLink, Lock, Medal, Shield, Sparkles, Star, Target, Trophy, TrendingUp, Users, Zap, Code } from "lucide-react";
 import { useState } from "react";
 
 export default function AuthenticatedAwards() {
