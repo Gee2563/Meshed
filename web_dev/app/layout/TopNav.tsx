@@ -15,6 +15,7 @@ export function TopNav({ currentUser }: TopNavProps) {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/upcycle", label: "Meshed Upcycle" },
     { href: "/ai-summary", label: "AI Summary" },
+    { href: "/eth-global", label: "EthGlobal" },
     ...(currentUser ? [{ href: "/profile", label: "Profile" }] : []),
   ];
 

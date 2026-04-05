@@ -2,6 +2,7 @@ import { HumanIdvIdentityForm } from "@/components/HumanIdvIdentityForm";
 import { LogoutButton } from "@/components/LogoutButton";
 import { WorldVerificationButton } from "@/components/WorldVerificationButton";
 import { Button } from "@/components/ui/Button";
+import { clientEnv } from "@/lib/config/env";
 import { getCurrentUser } from "@/lib/server/current-user";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,7 @@ export default async function HumanIdvPage() {
 
   const verificationStatus = currentUser.worldVerified ? "Verified" : "Pending";
   const verificationSignal = currentUser.id;
+  const worldAction = `${clientEnv.worldAction}-${currentUser.id}`;
   const nameParts = splitDisplayName(currentUser.name);
 
   return (
@@ -110,7 +112,11 @@ export default async function HumanIdvPage() {
                 the correct account every time.
               </p>
               <div className="mt-4">
-                <WorldVerificationButton signal={verificationSignal} verified={currentUser.worldVerified} />
+                <WorldVerificationButton
+                  signal={verificationSignal}
+                  verified={currentUser.worldVerified}
+                  action={worldAction}
+                />
               </div>
             </div>
             <div className="flex flex-wrap gap-3 pt-2">
