@@ -153,7 +153,7 @@ export default function UpCycle() {
               Discover pre-vetted, exceptional talent from your portfolio ecosystem
             </p>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-              When startups evolve or pivot, exceptional team members become available. Meshed UpCycle connects you with proven professionals who've already been through rigorous due diligence and carry verified credentials from your portfolio network. These talented individuals are ready to accelerate growth at your next portfolio company.
+              When startups evolve or pivot, exceptional team members become available. Meshed UpCycle connects you with proven professionals who&apos;ve already been through rigorous due diligence and carry verified credentials from your portfolio network. These talented individuals are ready to accelerate growth at your next portfolio company.
             </p>
           </div>
 
@@ -221,7 +221,7 @@ export default function UpCycle() {
               Featured Verified Candidates from EcoVerse
             </h2>
             <p className="text-lg text-gray-600">
-              Exceptional talent from Lereta's portfolio, ready for their next opportunity
+              Exceptional talent from Lereta&apos;s portfolio, ready for their next opportunity
             </p>
           </div>
 
@@ -350,7 +350,7 @@ export default function UpCycle() {
                               </div>
                               <span className="text-xs text-gray-500">({review.rating}.0)</span>
                             </div>
-                            <p className="text-sm text-gray-700 mb-3 italic">"{review.text}"</p>
+                            <p className="text-sm text-gray-700 mb-3 italic">“{review.text}”</p>
                             <div className="flex items-center gap-2">
                               <div className="bg-amber-200 text-amber-900 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold">
                                 {review.reviewer.split(' ').map((n) => n[0]).join('')}

@@ -33,7 +33,7 @@ export default async function HumanIdvPage() {
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900">Human verification starts after sign-in.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-700">
             Meshed needs an active authenticated session before we can continue into the human IDV checkpoint. Return to
-            the home page and sign in with your allowlisted email to continue.
+            the home page and sign in to continue.
           </p>
           <div className="mt-6">
             <Button href="/" variant="secondary">
