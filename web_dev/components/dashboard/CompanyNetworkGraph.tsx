@@ -584,7 +584,6 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
   const networkRef = useRef<VisNetworkInstance | null>(null);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [isLatestNewsModalOpen, setIsLatestNewsModalOpen] = useState(false);
@@ -595,7 +594,6 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
   const graphData = buildGraphData(nodes, edges, deferredSearchValue);
 
   const selectedNode = selectedNodeId ? nodes.find((node) => node.id === selectedNodeId) ?? null : null;
-  const selectedEdge = selectedEdgeId ? edges.find((edge) => edge.id === selectedEdgeId) ?? null : null;
   const selectedPerson = selectedNode?.people.find((person) => person.id === selectedPersonId) ?? null;
   const selectedPartner = selectedNode?.partners.find((partner) => partner.id === selectedPartnerId) ?? null;
   const matchingNodes = graphData.matchedNodeIds
@@ -693,6 +691,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
           edges: {
             chosen: false,
             hoverWidth: 0,
+            selectionWidth: 0,
             color: {
               color: "#94a3b8",
               opacity: 0.72,
@@ -704,11 +703,9 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
 
       network.on("click", (payload) => {
         const nextNodeId = payload.nodes?.[0];
-        const nextEdgeId = payload.edges?.[0];
 
         if (typeof nextNodeId === "string") {
           setSelectedNodeId(nextNodeId);
-          setSelectedEdgeId(null);
           setSelectedPersonId(null);
           setSelectedPartnerId(null);
           setIsLatestNewsModalOpen(false);
@@ -721,18 +718,8 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
           return;
         }
 
-        if (typeof nextEdgeId === "string") {
-          setSelectedEdgeId(nextEdgeId);
-          setSelectedNodeId(null);
-          setSelectedPersonId(null);
-          setSelectedPartnerId(null);
-          setIsLatestNewsModalOpen(false);
-          return;
-        }
-
         if (!payload.nodes?.length && !payload.edges?.length) {
           setSelectedNodeId(null);
-          setSelectedEdgeId(null);
           setSelectedPersonId(null);
           setSelectedPartnerId(null);
           setIsLatestNewsModalOpen(false);
@@ -777,18 +764,6 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
       setSelectedPersonId(null);
     }
 
-    if (
-      graphData.searchTerms.length &&
-      selectedEdgeId &&
-      !edges.some(
-        (edge) =>
-          edge.id === selectedEdgeId &&
-          (graphData.matchedNodeIds.includes(edge.sourceId) || graphData.matchedNodeIds.includes(edge.targetId)),
-      )
-    ) {
-      setSelectedEdgeId(null);
-    }
-
     scheduleGraphUpdate(() => {
       if (!networkRef.current) {
         return;
@@ -817,7 +792,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
         });
       }
     });
-  }, [edges, graphData.matchedNodeIds, graphData.searchTerms, graphData.visEdges, graphData.visNodes, selectedEdgeId, selectedNodeId]);
+  }, [graphData.matchedNodeIds, graphData.searchTerms, graphData.visEdges, graphData.visNodes, selectedNodeId]);
 
   function resetView() {
     networkRef.current?.fit({
@@ -834,7 +809,6 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
 
   function clearSelection() {
     setSelectedNodeId(null);
-    setSelectedEdgeId(null);
     setSelectedPersonId(null);
     setSelectedPartnerId(null);
     setIsLatestNewsModalOpen(false);
@@ -920,11 +894,11 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
                       Network details
                     </div>
                     <p className="mt-2 text-sm font-semibold text-ink">
-                      {selectedNode ? "Selected company" : selectedEdge ? "Selected bridge" : "Select a company or bridge"}
+                      {selectedNode ? "Selected company" : "Select a company"}
                     </p>
                   </div>
 
-                  {selectedNode || selectedEdge ? (
+                  {selectedNode ? (
                     <button
                       type="button"
                       onClick={clearSelection}
@@ -937,11 +911,11 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                  {!selectedNode && !selectedEdge ? (
+                  {!selectedNode ? (
                     <div>
-                      <h3 className="font-display text-xl tracking-tight text-ink">Select a company or bridge</h3>
+                      <h3 className="font-display text-xl tracking-tight text-ink">Select a company</h3>
                       <p className="mt-2 text-sm leading-6 text-slate">
-                        Click a node to inspect the company summary, mapped people, and strongest bridges. Click a bridge to inspect the relationship itself.
+                        Click a node to inspect the company summary, mapped people, latest news, and strongest bridges.
                       </p>
 
                       <div className="mt-4 rounded-[1.2rem] border border-slate-200 bg-mist/50 px-4 py-4">
@@ -1269,49 +1243,36 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
                         )}
                       </details>
 
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Strongest bridges</p>
-                        {selectedNodeBridges.map((bridge) => (
-                          <details key={bridge.id} className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3">
-                            <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-semibold text-ink">
-                                    {bridge.sourceName} to {bridge.targetName}
-                                  </p>
-                                  <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">{bridge.reason}</p>
+                      <details open className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Strongest bridges</p>
+                            <span className="rounded-full border border-slate-200 bg-mist/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate">
+                              {selectedNodeBridges.length}
+                            </span>
+                          </div>
+                        </summary>
+                        <div className="mt-4 space-y-3">
+                          {selectedNodeBridges.map((bridge) => (
+                            <details key={bridge.id} className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3">
+                              <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-ink">
+                                      {bridge.sourceName} to {bridge.targetName}
+                                    </p>
+                                    <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">{bridge.reason}</p>
+                                  </div>
+                                  <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
+                                    {bridge.score.toFixed(2)}
+                                  </span>
                                 </div>
-                                <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-                                  {bridge.score.toFixed(2)}
-                                </span>
-                              </div>
-                            </summary>
-                            <p className="mt-3 text-sm leading-6 text-slate">{bridge.explanation}</p>
-                          </details>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {selectedEdge ? (
-                    <div>
-                      <h3 className="font-display text-2xl tracking-tight text-ink">
-                        {selectedEdge.sourceName} to {selectedEdge.targetName}
-                      </h3>
-                      <div className="mt-3 inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-                        Score {selectedEdge.score.toFixed(2)}
-                      </div>
-
-                      <div className="mt-4 space-y-3">
-                        <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Reason</p>
-                          <p className="mt-2 text-sm leading-6 text-ink">{selectedEdge.reason}</p>
+                              </summary>
+                              <p className="mt-3 text-sm leading-6 text-slate">{bridge.explanation}</p>
+                            </details>
+                          ))}
                         </div>
-                        <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Explanation</p>
-                          <p className="mt-2 text-sm leading-6 text-ink">{selectedEdge.explanation}</p>
-                        </div>
-                      </div>
+                      </details>
                     </div>
                   ) : null}
                 </div>
