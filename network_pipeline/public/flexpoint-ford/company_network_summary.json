@@ -1,0 +1,11 @@
+{
+  "summary": {
+    "scope": "flexpoint-ford",
+    "scope_label": "Flexpoint Ford",
+    "company_count": 65,
+    "edge_count": 265,
+    "people_profile_count": 296,
+    "vertical_count": 12,
+    "generated_via": "network_pipeline.flexpoint_ford_graph_bundle"
+  }
+}

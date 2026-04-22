@@ -1,0 +1,895 @@
+[
+  {
+    "name": "Donald J. Edwards",
+    "first_name": "Donald",
+    "mid_initial": "J",
+    "surname": "Edwards",
+    "job_title": "Founder and Executive Chairman",
+    "location": "Miami",
+    "summary": "Don is our Founder and Executive Chairman. He founded Flexpoint Ford in 2005 and served as Chief Executive Officer until November 2025. Don began his private equity career in 1994 at GTCR, where he was a Principal and, for part of his tenure, chaired the firm\u2019s Investment Committee. Prior to joining GTCR, Don was an investment banker at Lazard, Ltd., where he focused on mergers and acquisitions in financial institutions and other industries.\n\nDon holds a B.S. degree in finance, with highest honors, from the University of Illinois Urbana-Champaign and an M.B.A. from Harvard Business School, where he graduated as a Baker Scholar. Don served as Chairman of the Board of Trustees of the University of Illinois from 2019 to 2024.",
+    "investments": null
+  },
+  {
+    "name": "Christopher J. Ackerman",
+    "first_name": "Christopher",
+    "mid_initial": "J",
+    "surname": "Ackerman",
+    "job_title": "Chief Executive Officer",
+    "location": "Chicago",
+    "summary": "Chris joined Flexpoint Ford in 2005 and currently serves as the firm's Chief Executive Officer, where he is responsible for overseeing firm operations in addition to identifying, evaluating, and executing investment opportunities. Prior to joining Flexpoint, Chris spent 10 years in the Investment Banking Division of Morgan Stanley, most recently as an Executive Director, where he was involved in a variety of acquisitions, divestitures, and other corporate advisory transactions.\n\nChris received a B.A. in mathematical economics, cum laude with honors, from Colgate University and an M.B.A., with honors, from Northwestern University\u2019s Kellogg School of Management.",
+    "investments": [
+      "Alera Group",
+      "AmRisc",
+      "Bridgehaven",
+      "Financial Pacific Leasing",
+      "Hilltop Holdings",
+      "Innovative Aftermarket Systems",
+      "Propel Insurance",
+      "Ryan Specialty",
+      "VALE Insurance Partners",
+      "American Strategic Insurance",
+      "Ariel Re",
+      "CFGI Holdings, LLC",
+      "GeoVera Holdings",
+      "Home Solutions",
+      "Norwich Group",
+      "Purchasing Power",
+      "TigerRisk Partners",
+      "VeriClaim"
+    ]
+  },
+  {
+    "name": "Steve Baranowski",
+    "first_name": "Steve",
+    "mid_initial": null,
+    "surname": "Baranowski",
+    "job_title": "Managing Director, Chief Financial Officer",
+    "location": "Chicago",
+    "summary": "Steve is a Managing Director and Chief Financial Officer at Flexpoint Ford. Prior to joining Flexpoint in 2025, Steve spent 12 years as a Partner at Adams Street Partners in various roles managing teams responsible for Accounting, Middle Office, Tax, Treasury Operations, and Performance Reporting & Analysis. Steve began his career in 2002 at KPMG, working in the financial services tax practice, where he focused primarily on private equity, mutual funds, banking, and other investment fund clients.\n\nSteve received a B.B.A. in accountancy, magna cum laude, from the University of Notre Dame and an M.B.A. with high honors from the University of Chicago Booth School of Business. He is a member of the American Institute of Certified Public Accountants and the Illinois State CPA Society.",
+    "investments": null
+  },
+  {
+    "name": "Benjamin F. Blum",
+    "first_name": "Benjamin",
+    "mid_initial": "F",
+    "surname": "Blum",
+    "job_title": "Managing Director",
+    "location": "New York",
+    "summary": "Ben is a Managing Director at Flexpoint Ford. Prior to joining Flexpoint in 2016, Ben was a Vice President at Morgan Stanley in the Fixed Income Division focused on asset-based lending and securitized products. Ben has extensive experience evaluating, structuring and managing all aspects of term securitizations and warehouse credit lines across a broad range of asset classes.\n\nBen received a B.S.B.A. in finance, summa cum laude, from Washington University in St. Louis.",
+    "investments": [
+      "Easterly"
+    ]
+  },
+  {
+    "name": "Daniel B. Edelman",
+    "first_name": "Daniel",
+    "mid_initial": "B",
+    "surname": "Edelman",
+    "job_title": "Managing Director",
+    "location": "New York",
+    "summary": "Daniel is a Managing Director at Flexpoint Ford. Prior to joining Flexpoint in 2013, Daniel was a Principal at Lee Equity Partners. During his tenure at Lee Equity Partners, he was involved in the investment of equity capital across a number of platform companies, primarily in financial services. Prior to Lee Equity, Daniel worked as a Business Analyst in the Corporate Finance Practice at McKinsey & Company.\n\nDaniel received a B.B.A. in finance and economics, with Phi Beta Kappa and high distinction honors, from the Ross School of Business at the University of Michigan.",
+    "investments": [
+      "AFH Wealth Management",
+      "Corient",
+      "DASH Financial Technologies",
+      "Reich & Tang",
+      "Clearstead",
+      "Credibly",
+      "PTMA Financial Solutions",
+      "Service Finance Company"
+    ]
+  },
+  {
+    "name": "Michael S. Fazekas",
+    "first_name": "Michael",
+    "mid_initial": "S",
+    "surname": "Fazekas",
+    "job_title": "Managing Director",
+    "location": "Chicago",
+    "summary": "Michael is a Managing Director at Flexpoint Ford. Prior to joining Flexpoint in 2007, Michael was an Investment Banking Analyst at J.P. Morgan, where he focused on mergers and acquisitions and capital raising assignments.\n\nMichael received an A.B. in economics, with honors, from The University of Chicago and an M.B.A., with honors, from The Wharton School of the University of Pennsylvania, where he was a member of the Health Care Management program.",
+    "investments": [
+      "Apollo Care",
+      "Kastle Therapeutics",
+      "TopRx",
+      "ArtesRx",
+      "MobilityWorks"
+    ]
+  },
+  {
+    "name": "Emily Henry",
+    "first_name": "Emily",
+    "mid_initial": null,
+    "surname": "Henry",
+    "job_title": "Managing Director, Investor Relations & Capital Formation",
+    "location": "New York",
+    "summary": "Emily is a Managing Director at Flexpoint Ford and is responsible for overseeing the firm\u2019s investor relations and capital formation initiatives, leading engagement with current and prospective investors. Prior to joining Flexpoint in 2024, Emily was a Partner and Head of Investor Relations at BayPine, where she oversaw fundraising and investor relations activities for their inaugural private equity vehicle and numerous co- investment syndications. Prior to joining BayPine, she was Head of Investor Relations at Declaration Partners and before that, Chief Operating Officer and Head of Investor Relations at Reservoir Capital. Emily began her career at Merrill Lynch working in investment banking within the Financial Institutions Group and later as a Principal in the Global Private Equity Group.\n\nEmily received a B.A. in economics and political science, magna cum laude, from Wellesley College and an M.B.A. from Columbia Business School.",
+    "investments": null
+  },
+  {
+    "name": "Dominic A. Hood",
+    "first_name": "Dominic",
+    "mid_initial": "A",
+    "surname": "Hood",
+    "job_title": "Managing Director",
+    "location": "Chicago",
+    "summary": "Dominic is a Managing Director at Flexpoint Ford. Prior to joining Flexpoint in 2010, Dominic worked in the Financial Institutions Group at Wachovia Securities, where he focused on mergers and acquisitions and capital raising advisory assignments.\n\nDominic received an A.B. in psychology from Harvard College and an M.B.A., with honors, from The University of Chicago Booth School of Business.",
+    "investments": [
+      "Accuserve",
+      "AmRisc",
+      "Bridgehaven",
+      "Enstar",
+      "Innovative Aftermarket Systems",
+      "Pelican Auto Finance, LLC",
+      "Purchasing Power",
+      "SageSure",
+      "Seawall Re II",
+      "VALE Insurance Partners",
+      "Alera Group",
+      "Ariel Re",
+      "Elliott Davis",
+      "GeoVera Holdings",
+      "Keystone",
+      "Propel Insurance",
+      "Ryan Specialty",
+      "Seawall Re",
+      "TigerRisk Partners",
+      "VeriClaim"
+    ]
+  },
+  {
+    "name": "Mike Morris",
+    "first_name": "Mike",
+    "mid_initial": null,
+    "surname": "Morris",
+    "job_title": "Managing Director",
+    "location": "Chicago",
+    "summary": "Mike is a Managing Director at Flexpoint Ford. Prior to joining Flexpoint in 2022, Mike was a Managing Director at Northleaf Capital Partners, where he had responsibility for leading opportunistic corporate and asset-backed investments globally. Prior to joining Northleaf, Mike was a Principal at H.I.G. Capital and also worked at Moelis & Company and Macquarie Capital.\n\nMike received a B.S. in finance from Miami University and an M.B.A. from The University of Chicago Booth School of Business.",
+    "investments": [
+      "Create Music Group",
+      "GoldState",
+      "Nettwerk",
+      "Duetti",
+      "Keystone"
+    ]
+  },
+  {
+    "name": "Jonathan T. Oka",
+    "first_name": "Jonathan",
+    "mid_initial": "T",
+    "surname": "Oka",
+    "job_title": "Managing Director",
+    "location": "Chicago",
+    "summary": "Jon is a Managing Director at Flexpoint Ford. Prior to joining Flexpoint in 2008, Jon served as an Associate at GTCR. Jon previously worked at McKesson Corporation and as a Mergers and Acquisitions Analyst with Lazard Freres and Co.\n\nJon holds a B.A. in music from Yale University and an M.B.A. from Harvard Business School.",
+    "investments": [
+      "Apollo Care",
+      "Canadian Hospital Specialties",
+      "Kastle Therapeutics",
+      "TopRx",
+      "ArtesRx",
+      "Home Solutions",
+      "MobilityWorks",
+      "YPrime"
+    ]
+  },
+  {
+    "name": "Joshua A. Tamaroff",
+    "first_name": "Joshua",
+    "mid_initial": "A",
+    "surname": "Tamaroff",
+    "job_title": "Managing Director",
+    "location": "New York",
+    "summary": "Josh is a Managing Director at Flexpoint Ford. Prior to joining Flexpoint in 2024, Josh was a Partner at Avista Capital Partners, where he focused on healthcare investments. Josh previously worked as an Analyst in the Leveraged Finance Group at Lehman Brothers and Barclays Capital.\n\nJosh holds a B.S. in industrial and labor relations from Cornell University and an M.B.A., with honors, from The Wharton School of the University of Pennsylvania, where he was a Palmer Scholar.",
+    "investments": null
+  },
+  {
+    "name": "Arjun Thimmaya",
+    "first_name": "Arjun",
+    "mid_initial": null,
+    "surname": "Thimmaya",
+    "job_title": "Managing Director",
+    "location": "New York",
+    "summary": "Arjun is a Managing Director at Flexpoint Ford. Prior to joining Flexpoint in 2020, Arjun was a Partner at Warburg Pincus, where he spent 12 years. At Warburg Pincus, he was primarily focused on investing in the financial services sector. Prior to joining Warburg Pincus, Arjun worked at Trimaran Capital.\n\nArjun received a B.S. in applied economics from Cornell University.",
+    "investments": [
+      "Baker Hill",
+      "Movantis",
+      "LERETA",
+      "PayFacto"
+    ]
+  },
+  {
+    "name": "Steven L. Begleiter",
+    "first_name": "Steven",
+    "mid_initial": "L",
+    "surname": "Begleiter",
+    "job_title": "Vice Chairman",
+    "location": "New York",
+    "summary": "Steve is a Vice Chairman at Flexpoint Ford. Steve served as a Managing Director from 2008 to 2025. Prior to joining Flexpoint in 2008, Steve was a Senior Managing Director at Bear Stearns & Co., where he was a member of the firm\u2019s Management and Compensation Committee (2000-2008), led the Corporate Strategy Group and had responsibility for Asset Management (2007-2008). Steve spent 15 years of his 24-year career at Bear Stearns in the Financial Institutions Group, where he worked with a broad range of domestic and international clients on a variety of advisory and financing transactions.\n\nSteve received a B.A. in economics, with honors, from Haverford College.",
+    "investments": [
+      "AFH Wealth Management",
+      "Corient",
+      "DASH Financial Technologies",
+      "Jefferson Capital International",
+      "Service Finance Company",
+      "Talcott",
+      "WisdomTree",
+      "Clearstead",
+      "Credibly",
+      "Easterly",
+      "LERETA",
+      "Sticky.io",
+      "TRAKAmerica"
+    ]
+  },
+  {
+    "name": "Stephen H. Haworth",
+    "first_name": "Stephen",
+    "mid_initial": "H",
+    "surname": "Haworth",
+    "job_title": "Vice Chairman",
+    "location": "Miami",
+    "summary": "Steve is a Vice Chairman at Flexpoint Ford. Steve served as Chief Financial Officer from 2005 to 2025. Prior to joining Flexpoint in 2005, Steve was a Partner at the accounting firm of Ernst and Young LLP, which he joined in 1985. From 1992 to 1994, Steve was a member of Ernst and Young\u2019s National Tax Department in Washington, D.C.\n\nSteve holds B.S. and M.S. degrees in accounting from Oklahoma State University.",
+    "investments": [
+      "CFGI Holdings, LLC",
+      "VeriClaim",
+      "TRAKAmerica"
+    ]
+  },
+  {
+    "name": "Perry O. Ballard",
+    "first_name": "Perry",
+    "mid_initial": "O",
+    "surname": "Ballard",
+    "job_title": "Senior Director",
+    "location": "Chicago",
+    "summary": "Perry is a Senior Director at Flexpoint Ford. Prior to joining Flexpoint in 2006, Perry worked at GTCR, most recently as a Vice President in the Healthcare Group. He previously worked as an Investment Banking Analyst at Credit Suisse First Boston.\n\nPerry received a B.A. in economics, with highest distinction and honors, from the University of Michigan and an M.B.A. from Harvard Business School.",
+    "investments": [
+      "Corva",
+      "IntegraCare Home Health",
+      "Select Rehabilitation",
+      "SouthEast Eye Specialists",
+      "Eagle Hospital Physicians",
+      "MGA Homecare",
+      "Senior Whole Health",
+      "Summit Behavioral Healthcare"
+    ]
+  },
+  {
+    "name": "Ethan A. Budin",
+    "first_name": "Ethan",
+    "mid_initial": "A",
+    "surname": "Budin",
+    "job_title": "Senior Director",
+    "location": "Chicago",
+    "summary": "Ethan is a Senior Director at Flexpoint Ford. Prior to joining Flexpoint in 2005, Ethan was a Principal of GTCR focusing on transactions in healthcare. Ethan previously worked as a Principal of Leeds Group and its affiliated private equity fund, Advance Capital Partners, an Associate with The Boston Consulting Group, and as a Mergers and Acquisitions Analyst with Lazard Fr\u00e8res and Co.\n\nEthan graduated with an A.B. in mathematics, summa cum laude, from Harvard University, where he was elected to the Phi Beta Kappa honor society.",
+    "investments": [
+      "Corva",
+      "IntegraCare Home Health",
+      "MGA Homecare",
+      "Home Solutions",
+      "Kastle Therapeutics",
+      "Select Rehabilitation"
+    ]
+  },
+  {
+    "name": "Charles E. Glew, Jr.",
+    "first_name": "Charles",
+    "mid_initial": "E",
+    "surname": "Glew",
+    "job_title": "Senior Director",
+    "location": "Chicago",
+    "summary": "Chuck is a Senior Director at Flexpoint Ford. Prior to joining Flexpoint in 2005, Chuck served as a Principal of GTCR. Chuck\u2019s prior investment experience includes four years at Summit Partners. Chuck began his career as an Analyst in the Corporate Finance Group at Citicorp.\n\nChuck received an A.B. in economics, cum laude, from Harvard University and an M.B.A. from the Stanford University Graduate School of Business, where he received the Henry Ford II Award for graduating first in his class and where he was an Arjay Miller Scholar.",
+    "investments": [
+      "Financial Pacific Leasing",
+      "JetPay",
+      "Pelican Auto Finance, LLC",
+      "Jefferson Capital International",
+      "Norwich Group",
+      "Senior Whole Health"
+    ]
+  },
+  {
+    "name": "Stephane Essama",
+    "first_name": "Stephane",
+    "mid_initial": null,
+    "surname": "Essama",
+    "job_title": "Principal",
+    "location": "New York",
+    "summary": "Stephane is a Principal at Flexpoint Ford. Prior to joining Flexpoint in 2018, Stephane was an Associate in Goldman Sachs\u2019 Financial Institutions Group. Stephane previously worked as a law clerk with Kirkland & Ellis LLP and a trader at the DRW Trading Group.\n\nStephane received a B.S. in aeronautics and astronautics from the Massachusetts Institute of Technology, a J.D. from The University of Pennsylvania Law School, and an M.B.A. from The Wharton School of the University of Pennsylvania.",
+    "investments": [
+      "AFH Wealth Management",
+      "Duetti",
+      "Talcott",
+      "Create Music Group",
+      "PTMA Financial Solutions"
+    ]
+  },
+  {
+    "name": "Jennifer Kim",
+    "first_name": "Jennifer",
+    "mid_initial": null,
+    "surname": "Kim",
+    "job_title": "Principal",
+    "location": "Chicago",
+    "summary": "Jennifer is a Principal at Flexpoint Ford. Prior to joining Flexpoint in 2018, Jennifer was an Associate at Silver Oak Services Partners. Jennifer previously worked as an Investment Banking Analyst at William Blair, where she focused on mergers and acquisitions.\n\nJennifer received a B.A. in economics from Northwestern University and an M.B.A., with honors, from The Wharton School of the University of Pennsylvania.",
+    "investments": [
+      "Accuserve",
+      "GeoVera Holdings",
+      "Seawall Re",
+      "TigerRisk Partners",
+      "Elliott Davis",
+      "SageSure",
+      "Seawall Re II"
+    ]
+  },
+  {
+    "name": "Vilas Nair",
+    "first_name": "Vilas",
+    "mid_initial": null,
+    "surname": "Nair",
+    "job_title": "Principal",
+    "location": "New York",
+    "summary": "Vilas is a Principal at Flexpoint Ford. Prior to joining Flexpoint in 2015, Vilas was an Associate in the Financial Services group at TA Associates. During his tenure at TA Associates, he focused primarily on investments in growth financial services and technology companies. Prior to TA Associates, Vilas worked as an Investment Banking Analyst at Moelis & Company.\n\nVilas received a B.B.A., with high distinction, from the Ross School of Business at the University of Michigan.",
+    "investments": [
+      "Baker Hill",
+      "Movantis",
+      "Reich & Tang",
+      "DASH Financial Technologies",
+      "PayFacto",
+      "Sticky.io"
+    ]
+  },
+  {
+    "name": "Philip M. Purcell",
+    "first_name": "Philip",
+    "mid_initial": "M",
+    "surname": "Purcell",
+    "job_title": "Principal",
+    "location": "Chicago",
+    "summary": "Phil is a Principal at Flexpoint Ford. Prior to joining Flexpoint in 2017, Phil was an Analyst in the Financial Institutions Group at UBS focused on mergers and acquisitions and capital raising advisory assignments.\n\nPhil received a B.B.A. in finance, summa cum laude, from the Cox School of Business at Southern Methodist University.",
+    "investments": [
+      "Bridgehaven",
+      "Ryan Specialty",
+      "VALE Insurance Partners",
+      "Purchasing Power",
+      "TRAKAmerica"
+    ]
+  },
+  {
+    "name": "Karan Sabharwal",
+    "first_name": "Karan",
+    "mid_initial": null,
+    "surname": "Sabharwal",
+    "job_title": "Principal",
+    "location": "New York",
+    "summary": "Karan is a Principal at Flexpoint Ford. Prior to joining Flexpoint in 2023, Karan was a Vice President at Waud Capital Partners. Previously, Karan worked in private equity at Golden Gate Capital and FFL Partners and in investment banking at Bank of America Merrill Lynch.\n\nKaran holds a B.S.E. in electrical & computer engineering and economics from Duke University and an M.B.A. from The Wharton School of the University of Pennsylvania.",
+    "investments": [
+      "Clearstead",
+      "LERETA"
+    ]
+  },
+  {
+    "name": "Shane Skibitsky",
+    "first_name": "Shane",
+    "mid_initial": null,
+    "surname": "Skibitsky",
+    "job_title": "Director, Portfolio Management",
+    "location": "New York",
+    "summary": "Shane is a Director at Flexpoint Ford. Prior to joining Flexpoint in 2019, Shane was a Senior Financial Analyst at CSS, a PE-backed regulatory technology platform. Prior to CSS, Shane was an Associate in the Economic & Valuation Services group of KPMG.\n\nShane received a B.S. in finance from The College of New Jersey and is a Chartered Financial Analyst (CFA).",
+    "investments": [
+      "Easterly"
+    ]
+  },
+  {
+    "name": "Peter Blynn",
+    "first_name": "Peter",
+    "mid_initial": null,
+    "surname": "Blynn",
+    "job_title": "Vice President",
+    "location": "New York",
+    "summary": "Peter is a Vice President at Flexpoint Ford. Prior to joining Flexpoint in 2025, Peter was a Director on UBS O\u2019Connor\u2019s private credit team. Peter previously worked as an Associate at Credit Suisse in the securitized products group.\n\nPeter received an A.B. in economics from Harvard University.",
+    "investments": null
+  },
+  {
+    "name": "Parth Gandhi",
+    "first_name": "Parth",
+    "mid_initial": null,
+    "surname": "Gandhi",
+    "job_title": "Vice President",
+    "location": "Chicago",
+    "summary": "Parth is a Vice President at Flexpoint Ford. Prior to joining Flexpoint in 2017, Parth worked in the Financial Institutions Group at Wells Fargo Securities, where he focused on mergers and acquisitions and capital raising advisory assignments.\n\nParth received a B.S. in business administration, with honors, from the University of North Carolina at Chapel Hill and an M.B.A., with high honors, from The University of Chicago Booth School of Business, where he was a Wallman Scholar.",
+    "investments": [
+      "Accuserve",
+      "GoldState",
+      "PTMA Financial Solutions",
+      "Elliott Davis",
+      "Nettwerk",
+      "SageSure"
+    ]
+  },
+  {
+    "name": "Colin Humble",
+    "first_name": "Colin",
+    "mid_initial": null,
+    "surname": "Humble",
+    "job_title": "Vice President",
+    "location": "Chicago",
+    "summary": "Colin is a Vice President at Flexpoint Ford. Prior to joining Flexpoint in 2025, Colin was an Associate at Charlesbank Capital Partners, where he focused on consumer services investments. Colin previously worked as a Senior Associate Consultant at Bain & Company in Chicago.\n\nColin received a B.B.A. in finance, summa cum laude, from the University of Notre Dame and an M.B.A. from Harvard Business School.",
+    "investments": null
+  },
+  {
+    "name": "Alex Hunstad",
+    "first_name": "Alex",
+    "mid_initial": null,
+    "surname": "Hunstad",
+    "job_title": "Vice President",
+    "location": "Chicago",
+    "summary": "Alex is a Vice President at Flexpoint Ford. Prior to joining Flexpoint in 2024, Alex was Chief Investment Officer at Opus Music Group. Prior to Opus Music Group, Alex was a Principal in the Opportunistic Investment Group at Allstate.\n\nAlex received a B.A. in financial economics, magna cum laude, from the University of Rochester and an M.B.A., with distinction, from Northwestern University\u2019s Kellogg School of Management.",
+    "investments": [
+      "Create Music Group",
+      "Seawall Re",
+      "Duetti",
+      "Seawall Re II"
+    ]
+  },
+  {
+    "name": "Dustin Hwang",
+    "first_name": "Dustin",
+    "mid_initial": null,
+    "surname": "Hwang",
+    "job_title": "Vice President",
+    "location": "New York",
+    "summary": "Dustin is a Vice President at Flexpoint Ford. Prior to joining Flexpoint in 2026, Dustin was a Vice President at Fortress Investment Group in the Technology and IP group. Dustin previously worked in private equity at Waterfall Asset Management, investment banking at Macquarie Capital and aviation financing at Deutsche Bank.\n\nDustin received a B.B.A. in Finance, Economics and Accounting from Marquette University.",
+    "investments": null
+  },
+  {
+    "name": "Will Reich",
+    "first_name": "Will",
+    "mid_initial": null,
+    "surname": "Reich",
+    "job_title": "Vice President, Investor Relations & Capital Formation",
+    "location": "New York",
+    "summary": "Will is a Vice President at Flexpoint Ford, where he supports the firm\u2019s investor relations and capital formation initiatives. His responsibilities include engaging with current and prospective investors and contributing to the firm\u2019s broader fundraising strategy.\n\nPrior to joining Flexpoint in 2025, Will was a Senior Associate at Colbeck Capital Management, where he focused on capital formation and investor relations across the firm\u2019s opportunistic credit platform. Earlier in his career, he was an Associate at Hamilton Lane in the Client Solutions group, managing relationships with institutional investors across the U.S. and Canada and supporting fundraising efforts for commingled funds, customized separate accounts, and strategic partnerships. Will began his career at BNY Mellon Investment Management.\n\nHe holds a B.A. in environmental studies from the University of Arizona and an M.B.A. from Columbia Business School.",
+    "investments": null
+  },
+  {
+    "name": "Sean Saggi",
+    "first_name": "Sean",
+    "mid_initial": null,
+    "surname": "Saggi",
+    "job_title": "Vice President",
+    "location": "New York",
+    "summary": "Sean is a Vice President at Flexpoint Ford. Prior to joining Flexpoint in 2022, Sean was a Senior Associate at Apax Partners. Sean previously worked as an Investment Banking Analyst at Evercore and RBC Capital Markets, focused on mergers and acquisitions.\n\nSean received a B.Com. in finance from McGill University.",
+    "investments": [
+      "Clearstead",
+      "LERETA",
+      "Corient",
+      "Movantis"
+    ]
+  },
+  {
+    "name": "Zach Smoler",
+    "first_name": "Zach",
+    "mid_initial": null,
+    "surname": "Smoler",
+    "job_title": "Vice President",
+    "location": "New York",
+    "summary": "Zach is a Vice President at Flexpoint Ford. Prior to joining Flexpoint in 2019, Zach was an Investment Banking Analyst at Morgan Stanley in the Financial Institutions Group focused on mergers and acquisitions and capital-raising advisory assignments.\n\nZach received a B.B.A. in finance and accounting, with high distinction, from the Ross School of Business at the University of Michigan.",
+    "investments": [
+      "AFH Wealth Management",
+      "Canadian Hospital Specialties",
+      "Reich & Tang",
+      "Baker Hill",
+      "DASH Financial Technologies"
+    ]
+  },
+  {
+    "name": "Will Tuchfarber",
+    "first_name": "Will",
+    "mid_initial": null,
+    "surname": "Tuchfarber",
+    "job_title": "Vice President",
+    "location": "Chicago",
+    "summary": "Will is a Vice President at Flexpoint Ford. Prior to joining Flexpoint in 2025, Will was a Senior Associate at Siris Capital. Will previously worked as an Investment Banking Analyst at Citigroup.\n\nWill received a B.B.A. in finance and applied mathematics, cum laude, from the University of Notre Dame and an M.B.A., with honors, from The Wharton School at the University of Pennsylvania, where he was a Palmer Scholar.",
+    "investments": null
+  },
+  {
+    "name": "Rohan Deorah",
+    "first_name": "Rohan",
+    "mid_initial": null,
+    "surname": "Deorah",
+    "job_title": "Senior Associate",
+    "location": "New York",
+    "summary": "Rohan is a Senior Associate at Flexpoint Ford. Prior to joining Flexpoint in 2022, Rohan was an Associate in the Esoteric Asset Backed Securities Originations group at J.P. Morgan.\n\nRohan received a B.S. in finance & computing and data science from New York University\u2019s Stern School of Business.",
+    "investments": null
+  },
+  {
+    "name": "Ki Sakuma",
+    "first_name": "Ki",
+    "mid_initial": null,
+    "surname": "Sakuma",
+    "job_title": "Senior Associate",
+    "location": "New York",
+    "summary": "Ki is a Senior Associate at Flexpoint Ford. Prior to joining Flexpoint in 2023, Ki served as an Investment Banking Analyst in the Consumer, Retail & Leisure group at Lazard, specializing in mergers and acquisitions advisory assignments. Ki previously worked as an Investment Banking Analyst at Citigroup.\n\nKi holds a B.B.A in finance from Miami University.",
+    "investments": null
+  },
+  {
+    "name": "Michael Schmidt",
+    "first_name": "Michael",
+    "mid_initial": null,
+    "surname": "Schmidt",
+    "job_title": "Senior Associate",
+    "location": "Chicago",
+    "summary": "Michael is a Senior Associate at Flexpoint Ford. Prior to joining Flexpoint in 2023, Michael served as an Investment Banking Analyst in the Diversified Industrials Group at Raymond James, where he focused on mergers and acquisitions and capital raising advisory assignments.\n\nMichael received a B.S. in commerce and economics from the University of Virginia.",
+    "investments": null
+  },
+  {
+    "name": "John Andrews",
+    "first_name": "John",
+    "mid_initial": null,
+    "surname": "Andrews",
+    "job_title": "Associate",
+    "location": "New York",
+    "summary": "John is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2024, John served as an Investment Banking Analyst at Bank of America, where he focused on mergers and acquisitions and capital raising advisory assignments.\n\nJohn holds a B.A. in finance from Michigan State University.",
+    "investments": null
+  },
+  {
+    "name": "Joe Hocking",
+    "first_name": "Joe",
+    "mid_initial": null,
+    "surname": "Hocking",
+    "job_title": "Associate",
+    "location": "New York",
+    "summary": "Joe is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2023, Joe was an Analyst in the Asset Backed Securitization group at KeyBanc Capital Markets.\n\nJoe received a B.S. in economics and finance from Northeastern University\u2019s D\u2019Amore-McKim School of Business.",
+    "investments": null
+  },
+  {
+    "name": "Moris Jamri",
+    "first_name": "Moris",
+    "mid_initial": null,
+    "surname": "Jamri",
+    "job_title": "Associate",
+    "location": "New York",
+    "summary": "Moris is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2025, he was an Analyst in the Latin America Coverage Group at Bank of America, specializing in mergers and acquisitions as well as capital-raising advisory assignments. Moris also has prior experience working in the Financial Planning team at the weather technology company Tomorrow.io.\n\nMoris received a B.A. in economics, magna cum laude, from the University of Pennsylvania.",
+    "investments": null
+  },
+  {
+    "name": "Jonathan Kang",
+    "first_name": "Jonathan",
+    "mid_initial": null,
+    "surname": "Kang",
+    "job_title": "Associate",
+    "location": "Chicago",
+    "summary": "Jonathan is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2024, Jonathan served as an Investment Banking Analyst in the Insurance group at Evercore, specializing in mergers and acquisitions advisory assignments.\n\nJonathan received a B.S. and M.S. in finance from the University of Florida.",
+    "investments": null
+  },
+  {
+    "name": "Frederic von Knobelsdorff",
+    "first_name": "Frederic",
+    "mid_initial": null,
+    "surname": "von Knobelsdorff",
+    "job_title": "Associate",
+    "location": "New York",
+    "summary": "Freddy is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2026, Freddy was an Analyst in Trade & Working Capital Solutions at Santander Corporate & Investment Banking.\n\nFreddy received a B.S. in business administration, summa cum laude, from Fordham University\u2019s Gabelli School of Business.",
+    "investments": null
+  },
+  {
+    "name": "Claudia Loiacono",
+    "first_name": "Claudia",
+    "mid_initial": null,
+    "surname": "Loiacono",
+    "job_title": "Associate",
+    "location": "New York",
+    "summary": "Claudia is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2025, Claudia was an Associate at Brighton Park Capital focusing primarily on investments in growth financial services and technology companies. Claudia previously worked as an Investment Banking Analyst in the Technology Group at J.P. Morgan.\n\nClaudia received a B.A. in economics from Yale University.",
+    "investments": null
+  },
+  {
+    "name": "Joe Latkovich",
+    "first_name": "Joe",
+    "mid_initial": null,
+    "surname": "Latkovich",
+    "job_title": "Associate",
+    "location": "Chicago",
+    "summary": "Joe is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2024, Joe was an Associate in the Insurance group at Piper Sandler, where he focused on mergers and acquisitions and capital raising advisory assignments. Joe previously worked as an Analyst at Raymond James in the Financial Services group.\n\nJoe received a B.S. in finance, magna cum laude, from Ohio State University.",
+    "investments": null
+  },
+  {
+    "name": "Francesco Maulini",
+    "first_name": "Francesco",
+    "mid_initial": null,
+    "surname": "Maulini",
+    "job_title": "Senior Associate",
+    "location": "New York",
+    "summary": "Francesco is a Senior Associate at Flexpoint Ford. Prior to joining Flexpoint in 2024, Francesco was an Investment Banking Analyst in the Financial Institutions Group at J.P. Morgan, specializing in mergers and acquisitions and capital-raising advisory assignments.\n\nFrancesco received a B.S. in international economics and management from Bocconi University and a M.Fin. from the Massachusetts Institute of Technology.",
+    "investments": null
+  },
+  {
+    "name": "Kevin Mulhearn",
+    "first_name": "Kevin",
+    "mid_initial": null,
+    "surname": "Mulhearn",
+    "job_title": "Associate, Portfolio Management",
+    "location": "New York",
+    "summary": "Kevin is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2023, Kevin was an Investment Analyst covering Technology, Media and Telecommunications at Credit Capital Investments, where he focused on public equities.\n\nKevin received a B.A. in business administration, cum laude, from Fordham University\u2019s Gabelli School of Business.",
+    "investments": null
+  },
+  {
+    "name": "Jared Rogers",
+    "first_name": "Jared",
+    "mid_initial": null,
+    "surname": "Rogers",
+    "job_title": "Associate",
+    "location": "Chicago",
+    "summary": "Jared is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2025, Jared served as an Investment Banking Analyst in the Media group at Solomon Partners, specializing in mergers and acquisitions advisory assignments.\n\nJared holds a B.B.A. from the University of Michigan.",
+    "investments": null
+  },
+  {
+    "name": "Kevin You",
+    "first_name": "Kevin",
+    "mid_initial": null,
+    "surname": "You",
+    "job_title": "Associate",
+    "location": "New York",
+    "summary": "Kevin is an Associate at Flexpoint Ford. Prior to joining Flexpoint in 2024, Kevin was an Analyst in the Securitized Products Group at Morgan Stanley.\n\nKevin received a B.A. in mathematics, summa cum laude, from the University of Pennsylvania.",
+    "investments": null
+  },
+  {
+    "name": "Mark Barham",
+    "first_name": "Mark",
+    "mid_initial": null,
+    "surname": "Barham",
+    "job_title": "Chief Administrative Officer & Chief Compliance Officer",
+    "location": "Chicago",
+    "summary": "Mark serves as Chief Administrative Officer and Chief Compliance Officer at Flexpoint Ford. Prior to joining Flexpoint in 2020, Mark was the Finance Director for Private Equity and Real Estate at Allstate Investments, part of The Allstate Corporation.\n\nMark holds a B.A. in business studies and economics from the University of Sheffield and an M.B.A from Northwestern University\u2019s Kellogg School of Management. He is a Fellow Chartered Accountant and a member of the Institute of Chartered Accountants in England & Wales.",
+    "investments": null
+  },
+  {
+    "name": "Missy A. Loudenback",
+    "first_name": "Missy",
+    "mid_initial": "A",
+    "surname": "Loudenback",
+    "job_title": "Chief Accounting Officer",
+    "location": "Chicago",
+    "summary": "Missy serves as Chief Accounting Officer at Flexpoint Ford, overseeing the financial reporting as well as audit and tax management responsibilities. Prior to joining Flexpoint in 2015, Missy spent 11 years in the Assurance Services practice in the Chicago office of the accounting firm Ernst and Young LLP, most recently as a Senior Manager, where her experience included GAAP and SEC financial reporting, risk management, and auditing both publicly and privately held REITs as well as private equity companies.\n\nMissy holds B.A. and M.S. degrees in accounting from Michigan State University and is a Certified Public Accountant. She is a member of the American Institute of Certified Public Accountants and the Illinois State CPA Society.",
+    "investments": null
+  },
+  {
+    "name": "Robert Payne",
+    "first_name": "Robert",
+    "mid_initial": null,
+    "surname": "Payne",
+    "job_title": "Vice President of Tax",
+    "location": "Chicago",
+    "summary": "Robert serves as Vice President of Tax at Flexpoint Ford. Prior to joining Flexpoint in 2017, Robert was a financial analyst at Equity Group Investments, a private investment firm. Robert began his career at Deloitte where he worked in the private equity tax advisor group.\n\nRobert obtained a B.B.A in accounting and finance from the University of Iowa.",
+    "investments": null
+  },
+  {
+    "name": "Kevin Alloway",
+    "first_name": "Kevin",
+    "mid_initial": null,
+    "surname": "Alloway",
+    "job_title": "Valuations Manager",
+    "location": "Chicago",
+    "summary": "Kevin serves as Valuations Manager at Flexpoint Ford. Prior to joining Flexpoint in 2025, Kevin was a Vice President in the portfolio valuation practice at Lincoln International and started his career in the Economic & Valuation Services group at KPMG in 2013.\n\nKevin received a B.B.A. in finance and business economics from Seattle University. Kevin holds the Accredited in Business Valuation (ABV) credential from the American Institute of Certified Public Accountants.",
+    "investments": null
+  },
+  {
+    "name": "Holly Berman",
+    "first_name": "Holly",
+    "mid_initial": null,
+    "surname": "Berman",
+    "job_title": "Executive Assistant",
+    "location": "Miami",
+    "summary": "Holly has worked at Flexpoint Ford for our Executive Chairman, Don Edwards, since the firm was founded in 2005. Prior to joining the Flexpoint team, she held an Executive Assistant position at GTCR, also assisting Don, marking over 30 years of continuous support.",
+    "investments": null
+  },
+  {
+    "name": "Tara Boutross",
+    "first_name": "Tara",
+    "mid_initial": null,
+    "surname": "Boutross",
+    "job_title": "Executive Assistant",
+    "location": "New York",
+    "summary": "Tara is an Executive Assistant at Flexpoint Ford. Prior to joining Flexpoint in 2018, Tara supported senior management executives at News Corporation in Los Angeles including the CEO and Chairman of the Board.\n\nTara studied at Mount Saint Mary\u2019s College and UCLA and earned a B.A. in history with honors. She holds a CASA certification from New York State Court.",
+    "investments": null
+  },
+  {
+    "name": "Jack Brunette",
+    "first_name": "Jack",
+    "mid_initial": null,
+    "surname": "Brunette",
+    "job_title": "Senior Accountant",
+    "location": "Chicago",
+    "summary": "Jack is a Senior Accountant at Flexpoint Ford. Prior to joining Flexpoint in 2026, Jack was a Staff Accountant with the Chicago White Sox and an Audit Associate at Baker Tilly.\n\nJack obtained a B.A. in Accounting and Finance from Carthage College.",
+    "investments": null
+  },
+  {
+    "name": "Aisling Burke",
+    "first_name": "Aisling",
+    "mid_initial": null,
+    "surname": "Burke",
+    "job_title": "Fund Accounting Manager",
+    "location": "Chicago",
+    "summary": "Aisling is a Fund Accounting Manager at Flexpoint Ford, responsible for supporting the firm\u2019s fund accounting and financial reporting processes. Prior to joining Flexpoint in 2025, Aisling held a similar position at Pinnacle Fund Services in Vancouver, where they provided fund administration services to a broad range of Private Equity investment clients.\n\nAisling holds a B.Com. from the National University of Ireland, Galway, and brings a detail-oriented approach and a strong foundation in fund operations to the role.",
+    "investments": null
+  },
+  {
+    "name": "Min Chen",
+    "first_name": "Min",
+    "mid_initial": null,
+    "surname": "Chen",
+    "job_title": "Senior Tax Accountant",
+    "location": "Chicago",
+    "summary": "Min is a Senior Tax Accountant at Flexpoint Ford. Prior to joining Flexpoint in 2024, Min started her career at Deloitte in the Business Tax Services group primarily serving private equity and family office clients.\n\nMin obtained a B.S. in accounting and an M.A.S. from the University of Illinois at Urbana-Champaign.",
+    "investments": null
+  },
+  {
+    "name": "Ehmudh Firdausi",
+    "first_name": "Ehmudh",
+    "mid_initial": null,
+    "surname": "Firdausi",
+    "job_title": "Valuations Analyst",
+    "location": "Chicago",
+    "summary": "Ehmudh is a Valuations Analyst at Flexpoint Ford. Prior to joining Flexpoint in 2022, Ehmudh was a Business Valuation Consultant at RSM.\n\nEhmudh obtained a B.S. in finance from DePaul University.",
+    "investments": null
+  },
+  {
+    "name": "Thomas Flavin",
+    "first_name": "Thomas",
+    "mid_initial": null,
+    "surname": "Flavin",
+    "job_title": "Senior Fund Accountant",
+    "location": "Chicago",
+    "summary": "Thomas is a Senior Fund Accountant at Flexpoint Ford. Prior to joining Flexpoint in 2025, Thomas was a member of the private equity accounting team at PPM America.\n\nThomas obtained a B.S. in accountancy from the Richard A. Chaifetz School of Business at Saint Louis University.",
+    "investments": null
+  },
+  {
+    "name": "Lourdes Gonzalez",
+    "first_name": "Lourdes",
+    "mid_initial": null,
+    "surname": "Gonzalez",
+    "job_title": "Corporate Controller",
+    "location": "Chicago",
+    "summary": "Lourdes is the Corporate Controller at Flexpoint Ford. Prior to joining Flexpoint in 2018, Lourdes was a member of the accounting team at Jeff McClusky and Associates.\n\nLourdes obtained a B.S.B. in accountancy from the Driehaus College of Business at DePaul University.",
+    "investments": null
+  },
+  {
+    "name": "Farukh Hasan",
+    "first_name": "Farukh",
+    "mid_initial": null,
+    "surname": "Hasan",
+    "job_title": "Executive Assistant",
+    "location": "New York",
+    "summary": "Farukh is an Executive Assistant at Flexpoint Ford. Prior to joining Flexpoint in 2025, Farukh worked at JPMorgan as a Senior Executive Assistant. Before JPMorgan, Farukh spent seventeen years in Higher Education as a Higher Education Administrator at New York University and, prior to that, at Queens College CUNY.\n\nFarukh holds a B.S. in business from SPS, City University of New York.",
+    "investments": null
+  },
+  {
+    "name": "Xuan Li",
+    "first_name": "Xuan",
+    "mid_initial": null,
+    "surname": "Li",
+    "job_title": "Fund Accounting Manager",
+    "location": "Chicago",
+    "summary": "Xuan serves as a Fund Accounting Manager at Flexpoint Ford. Prior to joining Flexpoint in 2025, Xuan was an Assistant Controller at PGIM Private Capital, where she managed mezzanine fund accounting operations. Before PGIM, she was a Senior Fund Accountant at Maranon Capital, responsible for the daily accounting operations of credit funds.\n\nXuan holds an M.S. in accounting from the University of Illinois at Chicago and is a Certified Public Accountant (CPA).",
+    "investments": null
+  },
+  {
+    "name": "Marian Lurio",
+    "first_name": "Marian",
+    "mid_initial": null,
+    "surname": "Lurio",
+    "job_title": "Executive Assistant, Investor Relations & Capital Formation",
+    "location": "New York",
+    "summary": "Marian is an Executive Assistant at Flexpoint Ford. Prior to joining Flexpoint in 2022, Marian worked in the healthcare and media industries. She obtained a B.A. in history and psychology from Dartmouth College.",
+    "investments": null
+  },
+  {
+    "name": "Michael Manganelli",
+    "first_name": "Michael",
+    "mid_initial": null,
+    "surname": "Manganelli",
+    "job_title": "Compliance Manager",
+    "location": "Chicago",
+    "summary": "Michael serves as Compliance Manager at Flexpoint Ford. Prior to joining Flexpoint in 2025, Michael was a Compliance Manager at IQ-EQ Fund Services, a compliance consultancy firm, where his experience includes assisting Registered Investment Advisors with complex SEC regulatory requirements.\n\nMichael holds a B.A. in political science from Miami University of Ohio and a J.D. from Loyola University Chicago School of Law.",
+    "investments": null
+  },
+  {
+    "name": "Jessica McClain",
+    "first_name": "Jessica",
+    "mid_initial": null,
+    "surname": "McClain",
+    "job_title": "Corporate Accountant",
+    "location": "Chicago",
+    "summary": "Jessica joined Flexpoint Ford in 2025 as a Corporate Accountant. She began her career in administrative roles across the hospitality and IT industries, where she developed a strong foundation in corporate operations and support.\n\nJessica earned a B.A. in psychology from Southern Illinois University Carbondale.",
+    "investments": null
+  },
+  {
+    "name": "Shyam Patel",
+    "first_name": "Shyam",
+    "mid_initial": null,
+    "surname": "Patel",
+    "job_title": "Senior Fund Accounting Manager",
+    "location": "Chicago",
+    "summary": "Shyam is a Senior Fund Accounting Manager at Flexpoint Ford, bringing more than 20 years of experience in fund operations. Prior to joining Flexpoint in 2026, he served as a Director at PGIM Private Capital, where he oversaw mezzanine fund accounting operations. Earlier in his career, Shyam was a Fund Accountant at GSC Capital, managing accounting functions for both U.S. and European mezzanine funds.\n\nShyam holds a B.S. in Accounting from Kean University.",
+    "investments": null
+  },
+  {
+    "name": "Marni Raming",
+    "first_name": "Marni",
+    "mid_initial": null,
+    "surname": "Raming",
+    "job_title": "Fund Controller",
+    "location": "Chicago",
+    "summary": "Marni serves as the Fund Controller at Flexpoint Ford, where she is responsible for overseeing the firm\u2019s financial reporting and managing audit processes. Prior to joining Flexpoint in 2025, she served as Vice President of Accounting at AJ Capital Partners.\n\nEarlier in her career, Marni held roles as Portfolio Controller and Senior Financial Analyst at CA Ventures and Walton Street Capital. She began her career in the Assurance Services practice at Ernst & Young LLP. Her experience includes GAAP and SEC financial reporting, risk management, and auditing both publicly and privately held REITs, as well as private equity firms.\n\nMarni holds a B.B.A. in accounting and an M.B.A. from Indiana University. She is a Certified Public Accountant (CPA) and a member of the American Institute of Certified Public Accountants and the Illinois CPA Society.",
+    "investments": null
+  },
+  {
+    "name": "Claudia Sandoval",
+    "first_name": "Claudia",
+    "mid_initial": null,
+    "surname": "Sandoval",
+    "job_title": "Executive Assistant",
+    "location": "Chicago",
+    "summary": "Claudia is an Executive Assistant at Flexpoint Ford. She leverages over a decade of experience and expertise in supporting C-level executives. Prior to joining Flexpoint in 2023, Claudia worked as an Executive Assistant to the Chief of Legal and Chief of Human Resources at Duracell. Prior to Duracell, she worked as an Executive Assistant and Analyst on the Strategy, Markets, & Development team at international engineering firm, thyssenkrupp.\n\nClaudia holds a B.A. in business management & marketing and a M.Ed., with distinction, from DePaul University. She also holds a Lean Six Sigma Green Belt.",
+    "investments": null
+  },
+  {
+    "name": "Jillian Savoca",
+    "first_name": "Jillian",
+    "mid_initial": null,
+    "surname": "Savoca",
+    "job_title": "Executive Assistant",
+    "location": "New York",
+    "summary": "Jillian serves as an Executive Assistant in the New York office of Flexpoint Ford. Prior to joining Flexpoint in 2025, Jillian held multiple roles with Marriott International, managing their Front Office operations. She completed Marriott\u2019s Global Leadership Development Program in 2024.\n\nJillian holds a B.S. in business administration from the Williams College of Business at Xavier University.",
+    "investments": null
+  },
+  {
+    "name": "Grace Shoub",
+    "first_name": "Grace",
+    "mid_initial": null,
+    "surname": "Shoub",
+    "job_title": "Senior Associate, Human Resources",
+    "location": "Chicago",
+    "summary": "Grace serves as a Senior Associate in Human Resources at Flexpoint Ford, supporting all HR functions across the firm. Prior to joining Flexpoint in 2025, she was an Associate at Maven Search, specializing in Investment Banking. Grace was previously a member of the Investment Banking and Private Equity team at Russell Reynolds Associates.\n\nGrace holds a B.A. in organizational communication and leadership from Butler University.",
+    "investments": null
+  },
+  {
+    "name": "Toni Smith",
+    "first_name": "Toni",
+    "mid_initial": null,
+    "surname": "Smith",
+    "job_title": "Staff Accountant",
+    "location": "Chicago",
+    "summary": "Bio coming soon.",
+    "investments": null
+  },
+  {
+    "name": "Shanleigh Sullivan",
+    "first_name": "Shanleigh",
+    "mid_initial": null,
+    "surname": "Sullivan",
+    "job_title": "Fund Accountant",
+    "location": "Chicago",
+    "summary": "Shanleigh is a Fund Accountant at Flexpoint Ford, where she supports the financial operations and reporting processes. Prior to her current role, she was a Finance and Operations Intern at Flexpoint during the summer of 2025.\n\nShanleigh graduated from Gonzaga University with a B.B.A. in finance and brings a strong foundation in financial analysis and accounting to her work.",
+    "investments": null
+  },
+  {
+    "name": "Mallory Trudeau",
+    "first_name": "Mallory",
+    "mid_initial": null,
+    "surname": "Trudeau",
+    "job_title": "Office Administrator",
+    "location": "Chicago",
+    "summary": "Mallory serves as an Office Administrator in the Chicago office of Flexpoint Ford. Prior to joining Flexpoint in 2024, Mallory worked in the sales and staffing agency industries.\n\nMallory obtained a B.S. in marketing from North Park University and is currently pursuing her M.H.A. from Southern New Hampshire University.",
+    "investments": null
+  },
+  {
+    "name": "Sara White",
+    "first_name": "Sara",
+    "mid_initial": null,
+    "surname": "White",
+    "job_title": "Executive Assistant",
+    "location": "Chicago",
+    "summary": "Sara is an Executive Assistant at Flexpoint Ford. She has over 25 years of experience providing professional administrative services. Her background includes supporting roles in the financial services sector, airline industry, and higher education.",
+    "investments": null
+  }
+]

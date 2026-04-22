@@ -78,6 +78,15 @@ def _split_pipe_list(value: object) -> list[str]:
     return [part.strip() for part in text.split("|") if part.strip()]
 
 
+def _to_string_list(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(entry).strip() for entry in value if str(entry).strip()]
+    text = _clean_text(value)
+    if not text:
+        return []
+    return [part.strip() for part in text.split("|") if part.strip()]
+
+
 def _pain_label(tag: str) -> str:
     return PAIN_POINT_LABELS.get(tag, tag.replace("_", " ").title())
 
@@ -284,6 +293,7 @@ def _build_company_network(
             **meta.to_dict(),
             "id": company_id,
             "label": _clean_text(meta.get("company_name")) or company_id,
+            "lps_involved": _to_string_list(meta.get("lps_involved")),
             "degree": degree,
             "degree_centrality": round(float(degree_centrality.get(company_id, 0.0)), 6),
             "betweenness": round(float(betweenness.get(company_id, 0.0)), 6),

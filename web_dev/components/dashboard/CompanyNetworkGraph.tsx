@@ -1,13 +1,15 @@
 "use client";
 
 import { ExternalLink, RotateCcw, Search, Workflow, X } from "lucide-react";
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { clientEnv } from "@/lib/config/env";
 import type {
   A16zCompanyGraphEdge,
+  A16zCompanyGraphNewsItem,
   A16zCompanyGraphNode,
+  A16zCompanyGraphPartner,
   A16zCompanyGraphPerson,
 } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
 import { cn, formatRelativeCount, titleCase } from "@/lib/utils";
@@ -15,6 +17,7 @@ import { cn, formatRelativeCount, titleCase } from "@/lib/utils";
 type CompanyNetworkGraphProps = {
   nodes: A16zCompanyGraphNode[];
   edges: A16zCompanyGraphEdge[];
+  graphLabel?: string;
 };
 
 type VisNetworkInstance = {
@@ -37,7 +40,11 @@ function extractDomainFromWebsite(website: string | null | undefined) {
   }
 }
 
-function buildLogoDevUrl(website: string | null | undefined, size: number) {
+function buildLogoDevUrl(website: string | null | undefined, size: number, localAssetPath?: string | null) {
+  if (localAssetPath) {
+    return localAssetPath;
+  }
+
   const domain = extractDomainFromWebsite(website);
 
   if (!domain) {
@@ -109,7 +116,7 @@ function buildGraphData(nodes: A16zCompanyGraphNode[], edges: A16zCompanyGraphEd
 
   const visNodes = nodes.map((node) => {
     const isDimmed = hasSearchFilter && !matchedNodeIds.has(node.id);
-    const logoUrl = buildLogoDevUrl(node.website, 112);
+    const logoUrl = buildLogoDevUrl(node.website, 112, node.flexpointLogoPath);
 
     return {
       id: node.id,
@@ -118,7 +125,6 @@ function buildGraphData(nodes: A16zCompanyGraphNode[], edges: A16zCompanyGraphEd
       image: logoUrl ?? undefined,
       borderWidth: logoUrl ? 4 : 5,
       size: Math.max(34, Math.min(node.size + 16, 68)),
-      title: `${node.companyName}\n${node.vertical ?? "Unassigned vertical"}\n${node.locationRegion ?? "Unknown region"}`,
       color: {
         background: isDimmed ? "#e2e8f0" : logoUrl ? "#ffffff" : node.colorHex ?? "#f8fafc",
         border: isDimmed ? "#cbd5e1" : "#334155",
@@ -152,7 +158,6 @@ function buildGraphData(nodes: A16zCompanyGraphNode[], edges: A16zCompanyGraphEd
       to: edge.targetId,
       width: Math.max(1, edge.width),
       color: isDimmed ? "rgba(148, 163, 184, 0.16)" : edge.color ?? "rgba(100, 116, 139, 0.72)",
-      title: `${edge.sourceName} to ${edge.targetName}\n${edge.explanation}`,
       smooth: {
         enabled: true,
         type: "dynamic" as const,
@@ -231,6 +236,16 @@ function dispatchGraphConnectRequest(person: A16zCompanyGraphPerson) {
     behavior: "smooth",
     block: "start",
   });
+}
+
+function partnerInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
 function PersonDetailModal({
@@ -378,22 +393,209 @@ function PersonDetailModal({
   );
 }
 
-export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) {
+function PartnerDetailModal({
+  partner,
+  companyName,
+  onClose,
+}: {
+  partner: A16zCompanyGraphPartner;
+  companyName: string;
+  onClose: () => void;
+}) {
+  const highlightedInvestments = partner.investments.map((investment) => ({
+    name: investment,
+    isCurrentCompany: investment.trim().toLowerCase() === companyName.trim().toLowerCase(),
+  }));
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.52)] px-4 py-8"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${partner.name} details`}
+        className="w-full max-w-2xl rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-7"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-[1.4rem] border-2 border-slate-200 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.96),rgba(125,211,252,0.42),rgba(129,140,248,0.34))] text-xl font-semibold tracking-tight text-ink">
+              {partnerInitials(partner.name)}
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Flexford partner</p>
+              <h3 className="mt-2 font-display text-3xl tracking-tight text-ink">{partner.name}</h3>
+              <p className="mt-2 text-sm text-slate">
+                {partner.jobTitle ?? "Partner profile"}
+                {partner.location ? ` | ${partner.location}` : ""}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate transition-colors hover:bg-mist"
+            aria-label="Close partner details"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-[1.2rem] border border-slate-200 bg-mist/60 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Relevant company</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">{companyName}</p>
+          </div>
+          <div className="rounded-[1.2rem] border border-slate-200 bg-mist/60 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Tracked investments</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">{partner.investments.length}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Role</p>
+            <p className="mt-2 text-sm leading-6 text-ink">{partner.jobTitle ?? "No title available."}</p>
+          </div>
+          <div className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Location</p>
+            <p className="mt-2 text-sm leading-6 text-ink">{partner.location ?? "No location available."}</p>
+          </div>
+        </div>
+
+        {partner.summary ? (
+          <div className="mt-6 rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Summary</p>
+            <p className="mt-2 text-sm leading-6 text-ink">{partner.summary}</p>
+          </div>
+        ) : null}
+
+        <div className="mt-6 rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Portfolio coverage</p>
+          {highlightedInvestments.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {highlightedInvestments.map((investment) => (
+                <span
+                  key={investment.name}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    investment.isCurrentCompany
+                      ? "border border-sky-200 bg-sky-50 text-sky-700"
+                      : "border border-slate-200 bg-mist/70 text-slate"
+                  }`}
+                >
+                  {investment.name}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm leading-6 text-ink">No portfolio coverage list is attached to this partner.</p>
+          )}
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LatestNewsModal({
+  companyName,
+  items,
+  onClose,
+}: {
+  companyName: string;
+  items: A16zCompanyGraphNewsItem[];
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.52)] px-4 py-8"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${companyName} latest news`}
+        className="w-full max-w-2xl rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-7"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Latest news</p>
+            <h3 className="mt-2 font-display text-3xl tracking-tight text-ink">{companyName}</h3>
+            <p className="mt-2 text-sm text-slate">
+              {formatRelativeCount(items.length, "article")} surfaced from the company&apos;s `/news` page.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate transition-colors hover:bg-mist"
+            aria-label="Close latest news"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {items.map((item) => (
+            <a
+              key={`${item.articleUrl}-${item.title}`}
+              href={item.articleUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4 transition-colors hover:bg-mist/60"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-6 text-ink">{item.title}</p>
+                  {item.datePublished ? (
+                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-slate">{item.datePublished}</p>
+                  ) : null}
+                </div>
+                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-sky-700" />
+              </div>
+            </a>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: CompanyNetworkGraphProps) {
   const graphRef = useRef<HTMLDivElement | null>(null);
   const networkRef = useRef<VisNetworkInstance | null>(null);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const [isLatestNewsModalOpen, setIsLatestNewsModalOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [isReady, setIsReady] = useState(false);
 
   const deferredSearchValue = useDeferredValue(searchValue);
-  const graphData = buildGraphData(nodes, edges, deferredSearchValue);
+  const graphData = useMemo(() => buildGraphData(nodes, edges, deferredSearchValue), [nodes, edges, deferredSearchValue]);
 
   const selectedNode = selectedNodeId ? nodes.find((node) => node.id === selectedNodeId) ?? null : null;
-  const selectedEdge = selectedEdgeId ? edges.find((edge) => edge.id === selectedEdgeId) ?? null : null;
   const selectedPerson = selectedNode?.people.find((person) => person.id === selectedPersonId) ?? null;
+  const selectedPartner = selectedNode?.partners.find((partner) => partner.id === selectedPartnerId) ?? null;
   const matchingNodes = graphData.matchedNodeIds
     .map((nodeId) => nodes.find((node) => node.id === nodeId) ?? null)
     .filter((node): node is A16zCompanyGraphNode => node !== null);
@@ -414,6 +616,16 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
       setSelectedPersonId(null);
     }
   }, [selectedNode, selectedPersonId]);
+
+  useEffect(() => {
+    if (!selectedNode || !selectedPartnerId) {
+      return;
+    }
+
+    if (!selectedNode.partners.some((partner) => partner.id === selectedPartnerId)) {
+      setSelectedPartnerId(null);
+    }
+  }, [selectedNode, selectedPartnerId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -438,7 +650,9 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
         {
           autoResize: true,
           interaction: {
-            hover: true,
+            hover: false,
+            hoverConnectedEdges: false,
+            selectConnectedEdges: false,
             dragNodes: true,
             dragView: true,
             zoomView: true,
@@ -455,7 +669,7 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
               enabled: true,
               iterations: 450,
               updateInterval: 40,
-              fit: true,
+              fit: false,
             },
             adaptiveTimestep: true,
             minVelocity: 0.18,
@@ -475,6 +689,9 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
             labelHighlightBold: false,
           },
           edges: {
+            chosen: false,
+            hoverWidth: 0,
+            selectionWidth: 0,
             color: {
               color: "#94a3b8",
               opacity: 0.72,
@@ -486,14 +703,13 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
 
       network.on("click", (payload) => {
         const nextNodeId = payload.nodes?.[0];
-        const nextEdgeId = payload.edges?.[0];
 
         if (typeof nextNodeId === "string") {
           setSelectedNodeId(nextNodeId);
-          setSelectedEdgeId(null);
           setSelectedPersonId(null);
+          setSelectedPartnerId(null);
+          setIsLatestNewsModalOpen(false);
           network.focus(nextNodeId, {
-            scale: 1.05,
             animation: {
               duration: 350,
             },
@@ -501,17 +717,11 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
           return;
         }
 
-        if (typeof nextEdgeId === "string") {
-          setSelectedEdgeId(nextEdgeId);
-          setSelectedNodeId(null);
-          setSelectedPersonId(null);
-          return;
-        }
-
         if (!payload.nodes?.length && !payload.edges?.length) {
           setSelectedNodeId(null);
-          setSelectedEdgeId(null);
           setSelectedPersonId(null);
+          setSelectedPartnerId(null);
+          setIsLatestNewsModalOpen(false);
         }
       });
 
@@ -547,24 +757,16 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
       nodes: graphData.visNodes,
       edges: graphData.visEdges,
     });
+  }, [graphData.visEdges, graphData.visNodes]);
 
+  useEffect(() => {
     if (graphData.searchTerms.length && selectedNodeId && !graphData.matchedNodeIds.includes(selectedNodeId)) {
       setSelectedNodeId(null);
       setSelectedPersonId(null);
     }
+  }, [graphData.matchedNodeIds, graphData.searchTerms, selectedNodeId]);
 
-    if (
-      graphData.searchTerms.length &&
-      selectedEdgeId &&
-      !edges.some(
-        (edge) =>
-          edge.id === selectedEdgeId &&
-          (graphData.matchedNodeIds.includes(edge.sourceId) || graphData.matchedNodeIds.includes(edge.targetId)),
-      )
-    ) {
-      setSelectedEdgeId(null);
-    }
-
+  useEffect(() => {
     scheduleGraphUpdate(() => {
       if (!networkRef.current) {
         return;
@@ -576,7 +778,6 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
 
       if (graphData.matchedNodeIds.length === 1) {
         networkRef.current.focus(graphData.matchedNodeIds[0], {
-          scale: 1.15,
           animation: {
             duration: 320,
           },
@@ -593,7 +794,7 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
         });
       }
     });
-  }, [edges, graphData.matchedNodeIds, graphData.searchTerms, graphData.visEdges, graphData.visNodes, selectedEdgeId, selectedNodeId]);
+  }, [graphData.matchedNodeIds, graphData.searchTerms]);
 
   function resetView() {
     networkRef.current?.fit({
@@ -610,8 +811,9 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
 
   function clearSelection() {
     setSelectedNodeId(null);
-    setSelectedEdgeId(null);
     setSelectedPersonId(null);
+    setSelectedPartnerId(null);
+    setIsLatestNewsModalOpen(false);
   }
 
   function connectPerson(person: A16zCompanyGraphPerson) {
@@ -625,7 +827,10 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
     : "No search filter active.";
 
   const selectedNodeWebsiteLabel = selectedNode ? getWebsiteLabel(selectedNode.website) : null;
-  const selectedNodeLogoUrl = selectedNode ? buildLogoDevUrl(selectedNode.website, 160) : null;
+  const selectedNodeLogoUrl = selectedNode
+    ? buildLogoDevUrl(selectedNode.website, 160, selectedNode.flexpointLogoPath)
+    : null;
+  const latestNewsPreview = selectedNode ? selectedNode.latestNews.slice(0, 2) : [];
 
   return (
     <>
@@ -635,7 +840,7 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
             <div>
               <p className="text-sm font-semibold text-ink">Browse the company network</p>
               <p className="mt-1 text-sm leading-6 text-slate">
-                This is the live `a16z-crypto` company graph generated by the pipeline, rendered directly in the app.
+                This is the live {graphLabel} company graph generated by the pipeline, rendered directly in the app.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -691,11 +896,11 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
                       Network details
                     </div>
                     <p className="mt-2 text-sm font-semibold text-ink">
-                      {selectedNode ? "Selected company" : selectedEdge ? "Selected bridge" : "Select a company or bridge"}
+                      {selectedNode ? "Selected company" : "Select a company"}
                     </p>
                   </div>
 
-                  {selectedNode || selectedEdge ? (
+                  {selectedNode ? (
                     <button
                       type="button"
                       onClick={clearSelection}
@@ -708,11 +913,11 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                  {!selectedNode && !selectedEdge ? (
+                  {!selectedNode ? (
                     <div>
-                      <h3 className="font-display text-xl tracking-tight text-ink">Select a company or bridge</h3>
+                      <h3 className="font-display text-xl tracking-tight text-ink">Select a company</h3>
                       <p className="mt-2 text-sm leading-6 text-slate">
-                        Click a node to inspect the company summary, mapped people, and strongest bridges. Click a bridge to inspect the relationship itself.
+                        Click a node to inspect the company summary, mapped people, latest news, and strongest bridges.
                       </p>
 
                       <div className="mt-4 rounded-[1.2rem] border border-slate-200 bg-mist/50 px-4 py-4">
@@ -815,6 +1020,68 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
                         </div>
                       </div>
 
+                      {selectedNode.partners.length ? (
+                        <details className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                          <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Flexford partners</p>
+                              <span className="rounded-full border border-slate-200 bg-mist/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate">
+                                {selectedNode.partners.length}
+                              </span>
+                            </div>
+                          </summary>
+                          <div className="mt-4 grid gap-3">
+                            {selectedNode.partners.map((partner) => (
+                              <div
+                                key={partner.id}
+                                className="rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,248,252,0.92))] px-3 py-3"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedPersonId(null);
+                                      setSelectedPartnerId(partner.id);
+                                    }}
+                                    className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                                  >
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.96),rgba(125,211,252,0.42),rgba(129,140,248,0.34))] text-sm font-semibold tracking-tight text-ink">
+                                      {partnerInitials(partner.name)}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-sm font-semibold text-ink">{partner.name}</p>
+                                        <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
+                                          {partner.investments.length} investments
+                                        </span>
+                                      </div>
+                                      <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">
+                                        {partner.jobTitle ?? "Flexford partner"}
+                                        {partner.location ? ` | ${partner.location}` : ""}
+                                      </p>
+                                      <p className="mt-2 line-clamp-3 text-sm leading-5 text-slate">
+                                        {partner.summary ?? "No partner summary available."}
+                                      </p>
+                                    </div>
+                                  </button>
+                                  <div className="flex shrink-0 flex-col gap-2">
+                                    <Button
+                                      variant="secondary"
+                                      onClick={() => {
+                                        setSelectedPersonId(null);
+                                        setSelectedPartnerId(partner.id);
+                                      }}
+                                    >
+                                      View
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      ) : null}
+
                       <div className="grid gap-3">
                         <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Current pain points</p>
@@ -860,14 +1127,16 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
                         ) : null}
                       </div>
 
-                      <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">People in this node</p>
-                          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
-                            Click for details
-                          </span>
-                        </div>
-                            {selectedNode.people.length ? (
+                      <details className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">People in this node</p>
+                            <span className="rounded-full border border-slate-200 bg-mist/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate">
+                              {selectedNode.people.length}
+                            </span>
+                          </div>
+                        </summary>
+                        {selectedNode.people.length ? (
                           <div className="mt-4 grid gap-3">
                             {selectedNode.people.map((person) => (
                               <div
@@ -877,8 +1146,11 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
                                 <div className="flex items-start gap-3">
                                   <button
                                     type="button"
-                                    onClick={() => setSelectedPersonId(person.id)}
-                                    className="flex min-w-0 flex-1 items-start gap-3 text-left transition-colors hover:opacity-90"
+                                    onClick={() => {
+                                      setSelectedPartnerId(null);
+                                      setSelectedPersonId(person.id);
+                                    }}
+                                    className="flex min-w-0 flex-1 items-start gap-3 text-left"
                                   >
                                     <img
                                       src={personAvatarUrl(person)}
@@ -902,7 +1174,13 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
                                     </div>
                                   </button>
                                   <div className="flex shrink-0 flex-col gap-2">
-                                    <Button variant="secondary" onClick={() => setSelectedPersonId(person.id)}>
+                                    <Button
+                                      variant="secondary"
+                                      onClick={() => {
+                                        setSelectedPartnerId(null);
+                                        setSelectedPersonId(person.id);
+                                      }}
+                                    >
                                       View
                                     </Button>
                                     <Button onClick={() => connectPerson(person)}>Connect</Button>
@@ -916,51 +1194,87 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
                             No people records are currently attached to this company node.
                           </p>
                         )}
-                      </div>
+                      </details>
 
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Strongest bridges</p>
-                        {selectedNodeBridges.map((bridge) => (
-                          <details key={bridge.id} className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3">
-                            <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-semibold text-ink">
-                                    {bridge.sourceName} to {bridge.targetName}
-                                  </p>
-                                  <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">{bridge.reason}</p>
+                      <details className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Latest news</p>
+                            <span className="rounded-full border border-slate-200 bg-mist/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate">
+                              {selectedNode.latestNews.length}
+                            </span>
+                          </div>
+                        </summary>
+                        {latestNewsPreview.length ? (
+                          <div className="mt-4 space-y-3">
+                            {latestNewsPreview.map((item) => (
+                              <a
+                                key={`${item.articleUrl}-${item.title}`}
+                                href={item.articleUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,248,252,0.92))] px-3 py-3 transition-colors hover:bg-mist/60"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-semibold leading-6 text-ink">{item.title}</p>
+                                    {item.datePublished ? (
+                                      <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">
+                                        {item.datePublished}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-sky-700" />
                                 </div>
-                                <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-                                  {bridge.score.toFixed(2)}
-                                </span>
-                              </div>
-                            </summary>
-                            <p className="mt-3 text-sm leading-6 text-slate">{bridge.explanation}</p>
-                          </details>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
+                              </a>
+                            ))}
+                            {selectedNode.latestNews.length > latestNewsPreview.length ? (
+                              <button
+                                type="button"
+                                onClick={() => setIsLatestNewsModalOpen(true)}
+                                className="text-sm font-medium text-sky-700 hover:text-sky-800"
+                              >
+                                Show more
+                              </button>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-sm leading-6 text-slate">
+                            No recent news articles were mapped from the company&apos;s `/news` page.
+                          </p>
+                        )}
+                      </details>
 
-                  {selectedEdge ? (
-                    <div>
-                      <h3 className="font-display text-2xl tracking-tight text-ink">
-                        {selectedEdge.sourceName} to {selectedEdge.targetName}
-                      </h3>
-                      <div className="mt-3 inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-                        Score {selectedEdge.score.toFixed(2)}
-                      </div>
-
-                      <div className="mt-4 space-y-3">
-                        <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Reason</p>
-                          <p className="mt-2 text-sm leading-6 text-ink">{selectedEdge.reason}</p>
+                      <details className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Strongest bridges</p>
+                            <span className="rounded-full border border-slate-200 bg-mist/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate">
+                              {selectedNodeBridges.length}
+                            </span>
+                          </div>
+                        </summary>
+                        <div className="mt-4 space-y-3">
+                          {selectedNodeBridges.map((bridge) => (
+                            <details key={bridge.id} className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3">
+                              <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-ink">
+                                      {bridge.sourceName} to {bridge.targetName}
+                                    </p>
+                                    <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate">{bridge.reason}</p>
+                                  </div>
+                                  <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
+                                    {bridge.score.toFixed(2)}
+                                  </span>
+                                </div>
+                              </summary>
+                              <p className="mt-3 text-sm leading-6 text-slate">{bridge.explanation}</p>
+                            </details>
+                          ))}
                         </div>
-                        <div className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Explanation</p>
-                          <p className="mt-2 text-sm leading-6 text-ink">{selectedEdge.explanation}</p>
-                        </div>
-                      </div>
+                      </details>
                     </div>
                   ) : null}
                 </div>
@@ -980,6 +1294,22 @@ export function CompanyNetworkGraph({ nodes, edges }: CompanyNetworkGraphProps) 
           person={selectedPerson}
           onClose={() => setSelectedPersonId(null)}
           onConnect={(person) => connectPerson(person)}
+        />
+      ) : null}
+
+      {selectedNode && selectedPartner ? (
+        <PartnerDetailModal
+          partner={selectedPartner}
+          companyName={selectedNode.companyName}
+          onClose={() => setSelectedPartnerId(null)}
+        />
+      ) : null}
+
+      {selectedNode && isLatestNewsModalOpen ? (
+        <LatestNewsModal
+          companyName={selectedNode.companyName}
+          items={selectedNode.latestNews}
+          onClose={() => setIsLatestNewsModalOpen(false)}
         />
       ) : null}
     </>

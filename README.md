@@ -46,3 +46,17 @@ If you need a clean DB state:
 
 npm run db:reset
 npm run db:push
+
+
+
+TODOS:
+Press/News release:
+-------------------
+
+1) Identify best sources for PRs:
+    - Company website + scrape?
+    - APIs  / RSS feeds?
+    - Latest press can be added by the IG (if they have someone in charge of comms)
+
+2) Implement on the following logics:
+    -  FE: card "Latest news"  on click to modal with titles of article, on click to 3rd party article url

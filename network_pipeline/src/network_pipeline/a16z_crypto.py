@@ -351,6 +351,7 @@ def build_a16z_crypto_normalized_companies(stage_path: Path) -> list[dict[str, o
             "investor_names": _as_text(node.get("investor_names")) or "a16z crypto",
             "investor_names_label": _as_text(node.get("investor_names_label")) or "a16z crypto",
             "investor_count": _as_int(node.get("investor_count")),
+            "lps_involved": _as_string_list(node.get("lps_involved")),
             "taxonomy_tokens": _as_text(node.get("taxonomy_tokens")) or None,
             "degree": _as_int(node.get("degree")),
             "people_count": _as_int(node.get("people_count")),

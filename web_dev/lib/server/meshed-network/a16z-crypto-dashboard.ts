@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
+
+import { getDashboardScopeConfig, type MeshedDashboardScope } from "@/lib/server/meshed-network/dashboard-scope";
 
 export type A16zDashboardSnapshot = {
   scope: string;
@@ -55,6 +56,8 @@ export type A16zCompanyGraphNode = {
   location: string | null;
   locationRegion: string | null;
   website: string | null;
+  flexpointLogoUrl: string | null;
+  flexpointLogoPath: string | null;
   degree: number;
   peopleCount: number;
   colorHex: string | null;
@@ -65,6 +68,8 @@ export type A16zCompanyGraphNode = {
   peopleConnectionSummary: string | null;
   peopleTrustSignalOverview: string | null;
   people: A16zCompanyGraphPerson[];
+  partners: A16zCompanyGraphPartner[];
+  latestNews: A16zCompanyGraphNewsItem[];
 };
 
 export type A16zCompanyGraphEdge = {
@@ -100,6 +105,21 @@ export type A16zCompanyGraphPerson = {
   stage: string | null;
 };
 
+export type A16zCompanyGraphPartner = {
+  id: string;
+  name: string;
+  jobTitle: string | null;
+  location: string | null;
+  summary: string | null;
+  investments: string[];
+};
+
+export type A16zCompanyGraphNewsItem = {
+  title: string;
+  datePublished: string | null;
+  articleUrl: string;
+};
+
 export type A16zCryptoDashboardData = {
   snapshot: A16zDashboardSnapshot;
   strongestBridges: A16zCompanyBridge[];
@@ -120,6 +140,14 @@ type CompanyNetworkPayload = {
     location?: string;
     location_region?: string;
     website?: string;
+    flexpoint_logo_url?: string;
+    flexpoint_logo_path?: string;
+    lps_involved?: string[] | string;
+    latest_news?: Array<{
+      title?: string;
+      date_published?: string | null;
+      article_url?: string | null;
+    }> | string;
     degree?: number;
     people_count?: number;
     people_ids?: string;
@@ -172,10 +200,16 @@ type PeopleNetworkPayload = {
   }>;
 };
 
-const A16Z_BUNDLE_ROOT = path.resolve(process.cwd(), "../network_pipeline/public/a16z-crypto");
+type TeamProfilePayload = {
+  name?: string;
+  job_title?: string | null;
+  location?: string | null;
+  summary?: string | null;
+  investments?: string[] | null;
+};
 
-async function readJson<T>(fileName: string) {
-  const payload = await readFile(path.join(A16Z_BUNDLE_ROOT, fileName), "utf-8");
+async function readJson<T>(scope: MeshedDashboardScope, fileName: string) {
+  const payload = await readFile(`${getDashboardScopeConfig(scope).bundleRoot}/${fileName}`, "utf-8");
   return JSON.parse(payload) as T;
 }
 
@@ -203,16 +237,88 @@ function parsePipeSeparatedTags(value: string | undefined) {
     .filter(Boolean);
 }
 
-export async function loadA16zCryptoDashboardData(): Promise<A16zCryptoDashboardData | null> {
+function parseStringArray(value: string[] | string | undefined | null) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    return [];
+  }
+
   try {
-    const [snapshot, companyNetwork, peopleNetwork] = await Promise.all([
-      readJson<A16zDashboardSnapshot>("dashboard_snapshot.json"),
-      readJson<CompanyNetworkPayload>("company_network_data.json"),
-      readJson<PeopleNetworkPayload>("people_network_data.json"),
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => String(item).trim()).filter(Boolean);
+    }
+  } catch {
+    return value
+      .split("|")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function normalizeLookupValue(value: string | null | undefined) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function parseNewsItems(value: unknown): A16zCompanyGraphNewsItem[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (!item || typeof item !== "object") {
+          return null;
+        }
+
+        const article = item as {
+          title?: unknown;
+          date_published?: unknown;
+          article_url?: unknown;
+        };
+        const title = String(article.title ?? "").trim();
+        const articleUrl = String(article.article_url ?? "").trim();
+
+        if (!title || !articleUrl) {
+          return null;
+        }
+
+        return {
+          title,
+          datePublished: String(article.date_published ?? "").trim() || null,
+          articleUrl,
+        } satisfies A16zCompanyGraphNewsItem;
+      })
+      .filter((item): item is A16zCompanyGraphNewsItem => item !== null);
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    try {
+      return parseNewsItems(JSON.parse(value));
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+export async function loadDashboardData(scope: MeshedDashboardScope): Promise<A16zCryptoDashboardData | null> {
+  try {
+    const [snapshot, companyNetwork, peopleNetwork, teamProfiles] = await Promise.all([
+      readJson<A16zDashboardSnapshot>(scope, "dashboard_snapshot.json"),
+      readJson<CompanyNetworkPayload>(scope, "company_network_data.json"),
+      readJson<PeopleNetworkPayload>(scope, "people_network_data.json"),
+      scope === "flexpoint-ford"
+        ? readJson<TeamProfilePayload[]>(scope, "team_profiles.json")
+        : Promise.resolve([] as TeamProfilePayload[]),
     ]);
 
     const peopleById = new Map<string, A16zCompanyGraphPerson>();
     const peopleByCompany = new Map<string, A16zCompanyGraphPerson[]>();
+    const partnersByName = new Map<string, TeamProfilePayload>();
 
     for (const person of peopleNetwork.nodes ?? []) {
       const personId = person.id ? String(person.id) : null;
@@ -255,14 +361,37 @@ export async function loadA16zCryptoDashboardData(): Promise<A16zCryptoDashboard
       peopleByCompany.set(normalizedCompany, existing);
     }
 
+    for (const partner of teamProfiles) {
+      const normalizedName = normalizeLookupValue(partner.name);
+
+      if (!normalizedName || partnersByName.has(normalizedName)) {
+        continue;
+      }
+
+      partnersByName.set(normalizedName, partner);
+    }
+
     const graphNodes = (companyNetwork.nodes ?? []).map((node, index) => {
       const companyName = node.company_name ?? "Unknown company";
       const peopleIds = parseJsonStringArray(node.people_ids);
+      const partnerNames = parseStringArray(node.lps_involved);
       const mappedPeople = peopleIds
         .map((personId) => peopleById.get(personId) ?? null)
         .filter((person): person is A16zCompanyGraphPerson => person !== null);
       const fallbackPeople =
         mappedPeople.length > 0 ? mappedPeople : [...(peopleByCompany.get(companyName.trim().toLowerCase()) ?? [])];
+      const partners = partnerNames.map((partnerName, partnerIndex) => {
+        const partnerProfile = partnersByName.get(normalizeLookupValue(partnerName));
+
+        return {
+          id: `partner_${node.id ?? `node_${index + 1}`}_${partnerIndex + 1}`,
+          name: partnerProfile?.name ?? partnerName,
+          jobTitle: partnerProfile?.job_title ?? null,
+          location: partnerProfile?.location ?? null,
+          summary: partnerProfile?.summary ?? null,
+          investments: parseStringArray(partnerProfile?.investments ?? []),
+        } satisfies A16zCompanyGraphPartner;
+      });
 
       return {
         id: node.id ?? `node_${index + 1}`,
@@ -273,6 +402,8 @@ export async function loadA16zCryptoDashboardData(): Promise<A16zCryptoDashboard
         location: node.location ?? null,
         locationRegion: node.location_region ?? null,
         website: node.website ?? null,
+        flexpointLogoUrl: node.flexpoint_logo_url ?? null,
+        flexpointLogoPath: node.flexpoint_logo_path ?? null,
         degree: Number(node.degree ?? 0),
         peopleCount: Number(node.people_count ?? fallbackPeople.length),
         colorHex: node.color_hex ?? null,
@@ -283,6 +414,8 @@ export async function loadA16zCryptoDashboardData(): Promise<A16zCryptoDashboard
         peopleConnectionSummary: node.people_connection_summary ?? null,
         peopleTrustSignalOverview: node.people_trust_signal_overview ?? null,
         people: fallbackPeople.sort((left, right) => right.networkImportanceScore - left.networkImportanceScore),
+        partners,
+        latestNews: parseNewsItems(node.latest_news),
       };
     });
 
@@ -329,4 +462,8 @@ export async function loadA16zCryptoDashboardData(): Promise<A16zCryptoDashboard
   } catch {
     return null;
   }
+}
+
+export async function loadA16zCryptoDashboardData(): Promise<A16zCryptoDashboardData | null> {
+  return loadDashboardData("a16z-crypto");
 }
