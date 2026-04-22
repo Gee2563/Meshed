@@ -47,6 +47,12 @@ If you need a clean DB state:
 npm run db:reset
 npm run db:push
 
+Refresh Flexpoint Ford network graph (scrape then build):
+
+cd network_pipeline
+source venv/bin/activate
+./scripts/run_flexpointford_pipeline.sh
+
 
 
 TODOS:
