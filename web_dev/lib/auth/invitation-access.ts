@@ -43,6 +43,18 @@ function parseDynamicInviteEmailsFromEnv(): DynamicInviteRecord[] {
 const inviteRegistry: DynamicInviteRecord[] = [
   ...parseDynamicInviteEmailsFromEnv(),
   {
+    email: "georgegds92@gmail.com",
+    kind: "vc_member",
+    nextRoute: "/human-idv",
+    role: "investor",
+    outsideNetworkAccessEnabled: true,
+    onboardingMode: "individual",
+    onboardingStep: "complete",
+    title: "Investor",
+    vcCompanyId: "co_invite_flexpoint_ford",
+    vcCompanyName: "Flexpoint Ford",
+  },
+  {
     email: "georgegds92+1@gmail.com",
     kind: "portfolio_member",
     nextRoute: "/human-idv",

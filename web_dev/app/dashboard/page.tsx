@@ -3,7 +3,8 @@ import { ConnectionsPanel } from "@/components/dashboard/ConnectionsPanel";
 import { CollapsibleCard } from "@/components/dashboard/CollapsibleCard";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
-import { loadA16zCryptoDashboardData } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
+import { loadDashboardData } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
+import { getDashboardScopeConfig, resolveDashboardScopeForEmail } from "@/lib/server/meshed-network/dashboard-scope";
 import { getCurrentUser } from "@/lib/server/current-user";
 import { prisma } from "@/lib/server/prisma";
 import { userRepository } from "@/lib/server/repositories/user-repository";
@@ -57,7 +58,7 @@ function buildContactReason(user: UserSummary, notification?: { counterpartName:
 }
 
 export default async function DashboardPage() {
-  const [currentUser, dashboard] = await Promise.all([getCurrentUser(), loadA16zCryptoDashboardData()]);
+  const currentUser = await getCurrentUser();
 
   if (!currentUser) {
     return (
@@ -79,15 +80,19 @@ export default async function DashboardPage() {
     );
   }
 
+  const dashboardScope = resolveDashboardScopeForEmail(currentUser.email);
+  const dashboardScopeConfig = getDashboardScopeConfig(dashboardScope);
+  const dashboard = await loadDashboardData(dashboardScope);
+
   if (!dashboard) {
     return (
       <main className="px-4 py-10 sm:px-6 lg:px-10">
         <section className="mx-auto max-w-3xl rounded-[2rem] border border-white/75 bg-white/75 p-6 shadow-halo backdrop-blur sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate">Dashboard data</p>
-          <h1 className="mt-4 font-display text-4xl tracking-tight text-ink">A16z crypto bundle unavailable</h1>
+          <h1 className="mt-4 font-display text-4xl tracking-tight text-ink">{dashboardScopeConfig.scopeLabel} bundle unavailable</h1>
           <p className="mt-4 text-sm leading-7 text-slate">
-            The dashboard page is ready, but the generated `network_pipeline/public/a16z-crypto` bundle is missing or
-            unreadable. Re-run the pipeline slice, then refresh this page.
+            The dashboard page is ready, but the generated `{dashboardScopeConfig.bundleRelativePath}` bundle is missing
+            or unreadable. Re-run the pipeline slice, then refresh this page.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button href="/" variant="secondary">
@@ -167,6 +172,8 @@ export default async function DashboardPage() {
     }));
 
   const { snapshot, strongestBridges, companyGraph } = dashboard;
+  const scopeLabel = snapshot.scope_label || dashboardScopeConfig.scopeLabel;
+  const heroDescription = `Here's your daily AI-powered update on the ${dashboardScopeConfig.organizationName} Meshed network`;
   const statusItems = [
     { label: "Role", value: titleCase(currentUser.role) },
     { label: "Dynamic wallet", value: currentUser.walletAddress ? "Connected" : "Pending" },
@@ -180,15 +187,15 @@ export default async function DashboardPage() {
       <section className="mx-auto max-w-7xl space-y-6">
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <CollapsibleCard
-            eyebrow="A16z crypto"
-            title="Welcome to your a16z meshed network"
-            description="Here's your daily AI-powered update on the Andreessen Horowitz Meshed network"
+            eyebrow={scopeLabel}
+            title={dashboardScopeConfig.heroTitle}
+            description={heroDescription}
             className="bg-white/65 backdrop-blur"
           >
             <div className="space-y-5">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-full border border-sky-200 bg-sky-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-                  A16z crypto
+                  {scopeLabel}
                 </span>
                 <span className="rounded-full border border-white/80 bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate">
                   Demo dashboard
@@ -262,10 +269,10 @@ export default async function DashboardPage() {
 
         <CollapsibleCard
           eyebrow="Network graph"
-          title="a16z's Meshed Network Interactive Graph"
+          title={dashboardScopeConfig.graphTitle}
           description="Neural Portfolio Graphs for Modern Investors. Transform your portfolio data into actionable insights and strategic connections."
         >
-          <CompanyNetworkGraph nodes={companyGraph.nodes} edges={companyGraph.edges} />
+          <CompanyNetworkGraph nodes={companyGraph.nodes} edges={companyGraph.edges} graphLabel={scopeLabel} />
         </CollapsibleCard>
 
         <CollapsibleCard
@@ -296,7 +303,7 @@ export default async function DashboardPage() {
           <CollapsibleCard
             eyebrow="Top companies"
             title="Most connected companies"
-            description="These are the most central companies in the current a16z graph, ranked by company bridge degree with people density as the tie-breaker."
+            description={`These are the most central companies in the current ${scopeLabel} graph, ranked by company bridge degree with people density as the tie-breaker.`}
             defaultOpen={false}
           >
             <div className="grid gap-3 md:grid-cols-2">

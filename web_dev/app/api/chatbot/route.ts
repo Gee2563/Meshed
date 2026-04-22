@@ -1,9 +1,8 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 
+import { getDashboardScopeConfig, resolveDashboardScopeForEmail } from "@/lib/server/meshed-network/dashboard-scope";
+import { requireCurrentUser } from "@/lib/server/current-user";
 import { ApiError, fail, ok } from "@/lib/server/http";
-
-const A16Z_BUNDLE_ROOT = path.resolve(process.cwd(), "../network_pipeline/public/a16z-crypto");
 
 type CompanyNode = {
   company_name?: string | null;
@@ -112,8 +111,8 @@ function parseRequestText(payload: unknown): string {
   return query.trim();
 }
 
-async function readJson<T>(fileName: string): Promise<T> {
-  const data = await readFile(path.join(A16Z_BUNDLE_ROOT, fileName), "utf-8");
+async function readJson<T>(bundleRoot: string, fileName: string): Promise<T> {
+  const data = await readFile(`${bundleRoot}/${fileName}`, "utf-8");
   return JSON.parse(data) as T;
 }
 
@@ -417,17 +416,22 @@ function answerGraphQuestion(question: string, companyPayload: CompanyNetworkPay
 
 export async function POST(request: Request) {
   try {
+    const currentUser = await requireCurrentUser();
     const body = await request.json();
     const question = parseRequestText(body);
+    const scope = resolveDashboardScopeForEmail(currentUser.email);
+    const scopeConfig = getDashboardScopeConfig(scope);
 
     const [companyNetwork, peopleNetwork] = await Promise.all([
-      readJson<CompanyNetworkPayload>("company_network_data.json"),
-      readJson<PeopleNetworkPayload>("people_network_data.json"),
+      readJson<CompanyNetworkPayload>(scopeConfig.bundleRoot, "company_network_data.json"),
+      readJson<PeopleNetworkPayload>(scopeConfig.bundleRoot, "people_network_data.json"),
     ]);
 
     const response = answerGraphQuestion(question, companyNetwork, peopleNetwork);
     return ok({
       question,
+      scope,
+      scopeLabel: scopeConfig.scopeLabel,
       ...response,
     });
   } catch (error) {

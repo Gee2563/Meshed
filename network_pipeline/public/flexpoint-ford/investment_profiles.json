@@ -10,7 +10,8 @@
     "location": "Denver, CO",
     "website": "https://www.accuserve.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/accuserve-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/accuserve.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/accuserve.svg",
+    "latest_news": []
   },
   {
     "name": "AFH Wealth Management",
@@ -23,7 +24,39 @@
     "location": "Bromsgrove, UK",
     "website": "https://www.afhwm.co.uk",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/afh.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/afh-financial-group.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/afh-financial-group.svg",
+    "latest_news": [
+      {
+        "title": "Why the coming inflation shock may not be as bad as 2022",
+        "date_published": null,
+        "article_url": "https://www.afhwm.co.uk/news/why-the-coming-inflation-shock-may-not-be-as-bad-as-2022/"
+      },
+      {
+        "title": "The powerful investment lesson that walking your dog can teach you",
+        "date_published": null,
+        "article_url": "https://www.afhwm.co.uk/news/the-powerful-investment-lesson-that-walking-your-dog-can-teach-you/"
+      },
+      {
+        "title": "Three ways you could tell if someone is being financially abused",
+        "date_published": null,
+        "article_url": "https://www.afhwm.co.uk/news/three-ways-you-could-tell-if-someone-is-being-financially-abused/"
+      },
+      {
+        "title": "3 positive ways to build a nest egg for your child this Easter",
+        "date_published": null,
+        "article_url": "https://www.afhwm.co.uk/news/3-positive-ways-to-build-a-nest-egg-for-your-child-this-easter/"
+      },
+      {
+        "title": "Five positive financial lessons the hit musical Mamma Mia could teach you",
+        "date_published": null,
+        "article_url": "https://www.afhwm.co.uk/news/five-positive-financial-lessons-the-hit-musical-mamma-mia-could-teach-you/"
+      },
+      {
+        "title": "What could \u2018Trumpflation\u2019 mean for your money and what can you do?",
+        "date_published": null,
+        "article_url": "https://www.afhwm.co.uk/news/what-could-trumpflation-mean-for-your-money-and-what-can-you-do/"
+      }
+    ]
   },
   {
     "name": "Alera Group",
@@ -36,7 +69,14 @@
     "location": "Deerfield, IL",
     "website": "https://www.aleragroup.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/alera-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/alera-group.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/alera-group.svg",
+    "latest_news": [
+      {
+        "title": "Read more",
+        "date_published": null,
+        "article_url": "https://aleragroup.com/news/alera-group-financial-services-teams-recognized-among-industrys-best"
+      }
+    ]
   },
   {
     "name": "AMD Holdings",
@@ -49,7 +89,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/amd-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/amd-holdings.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/amd-holdings.svg",
+    "latest_news": []
   },
   {
     "name": "American Strategic Insurance",
@@ -62,7 +103,8 @@
     "location": "St. Petersburg, FL",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/asi-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/american-strategic-insurance.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/american-strategic-insurance.svg",
+    "latest_news": []
   },
   {
     "name": "AmRisc",
@@ -75,7 +117,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/amrisc-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/amrisc.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/amrisc.svg",
+    "latest_news": []
   },
   {
     "name": "Apollo Care",
@@ -88,7 +131,8 @@
     "location": "Chicago, IL",
     "website": "https://www.apollocare.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/apollo-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/apollocare.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/apollocare.svg",
+    "latest_news": []
   },
   {
     "name": "Ariel Re",
@@ -101,7 +145,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/ariel-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/ariel-re.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/ariel-re.svg",
+    "latest_news": []
   },
   {
     "name": "ArtesRx",
@@ -114,7 +159,8 @@
     "location": "Amherst, NY",
     "website": "https://www.artesrx.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/artes-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/artesrx.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/artesrx.svg",
+    "latest_news": []
   },
   {
     "name": "Baker Hill",
@@ -127,7 +173,8 @@
     "location": "Carmel, IN",
     "website": "https://www.bakerhill.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/baker.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/baker-hill.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/baker-hill.svg",
+    "latest_news": []
   },
   {
     "name": "Bridgehaven",
@@ -138,9 +185,10 @@
     "sub_sector": "Insurance & Insurance Services",
     "status": "Active",
     "location": "London, UK",
-    "website": "https://www.bhvn-ins.com/",
+    "website": "https://www.bhvn-ins.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/bridge-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/bridgehaven.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/bridgehaven.svg",
+    "latest_news": []
   },
   {
     "name": "Canadian Hospital Specialties",
@@ -153,7 +201,8 @@
     "location": "Oakville, ON",
     "website": "https://www.chsltd.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/chs.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/canadian-hospital-specialties.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/canadian-hospital-specialties.svg",
+    "latest_news": []
   },
   {
     "name": "CFGI Holdings, LLC",
@@ -166,7 +215,8 @@
     "location": "Boston, MA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/cfgi-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/corporate-finance-group.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/corporate-finance-group.svg",
+    "latest_news": []
   },
   {
     "name": "Clearstead",
@@ -179,7 +229,8 @@
     "location": "Cleveland, OH",
     "website": "https://www.clearstead.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/clear-logo-1.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/clearstead.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/clearstead.svg",
+    "latest_news": []
   },
   {
     "name": "Corient",
@@ -192,7 +243,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/corient-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/corient.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/corient.svg",
+    "latest_news": []
   },
   {
     "name": "Corva",
@@ -205,7 +257,8 @@
     "location": "Greenwood Village, CO",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/corva-logo-1.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/corva.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/corva.svg",
+    "latest_news": []
   },
   {
     "name": "Create Music Group",
@@ -218,7 +271,39 @@
     "location": "Los Angeles, CA",
     "website": "https://www.createmusicgroup.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/create-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/create-music-group.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/create-music-group.svg",
+    "latest_news": [
+      {
+        "title": "CREATE MUSIC GROUP FORMS JOINT VENTURE \ufeffWITH JONNYSHIPES\u2019 GOODTALK",
+        "date_published": "2026-04-22",
+        "article_url": "https://www.createmusicgroup.com/news/create-music-group-forms-joint-venture-with-jonnyshipes-goodtalk"
+      },
+      {
+        "title": "Billboard 2026 Dance Power Players",
+        "date_published": "2026-03-16",
+        "article_url": "https://www.createmusicgroup.com/news/billboard-2026-dance-power-players"
+      },
+      {
+        "title": "Create Music Group, at $2.2 billion valuation, completes $450 million fundraise",
+        "date_published": "2026-03-04",
+        "article_url": "https://www.createmusicgroup.com/news/create-music-group-at-2-2-billion-valuation-completes-450-million-fundraise"
+      },
+      {
+        "title": "Mitchell Shymansky appointed Chief Data & Technology Officer at Create Music Group",
+        "date_published": "2026-02-11",
+        "article_url": "https://www.createmusicgroup.com/news/mitchell-shymansky-appointed-chief-data-and-technology-officer-at-create-music-group"
+      },
+      {
+        "title": "Create Music Group strikes $300M investment in Nettwerk Music Group, as Canadian firm executes management buyout",
+        "date_published": "2026-02-10",
+        "article_url": "https://www.createmusicgroup.com/news/create-music-group-strikes-300-m-investment-in-nettwerk-music-group-as-canadian-firm-executes-management-buyout"
+      },
+      {
+        "title": "Durand Bernarr Wins at 2026 Grammys",
+        "date_published": "2026-02-06",
+        "article_url": "https://www.createmusicgroup.com/news/durand-bernarr-wins-at-2026-grammys"
+      }
+    ]
   },
   {
     "name": "Credibly",
@@ -231,7 +316,8 @@
     "location": "Troy, MI",
     "website": "https://www.credibly.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/credibly-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/retailcapital.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/retailcapital.svg",
+    "latest_news": []
   },
   {
     "name": "DASH Financial Technologies",
@@ -244,7 +330,8 @@
     "location": "New York, NY",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/dash-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/dash-financial-technologies.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/dash-financial-technologies.svg",
+    "latest_news": []
   },
   {
     "name": "Duetti",
@@ -257,7 +344,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/duetti-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/duetti.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/duetti.svg",
+    "latest_news": []
   },
   {
     "name": "Eagle Hospital Physicians",
@@ -270,7 +358,8 @@
     "location": "Dallas, TX",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/eagle.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/eagle-hospital-physicians.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/eagle-hospital-physicians.svg",
+    "latest_news": []
   },
   {
     "name": "Easterly",
@@ -283,7 +372,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/easterly-logo-1.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/easterly.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/easterly.svg",
+    "latest_news": []
   },
   {
     "name": "Elliott Davis",
@@ -296,7 +386,8 @@
     "location": "Greenville, SC",
     "website": "https://www.elliottdavis.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/elliott-davis.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/elliott-davis.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/elliott-davis.svg",
+    "latest_news": []
   },
   {
     "name": "Enstar",
@@ -309,7 +400,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/enstar-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/enstar.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/enstar.svg",
+    "latest_news": []
   },
   {
     "name": "Financial Pacific Leasing",
@@ -322,7 +414,8 @@
     "location": "Federal Way, WA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/financial-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/financial-pacific-leasing.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/financial-pacific-leasing.svg",
+    "latest_news": []
   },
   {
     "name": "GeoVera Holdings",
@@ -335,7 +428,8 @@
     "location": "Fairfield, CA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/geovera-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/geovera-holdings.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/geovera-holdings.svg",
+    "latest_news": []
   },
   {
     "name": "GoldState",
@@ -348,7 +442,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/goldstate-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/goldstate.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/goldstate.svg",
+    "latest_news": []
   },
   {
     "name": "Hilltop Holdings",
@@ -361,7 +456,8 @@
     "location": "Dallas, TX",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/hilltop-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/hilltop-holdings.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/hilltop-holdings.svg",
+    "latest_news": []
   },
   {
     "name": "Home Solutions",
@@ -374,7 +470,8 @@
     "location": "Somers Point, NJ",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/home-solutions-2.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/home-solutions.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/home-solutions.svg",
+    "latest_news": []
   },
   {
     "name": "Innovative Aftermarket Systems",
@@ -387,7 +484,8 @@
     "location": "Austin, TX",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/ias-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/innovative-aftermarket-systems.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/innovative-aftermarket-systems.svg",
+    "latest_news": []
   },
   {
     "name": "IntegraCare Home Health",
@@ -400,7 +498,8 @@
     "location": "Grapevine, TX",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/integra-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/integracare-home-health.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/integracare-home-health.svg",
+    "latest_news": []
   },
   {
     "name": "Jefferson Capital International",
@@ -413,7 +512,8 @@
     "location": "St. Cloud, MN",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/jefferson-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/jefferson-capital-international.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/jefferson-capital-international.svg",
+    "latest_news": []
   },
   {
     "name": "JetPay",
@@ -426,7 +526,8 @@
     "location": "Berwyn, PA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/jetpay-logo-1.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/jetpay-corporation.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/jetpay-corporation.svg",
+    "latest_news": []
   },
   {
     "name": "Kastle Therapeutics",
@@ -439,7 +540,8 @@
     "location": "Chicago, IL",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/kastle-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/kastle-therapeutics.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/kastle-therapeutics.svg",
+    "latest_news": []
   },
   {
     "name": "Keystone",
@@ -452,7 +554,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/keystone-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/keystone.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/keystone.svg",
+    "latest_news": []
   },
   {
     "name": "LERETA",
@@ -465,7 +568,19 @@
     "location": "Pomona, CA",
     "website": "https://lereta.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/lereta-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/lereta.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/lereta.svg",
+    "latest_news": [
+      {
+        "title": "Articles",
+        "date_published": null,
+        "article_url": "https://lereta.com/news/category/articles/"
+      },
+      {
+        "title": "Press Releases",
+        "date_published": null,
+        "article_url": "https://lereta.com/news/category/press-releases/"
+      }
+    ]
   },
   {
     "name": "MGA Homecare",
@@ -478,7 +593,8 @@
     "location": "Scottsdale, AZ",
     "website": "https://www.MGAhomecare.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/mga.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/mga-homecare.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/mga-homecare.svg",
+    "latest_news": []
   },
   {
     "name": "MobilityWorks",
@@ -491,7 +607,8 @@
     "location": "Richfield, OH",
     "website": "https://www.mobilityworks.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/mobility-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/mobilityworks.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/mobilityworks.svg",
+    "latest_news": []
   },
   {
     "name": "Movantis",
@@ -504,7 +621,8 @@
     "location": "Houston, TX",
     "website": "https://www.movantis.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/mov.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/movantis.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/movantis.svg",
+    "latest_news": []
   },
   {
     "name": "Nettwerk",
@@ -517,7 +635,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/nettwork-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/nettwerk.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/nettwerk.svg",
+    "latest_news": []
   },
   {
     "name": "Norwich Group",
@@ -530,7 +649,8 @@
     "location": "Rosemont, PA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/norwich-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/norwich-group.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/norwich-group.svg",
+    "latest_news": []
   },
   {
     "name": "PayFacto",
@@ -543,7 +663,8 @@
     "location": "Verdun, QC",
     "website": "https://www.payfacto.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/pay-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/payfacto.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/payfacto.svg",
+    "latest_news": []
   },
   {
     "name": "Pelican Auto Finance, LLC",
@@ -556,7 +677,8 @@
     "location": "Cherry Hill, NJ",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/pelican-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/pelican-auto-finance-llc.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/pelican-auto-finance-llc.svg",
+    "latest_news": []
   },
   {
     "name": "Propel Insurance",
@@ -569,7 +691,8 @@
     "location": "Tacoma, WA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/propel2.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/propel-insurance.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/propel-insurance.svg",
+    "latest_news": []
   },
   {
     "name": "PTMA Financial Solutions",
@@ -582,7 +705,8 @@
     "location": "Denver, CO & Naperville, IL",
     "website": "https://ptma.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/PTMA-Logo-2.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/ptma.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/ptma.svg",
+    "latest_news": []
   },
   {
     "name": "Purchasing Power",
@@ -595,7 +719,8 @@
     "location": "Atlanta, GA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/purchase-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/purchasing-power-llc.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/purchasing-power-llc.svg",
+    "latest_news": []
   },
   {
     "name": "Reich & Tang",
@@ -608,7 +733,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/rt-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/reich-tang.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/reich-tang.svg",
+    "latest_news": []
   },
   {
     "name": "Ryan Specialty",
@@ -621,7 +747,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/ryan.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/ryan-specialty.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/ryan-specialty.svg",
+    "latest_news": []
   },
   {
     "name": "SageSure",
@@ -634,7 +761,8 @@
     "location": "Jersey City, NJ",
     "website": "https://www.sagesure.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/sage.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/sagesure.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/sagesure.svg",
+    "latest_news": []
   },
   {
     "name": "Seawall Re",
@@ -647,7 +775,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/seawall.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/seawall.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/seawall.svg",
+    "latest_news": []
   },
   {
     "name": "Seawall Re II",
@@ -660,7 +789,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/seawall-2.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/seawall-re-ii.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/seawall-re-ii.svg",
+    "latest_news": []
   },
   {
     "name": "Select Rehabilitation",
@@ -673,7 +803,8 @@
     "location": "Glenview, IL",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/select-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/select-rehabilitation.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/select-rehabilitation.svg",
+    "latest_news": []
   },
   {
     "name": "Senior Whole Health",
@@ -686,7 +817,8 @@
     "location": "Cambridge, MA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/swh-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/senior-whole-health.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/senior-whole-health.svg",
+    "latest_news": []
   },
   {
     "name": "Service Finance Company",
@@ -699,7 +831,8 @@
     "location": "Boca Raton, FL",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/service-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/service-finance-company.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/service-finance-company.svg",
+    "latest_news": []
   },
   {
     "name": "SouthEast Eye Specialists",
@@ -712,7 +845,8 @@
     "location": "Chattanooga, TN",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/south-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/southeast-eye-specialists.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/southeast-eye-specialists.svg",
+    "latest_news": []
   },
   {
     "name": "Sticky.io",
@@ -725,7 +859,8 @@
     "location": "San Francisco, CA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/sticky-logo-4.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/limelight.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/limelight.svg",
+    "latest_news": []
   },
   {
     "name": "Summit Behavioral Healthcare",
@@ -738,7 +873,8 @@
     "location": "Atlanta, GA",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/summit.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/summit-behavioral-healthcare.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/summit-behavioral-healthcare.svg",
+    "latest_news": []
   },
   {
     "name": "Talcott",
@@ -751,7 +887,8 @@
     "location": null,
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/talcott-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/talcott.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/talcott.svg",
+    "latest_news": []
   },
   {
     "name": "TigerRisk Partners",
@@ -764,7 +901,8 @@
     "location": "Stamford, CT",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/tiger-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/tigerrisk.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/tigerrisk.svg",
+    "latest_news": []
   },
   {
     "name": "TopRx",
@@ -777,7 +915,8 @@
     "location": "Memphis, TN",
     "website": "https://www.toprx.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/toprx-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/top-rx.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/top-rx.svg",
+    "latest_news": []
   },
   {
     "name": "TRAKAmerica",
@@ -790,7 +929,19 @@
     "location": "Bonita Springs, FL",
     "website": "https://www.trakamerica.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/trak-logo-1.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/trak-america.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/trak-america.svg",
+    "latest_news": [
+      {
+        "title": "TRAKAmerica Acquires KnovaOne",
+        "date_published": null,
+        "article_url": "https://trakamerica.com/trakamerica-acquires-knovaone/"
+      },
+      {
+        "title": "Credit Unions Bracing For Delinquency Surge",
+        "date_published": null,
+        "article_url": "https://trakamerica.com/credit-unions-bracing-for-delinquency-surge/"
+      }
+    ]
   },
   {
     "name": "VALE Insurance Partners",
@@ -803,7 +954,8 @@
     "location": "New York, NY",
     "website": "https://www.valeinsurancepartners.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/vale-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/vale-insurance-partners.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/vale-insurance-partners.svg",
+    "latest_news": []
   },
   {
     "name": "VeriClaim",
@@ -816,7 +968,8 @@
     "location": "Naperville, IL",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/veri-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/vericlaim.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/vericlaim.svg",
+    "latest_news": []
   },
   {
     "name": "WisdomTree",
@@ -829,7 +982,8 @@
     "location": "New York, NY",
     "website": null,
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/wisdom.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/wisdom-tree.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/wisdom-tree.svg",
+    "latest_news": []
   },
   {
     "name": "YPrime",
@@ -842,6 +996,38 @@
     "location": "Malvern, PA",
     "website": "https://www.yprime.com",
     "flexpoint_logo_url": "https://flexpointford.com/wp-content/uploads/prime-logo.svg",
-    "flexpoint_logo_path": "/flexpoint-ford/company-logos/yprime.svg"
+    "flexpoint_logo_path": "/flexpoint-ford/company-logos/yprime.svg",
+    "latest_news": [
+      {
+        "title": "YPrime Expands eCOA Platform with Participant Hub",
+        "date_published": "2026-04-07",
+        "article_url": "https://www.yprime.com/ecoa-participant-engagement/"
+      },
+      {
+        "title": "YPrime Recognized as a Clinical Trial Technology ESG Leader with EcoVadis Silver Medal",
+        "date_published": "2026-02-09",
+        "article_url": "https://www.yprime.com/yprime-recognized-as-esg-leader/"
+      },
+      {
+        "title": "YPrime Recognized for AI Innovation and Sustainability in the 2025 Clinical Trials Arena Excellence Awards",
+        "date_published": "2025-12-09",
+        "article_url": "https://www.yprime.com/yprime-clinical-trials-arena-excellence-awards-2025/"
+      },
+      {
+        "title": "YPrime Research Shows 74% Fewer Localization Errors in eCOA Migration with AI-Enabled Workflows",
+        "date_published": "2025-11-18",
+        "article_url": "https://www.yprime.com/ecoa-ai-localization/"
+      },
+      {
+        "title": "YPrime Launches Advanced eCOA Oversight to Strengthen Investigator Accountability and Participant Safety",
+        "date_published": "2025-10-29",
+        "article_url": "https://www.yprime.com/yprime-announces-advanced-ecoa-oversight/"
+      },
+      {
+        "title": "YPrime Releases Inaugural ESG Report, Reinforcing Commitment to Responsible Innovation in Clinical Research",
+        "date_published": "2025-09-23",
+        "article_url": "https://www.yprime.com/yprime-esg-report-2024/"
+      }
+    ]
   }
 ]

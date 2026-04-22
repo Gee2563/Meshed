@@ -1,0 +1,160 @@
+{
+  "scope": "flexpoint-ford",
+  "scope_label": "Flexpoint Ford",
+  "company_count": 65,
+  "company_edge_count": 265,
+  "people_profile_count": 296,
+  "vertical_count": 12,
+  "people_count": 296,
+  "people_company_count": 65,
+  "people_edge_count": 1175,
+  "generated_via": "network_pipeline.flexpoint_ford_graph_bundle",
+  "top_companies": [
+    {
+      "id": "co_ff_tigerrisk",
+      "company_name": "TigerRisk Partners",
+      "vertical": "Insurance & Insurance Services",
+      "location_region": "United States",
+      "degree": 16,
+      "people_count": 5
+    },
+    {
+      "id": "co_ff_home-solutions",
+      "company_name": "Home Solutions",
+      "vertical": "Legacy Healthcare",
+      "location_region": "United States",
+      "degree": 16,
+      "people_count": 4
+    },
+    {
+      "id": "co_ff_vericlaim",
+      "company_name": "VeriClaim",
+      "vertical": "Insurance & Insurance Services",
+      "location_region": "United States",
+      "degree": 15,
+      "people_count": 6
+    },
+    {
+      "id": "co_ff_innovative-aftermarket-systems",
+      "company_name": "Innovative Aftermarket Systems",
+      "vertical": "Insurance & Insurance Services",
+      "location_region": "United States",
+      "degree": 14,
+      "people_count": 5
+    },
+    {
+      "id": "co_ff_geovera-holdings",
+      "company_name": "GeoVera Holdings",
+      "vertical": "Insurance & Insurance Services",
+      "location_region": "United States",
+      "degree": 11,
+      "people_count": 6
+    },
+    {
+      "id": "co_ff_dash-financial-technologies",
+      "company_name": "DASH Financial Technologies",
+      "vertical": "Asset & Wealth Management",
+      "location_region": "United States",
+      "degree": 11,
+      "people_count": 3
+    }
+  ],
+  "featured_people": [
+    {
+      "id": "p_flexpoint-ford_00067",
+      "name": "Alex Johnson",
+      "company": "Corient",
+      "suggested_role": "operator",
+      "current_pain_point_label": "Cash Efficiency",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "verified_operator"
+      ]
+    },
+    {
+      "id": "p_flexpoint-ford_00043",
+      "name": "Alex Miller",
+      "company": "Baker Hill",
+      "suggested_role": "consultant",
+      "current_pain_point_label": "Go-To-Market Execution",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "high_engagement_consultant"
+      ]
+    },
+    {
+      "id": "p_flexpoint-ford_00276",
+      "name": "Alex Smith",
+      "company": "TRAKAmerica",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Operational Scaling",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_flexpoint-ford_00257",
+      "name": "Ari Baker",
+      "company": "Summit Behavioral Healthcare",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Operational Scaling",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_flexpoint-ford_00291",
+      "name": "Ari Harris",
+      "company": "WisdomTree",
+      "suggested_role": "operator",
+      "current_pain_point_label": "Cash Efficiency",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "verified_operator"
+      ]
+    },
+    {
+      "id": "p_flexpoint-ford_00140",
+      "name": "Ari Kim",
+      "company": "IntegraCare Home Health",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Product-Market Fit",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    },
+    {
+      "id": "p_flexpoint-ford_00153",
+      "name": "Ari King",
+      "company": "JetPay",
+      "suggested_role": "operator",
+      "current_pain_point_label": "Operational Scaling",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "verified_operator"
+      ]
+    },
+    {
+      "id": "p_flexpoint-ford_00083",
+      "name": "Ari Miller",
+      "company": "Credibly",
+      "suggested_role": "mentor",
+      "current_pain_point_label": "Regulatory Compliance",
+      "network_importance_score": 99,
+      "trust_signals": [
+        "rising_contributor",
+        "trusted_mentor"
+      ]
+    }
+  ]
+}
