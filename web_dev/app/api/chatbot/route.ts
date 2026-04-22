@@ -86,10 +86,12 @@ type ChatIntent =
   | "companies_with_recent_news"
   | "general";
 
+type ChatHighlight = string | { text: string; url?: string | null };
+
 type ChatReply = {
   intent: ChatIntent;
   answer: string;
-  highlights: string[];
+  highlights: ChatHighlight[];
 };
 
 function normalize(value: unknown): string {
@@ -107,7 +109,11 @@ function cleanText(value: unknown): string {
   if (value === null || value === undefined) {
     return "";
   }
-  return String(value).replace(/\s+/g, " ").trim();
+  return String(value)
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseScore(value: unknown): number {
@@ -256,6 +262,58 @@ function getPersonName(person: PeopleNode): string {
   return cleanText(person.name ?? person.label) || "Unknown person";
 }
 
+function getPersonRole(person: PeopleNode): string {
+  const preferredTitle = cleanText(person.title);
+  if (preferredTitle) {
+    return preferredTitle;
+  }
+
+  const suggestedRole = cleanText(person.suggested_role);
+  if (suggestedRole) {
+    return formatTagLabel(suggestedRole);
+  }
+
+  return "Network contact";
+}
+
+function formatPeopleRecommendationReason(reason: string): string {
+  const cleaned = cleanText(reason);
+  if (!cleaned) {
+    return "they are well positioned in this network and look like a strong introduction candidate";
+  }
+
+  const mixedPainMatch = cleaned.match(/^Mixed Pain Point Similarity:\s*(.+?)\.\s*(.*)$/i);
+  if (mixedPainMatch) {
+    const topics = cleanText(mixedPainMatch[1]);
+    const remainder = cleanText(mixedPainMatch[2]);
+    if (/boosted by/i.test(remainder)) {
+      return `they have relevant experience with ${topics.toLowerCase()} and rank highly in the network because they are active, credible, and a strong fit for this type of introduction`;
+    }
+    return `they have relevant experience with ${topics.toLowerCase()} and look like a strong fit for this introduction`;
+  }
+
+  const resolvedMatch = cleaned.match(/^Resolved-to-Current Match:\s*(.+?)\.\s*(.*)$/i);
+  if (resolvedMatch) {
+    const topics = cleanText(resolvedMatch[1]);
+    const remainder = cleanText(resolvedMatch[2]);
+    if (/boosted by/i.test(remainder)) {
+      return `they have already worked through related challenges such as ${topics.toLowerCase()} and rank highly in the network because they are active, credible, and well connected`;
+    }
+    return `they have already worked through related challenges such as ${topics.toLowerCase()}`;
+  }
+
+  const boostedMatch = cleaned.match(/^Importance\s+[\d.]+\s+vs\s+base\s+[\d.]+,\s+boosted by\s+(.+)$/i);
+  if (boostedMatch) {
+    const boosts = cleanText(boostedMatch[1])
+      .replace(/linkedin presence/gi, "a visible professional profile")
+      .replace(/mentor fit/gi, "strong mentor fit")
+      .replace(/shared vc context/gi, "shared VC context");
+    return `they rank highly in the network because of ${boosts.toLowerCase()}`;
+  }
+
+  return cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
+}
+
 function buildCompanySearchText(company: CompanyNode): string {
   return normalize(
     [
@@ -299,6 +357,24 @@ function buildPersonSearchText(person: PeopleNode): string {
   );
 }
 
+function buildLpExposureSearchText(company: CompanyNode): string {
+  return normalize(
+    [
+      company.vertical,
+      company.taxonomy_tokens,
+      company.summary,
+      company.location,
+      company.location_region,
+      company.stage,
+      company.people_connection_summary,
+      company.people_current_pain_point_overview,
+      company.people_resolved_pain_point_overview,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
 function scoreTextAgainstTerms(searchText: string, terms: string[]): number {
   let score = 0;
   for (const term of terms) {
@@ -311,24 +387,56 @@ function scoreTextAgainstTerms(searchText: string, terms: string[]): number {
 
 function findBestCompanyMatch(question: string, companies: CompanyNode[]): CompanyNode | null {
   const text = normalize(question);
+  const genericCompanyTokens = new Set([
+    "capital",
+    "company",
+    "financial",
+    "fund",
+    "global",
+    "group",
+    "health",
+    "healthcare",
+    "holdings",
+    "insurance",
+    "management",
+    "network",
+    "partners",
+    "services",
+    "solutions",
+    "technology",
+    "technologies",
+  ]);
+
   const ranked = companies
     .map((company) => {
       const companyName = normalize(getCompanyName(company));
+      const tokens = companyName
+        .split(" ")
+        .filter((token) => token.length > 2 && !genericCompanyTokens.has(token));
       let score = 0;
+      let tokenMatches = 0;
+      let longestMatchedTokenLength = 0;
 
       if (companyName && text.includes(companyName)) {
-        score += 20 + companyName.split(" ").length;
+        score += 100 + companyName.split(" ").length;
       }
 
-      for (const token of companyName.split(" ")) {
-        if (token.length > 3 && text.includes(token)) {
-          score += 1;
+      for (const token of tokens) {
+        if (text.includes(token)) {
+          tokenMatches += 1;
+          longestMatchedTokenLength = Math.max(longestMatchedTokenLength, token.length);
         }
+      }
+
+      if (tokenMatches >= 2) {
+        score += 20 + tokenMatches * 2;
+      } else if (tokenMatches === 1 && (tokens.length === 1 || longestMatchedTokenLength >= 7)) {
+        score += 8;
       }
 
       for (const identifier of getCompanyIds(company).map((value) => normalize(value))) {
         if (identifier && text.includes(identifier)) {
-          score += 5;
+          score += 50;
         }
       }
 
@@ -390,6 +498,9 @@ function detectIntent(question: string, companies: CompanyNode[]): ChatIntent {
   const companyMatch = findBestCompanyMatch(question, companies);
   const hasNewsLanguage = /(news|headline|headlines|article|articles|press|newsroom|blog)/.test(text);
   const hasLpLanguage = /(lp|lps|limited partner|limited partners|partner|partners)/.test(text);
+  const hasCompanySpecificLpLanguage = /(involved with|attached to|for\s+[a-z0-9]|with\s+[a-z0-9]|covering|covers|backing|backs|on\s+[a-z0-9])/.test(
+    text,
+  );
 
   if (hasNewsLanguage && companyMatch) {
     return "latest_news_for_company";
@@ -400,7 +511,7 @@ function detectIntent(question: string, companies: CompanyNode[]): ChatIntent {
   if (hasLpLanguage && /(covers most|touches most|most companies|most active|largest coverage|portfolio coverage)/.test(text)) {
     return "lp_company_coverage";
   }
-  if (hasLpLanguage && companyMatch) {
+  if (hasLpLanguage && companyMatch && hasCompanySpecificLpLanguage) {
     return "lp_coverage_for_company";
   }
   if (hasLpLanguage && /most|highest|which|who/.test(text)) {
@@ -431,7 +542,7 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
   const matchingCompanies = companies
     .map((company) => ({
       company,
-      matchScore: terms.length > 0 ? scoreTextAgainstTerms(buildCompanySearchText(company), terms) : 1,
+      matchScore: terms.length > 0 ? scoreTextAgainstTerms(buildLpExposureSearchText(company), terms) : 1,
     }))
     .filter((entry) => terms.length === 0 || entry.matchScore > 0)
     .sort((left, right) => right.matchScore - left.matchScore);
@@ -454,15 +565,45 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
   }
 
   const topOwner = rankedOwners[0];
+  const tiedOwners = rankedOwners.filter((owner) => owner.count === topOwner.count);
+  const topMatchingCompanies = matchingCompanies.slice(0, 5).map((entry) => getCompanyName(entry.company));
+
+  if (tiedOwners.length > 1) {
+    return {
+      intent: "lp_exposure",
+      answer: topOwner.usesInvestorProxy
+        ? `There is not a single investor-level leader for that theme yet. The strongest exposure is tied between ${tiedOwners
+            .map((owner) => owner.ownerName)
+            .join(", ")}.`
+        : `There is not a single LP leader for that theme yet. The strongest exposure is tied between ${tiedOwners
+            .map((owner) => owner.ownerName)
+            .join(", ")}.`,
+      highlights: [
+        `Top matching companies: ${topMatchingCompanies.join(", ")}`,
+        ...rankedOwners.slice(0, 4).map(
+          (owner) =>
+            `${owner.ownerName} — exposure score ${owner.count} across ${owner.companyNames.length} companies: ${owner.companyNames
+              .slice(0, 4)
+              .join(", ")}`,
+        ),
+      ],
+    };
+  }
+
   return {
     intent: "lp_exposure",
     answer: topOwner.usesInvestorProxy
       ? `${topOwner.ownerName} has the strongest investor-level exposure proxy for that theme.`
       : `${topOwner.ownerName} has the strongest LP exposure for that theme.`,
-    highlights: rankedOwners.slice(0, 4).map(
-      (owner) =>
-        `${owner.ownerName} — exposure score ${owner.count} across ${owner.companyNames.length} companies: ${owner.companyNames.slice(0, 4).join(", ")}`,
-    ),
+    highlights: [
+      `Top matching companies: ${topMatchingCompanies.join(", ")}`,
+      ...rankedOwners.slice(0, 4).map(
+        (owner) =>
+          `${owner.ownerName} — exposure score ${owner.count} across ${owner.companyNames.length} companies: ${owner.companyNames
+            .slice(0, 4)
+            .join(", ")}`,
+      ),
+    ],
   };
 }
 
@@ -539,7 +680,7 @@ function askForFounderRecommendations(question: string, companies: CompanyNode[]
       return {
         personName: getPersonName(person),
         company: cleanText(person.company) || "Unknown company",
-        role: cleanText(person.title ?? person.suggested_role) || "Network contact",
+        role: getPersonRole(person),
         score: baseScore + matchScore * 3 + companyBoost,
         reason:
           cleanText(person.connection_summary) ||
@@ -562,12 +703,14 @@ function askForFounderRecommendations(question: string, companies: CompanyNode[]
   return {
     intent: "founder_recommendation",
     answer: "These are the strongest people to reach out to from the current network graph.",
-    highlights: rankedPeople.map(
-      (person) =>
-        `${person.personName} (${person.role}) at ${person.company} — ${person.reason.slice(0, 160)}${
-          person.reason.length > 160 ? "..." : ""
-        }`,
-    ),
+    highlights: rankedPeople.map((person) => {
+      const reason = formatPeopleRecommendationReason(person.reason);
+      if (person.role && person.role !== "Network contact") {
+        return `${person.personName} at ${person.company} is a strong person to reach out to. They are a ${person.role.toLowerCase()} and stand out because ${reason}.`;
+      }
+
+      return `${person.personName} at ${person.company} is a strong person to reach out to because ${reason}.`;
+    }),
   };
 }
 
@@ -594,11 +737,75 @@ function askForTopConnected(companies: CompanyNode[], terms: string[]): ChatRepl
   return {
     intent: "top_connected_companies",
     answer: terms.length > 0 ? "These are the most connected companies matching that theme." : "Top connected companies in the current graph are:",
-    highlights: rankedCompanies.map(
-      (entry) =>
-        `${getCompanyName(entry.company)} — degree ${entry.degree}${entry.company.vertical ? ` (${entry.company.vertical})` : ""}`,
-    ),
+    highlights: rankedCompanies.map((entry) => {
+      const companyName = getCompanyName(entry.company);
+      const bridgeLabel = `${entry.degree} company bridge${entry.degree === 1 ? "" : "s"}`;
+
+      if (terms.length > 0) {
+        return entry.company.vertical
+          ? `${companyName} is one of the most connected companies in that theme, with ${bridgeLabel}. It sits in ${entry.company.vertical}.`
+          : `${companyName} is one of the most connected companies in that theme, with ${bridgeLabel}.`;
+      }
+
+      return entry.company.vertical
+        ? `${companyName} is one of the most connected companies in the current graph, with ${bridgeLabel}. It sits in ${entry.company.vertical}.`
+        : `${companyName} is one of the most connected companies in the current graph, with ${bridgeLabel}.`;
+    }),
   };
+}
+
+function formatBridgeReason(reason: string): string {
+  const parts = cleanText(reason)
+    .split("|")
+    .map((part) => cleanText(part))
+    .filter(Boolean)
+    .map((part) => {
+      const sharedVertical = part.match(/^shared vertical \((.+)\)$/i);
+      if (sharedVertical) {
+        return `they operate in the same vertical: ${sharedVertical[1]}`;
+      }
+
+      const sharedStage = part.match(/^shared stage \((.+)\)$/i);
+      if (sharedStage) {
+        return `they are at the same stage: ${sharedStage[1]}`;
+      }
+
+      const sameRegion = part.match(/^same region \((.+)\)$/i);
+      if (sameRegion) {
+        return `they share the same region: ${sameRegion[1]}`;
+      }
+
+      const sharedPainPoint = part.match(/^shared current pain point \((.+)\)$/i);
+      if (sharedPainPoint) {
+        return `they are both facing ${sharedPainPoint[1]}`;
+      }
+
+      const sharedResolvedPainPoint = part.match(/^shared resolved pain point \((.+)\)$/i);
+      if (sharedResolvedPainPoint) {
+        return `they have both solved ${sharedResolvedPainPoint[1]}`;
+      }
+
+      const sharedFund = part.match(/^shared fund \((.+)\)$/i);
+      if (sharedFund) {
+        return `they are backed through the same fund: ${sharedFund[1]}`;
+      }
+
+      return part;
+    });
+
+  if (parts.length === 0) {
+    return "they share several strong network similarities";
+  }
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  if (parts.length === 2) {
+    return `${parts[0]}, and ${parts[1]}`;
+  }
+
+  return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
 }
 
 function askForBridgeInsights(question: string, companies: CompanyNode[], edges: EdgeNode[]): ChatReply {
@@ -631,10 +838,19 @@ function askForBridgeInsights(question: string, companies: CompanyNode[], edges:
       ? `These are the strongest bridges for ${getCompanyName(company)}.`
       : "These are the strongest bridge opportunities I can read from the graph.",
     highlights: ranked.map(
-      (item) =>
-        `${item.source} ↔ ${item.target} (score ${item.score.toFixed(3)}) — ${item.reason.slice(0, 140)}${
-          item.reason.length > 140 ? "..." : ""
-        }`,
+      (item) => {
+        if (company) {
+          const companyName = getCompanyName(company);
+          const counterpart = item.source === companyName ? item.target : item.source;
+          return `${counterpart} is one of the strongest bridge matches for ${companyName} with a score of ${item.score.toFixed(
+            3,
+          )} because ${formatBridgeReason(item.reason)}.`;
+        }
+
+        return `${item.source} and ${item.target} form a strong bridge with a score of ${item.score.toFixed(
+          3,
+        )} because ${formatBridgeReason(item.reason)}.`;
+      },
     ),
   };
 }
@@ -709,10 +925,7 @@ function askForCompaniesWithPainPoint(companies: CompanyNode[], terms: string[])
     return {
       intent: "companies_with_pain_point",
       answer: "These companies are the strongest matches for that current pain point.",
-      highlights: rankedCompanies.map(
-        (entry) =>
-          `${getCompanyName(entry.company)} — ${entry.currentTags.length > 0 ? entry.currentTags.map(formatTagLabel).join(", ") : "pain point labels are sparse"}`,
-      ),
+      highlights: rankedCompanies.map((entry) => getCompanyName(entry.company)),
     };
   }
 
@@ -829,7 +1042,10 @@ function askForLatestNewsForCompany(question: string, companies: CompanyNode[]):
   return {
     intent: "latest_news_for_company",
     answer: `Here is the latest news I found for ${getCompanyName(company)}.`,
-    highlights: newsItems.slice(0, 4).map((item) => `${item.datePublished ? `${item.datePublished} — ` : ""}${item.title}`),
+    highlights: newsItems.slice(0, 4).map((item) => ({
+      text: `${item.datePublished ? `${item.datePublished} — ` : ""}${item.title}`,
+      url: item.articleUrl,
+    })),
   };
 }
 

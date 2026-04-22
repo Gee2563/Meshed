@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, RotateCcw, Search, Workflow, X } from "lucide-react";
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { clientEnv } from "@/lib/config/env";
@@ -591,7 +591,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
   const [isReady, setIsReady] = useState(false);
 
   const deferredSearchValue = useDeferredValue(searchValue);
-  const graphData = buildGraphData(nodes, edges, deferredSearchValue);
+  const graphData = useMemo(() => buildGraphData(nodes, edges, deferredSearchValue), [nodes, edges, deferredSearchValue]);
 
   const selectedNode = selectedNodeId ? nodes.find((node) => node.id === selectedNodeId) ?? null : null;
   const selectedPerson = selectedNode?.people.find((person) => person.id === selectedPersonId) ?? null;
@@ -669,7 +669,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
               enabled: true,
               iterations: 450,
               updateInterval: 40,
-              fit: true,
+              fit: false,
             },
             adaptiveTimestep: true,
             minVelocity: 0.18,
@@ -710,7 +710,6 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
           setSelectedPartnerId(null);
           setIsLatestNewsModalOpen(false);
           network.focus(nextNodeId, {
-            scale: 1.05,
             animation: {
               duration: 350,
             },
@@ -758,12 +757,16 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
       nodes: graphData.visNodes,
       edges: graphData.visEdges,
     });
+  }, [graphData.visEdges, graphData.visNodes]);
 
+  useEffect(() => {
     if (graphData.searchTerms.length && selectedNodeId && !graphData.matchedNodeIds.includes(selectedNodeId)) {
       setSelectedNodeId(null);
       setSelectedPersonId(null);
     }
+  }, [graphData.matchedNodeIds, graphData.searchTerms, selectedNodeId]);
 
+  useEffect(() => {
     scheduleGraphUpdate(() => {
       if (!networkRef.current) {
         return;
@@ -775,7 +778,6 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
 
       if (graphData.matchedNodeIds.length === 1) {
         networkRef.current.focus(graphData.matchedNodeIds[0], {
-          scale: 1.15,
           animation: {
             duration: 320,
           },
@@ -792,7 +794,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
         });
       }
     });
-  }, [graphData.matchedNodeIds, graphData.searchTerms, graphData.visEdges, graphData.visNodes, selectedNodeId]);
+  }, [graphData.matchedNodeIds, graphData.searchTerms]);
 
   function resetView() {
     networkRef.current?.fit({
@@ -1019,7 +1021,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
                       </div>
 
                       {selectedNode.partners.length ? (
-                        <details open className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                        <details className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
                           <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                             <div className="flex items-center justify-between gap-3">
                               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Flexford partners</p>
@@ -1125,7 +1127,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
                         ) : null}
                       </div>
 
-                      <details open className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                      <details className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
                         <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">People in this node</p>
@@ -1194,7 +1196,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
                         )}
                       </details>
 
-                      <details open className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                      <details className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
                         <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Latest news</p>
@@ -1243,7 +1245,7 @@ export function CompanyNetworkGraph({ nodes, edges, graphLabel = "current" }: Co
                         )}
                       </details>
 
-                      <details open className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
+                      <details className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-4">
                         <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Strongest bridges</p>

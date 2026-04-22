@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 
+type ChatHighlight = string | { text: string; url?: string | null };
+
 type ChatMessage = {
   from: "user" | "assistant";
   text: string;
-  highlights?: string[];
+  highlights?: ChatHighlight[];
   intent?: string;
   isPending?: boolean;
 };
 
 type ChatbotReply = {
   answer: string;
-  highlights: string[];
+  highlights: ChatHighlight[];
   intent: string;
 };
 
@@ -170,17 +172,33 @@ export default function ChatbotPage() {
                   <p className="mt-3 leading-7 text-ink">{message.text}</p>
                   {message.highlights?.length ? (
                     <div className="mt-4 space-y-2">
-                      {message.highlights.map((highlight, highlightIndex) => (
-                        <div
-                          key={`${highlight}-${highlightIndex}`}
-                          className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
-                        >
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
-                            Insight {highlightIndex + 1}
-                          </p>
-                          <p className="mt-1 text-sm leading-6 text-ink">{highlight}</p>
-                        </div>
-                      ))}
+                      {message.highlights.map((highlight, highlightIndex) => {
+                        const highlightText = typeof highlight === "string" ? highlight : highlight.text;
+                        const highlightUrl = typeof highlight === "string" ? null : highlight.url;
+
+                        return (
+                          <div
+                            key={`${highlightText}-${highlightIndex}`}
+                            className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
+                          >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
+                              Insight {highlightIndex + 1}
+                            </p>
+                            {highlightUrl ? (
+                              <a
+                                href={highlightUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-1 block text-sm leading-6 text-sky-700 underline decoration-sky-200 underline-offset-2 transition hover:text-sky-800"
+                              >
+                                {highlightText}
+                              </a>
+                            ) : (
+                              <p className="mt-1 text-sm leading-6 text-ink">{highlightText}</p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : null}
                 </>
