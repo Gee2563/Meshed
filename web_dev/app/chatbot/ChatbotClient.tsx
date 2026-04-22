@@ -391,9 +391,6 @@ export default function ChatbotClient({ companyNodes }: ChatbotClientProps) {
                   <p className="text-sm font-semibold text-ink">Ask a graph question</p>
                   <p className="mt-1 text-xs text-slate">Try an LP, company, bridge, pain-point, or news question.</p>
                 </div>
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                  Demo ready
-                </span>
               </div>
               <textarea
                 id="chat-message"

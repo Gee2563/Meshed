@@ -215,6 +215,8 @@ function extractQueryTerms(question: string): string[] {
     "across",
     "and",
     "are",
+    "companies",
+    "company",
     "does",
     "do",
     "for",
@@ -231,13 +233,17 @@ function extractQueryTerms(question: string): string[] {
     "most",
     "my",
     "network",
+    "networks",
     "of",
     "on",
+    "sector",
     "should",
     "show",
     "the",
     "this",
     "to",
+    "vertical",
+    "verticals",
     "we",
     "what",
     "which",
@@ -382,11 +388,12 @@ function buildStructuredPersonHighlight(
   person: { personId: string; personName: string; company: string; reason: string },
   index: number,
   companies: CompanyNode[],
+  textOverride?: string | null,
 ): ChatHighlight {
   const company = findCompanyByName(person.company, companies);
 
   return {
-    text: formatOutreachPersonHighlight(person, index),
+    text: textOverride || formatOutreachPersonHighlight(person, index),
     modalType: "person",
     companyId: getCompanyLookupId(company),
     companyName: company ? getCompanyName(company) : person.company,
@@ -427,9 +434,9 @@ function buildCompanyPartnerHighlight(
   };
 }
 
-function buildLatestNewsModalHighlight(company: CompanyNode): ChatHighlight {
+function buildLatestNewsModalHighlight(company: CompanyNode, textOverride?: string | null): ChatHighlight {
   return {
-    text: `Open ${getCompanyName(company)} latest news`,
+    text: textOverride || `Open ${getCompanyName(company)} latest news`,
     modalType: "latest_news",
     companyId: getCompanyLookupId(company),
     companyName: getCompanyName(company),
@@ -811,8 +818,14 @@ function askForLpCompanyCoverage(companies: CompanyNode[]): ChatReply {
     answer: topOwner.usesInvestorProxy
       ? `${topOwner.ownerName} touches the most companies in this demo bundle based on investor-level coverage.`
       : `${topOwner.ownerName} currently covers the most companies in this demo bundle.`,
-    highlights: rankedOwners.slice(0, 5).map(
-      (owner) => `${owner.ownerName} — ${owner.companyNames.length} companies: ${owner.companyNames.slice(0, 5).join(", ")}`,
+    highlights: rankedOwners.slice(0, 5).map((owner, index) =>
+      buildStructuredPartnerHighlight(
+        owner,
+        index,
+        companies,
+        owner.companyNames[0] ?? null,
+        `${owner.ownerName} — ${owner.companyNames.length} companies: ${owner.companyNames.slice(0, 5).join(", ")}`,
+      ),
     ),
   };
 }
@@ -1069,7 +1082,7 @@ function askForCompaniesByVertical(companies: CompanyNode[], terms: string[]): C
   const rankedCompanies = companies
     .map((company) => ({
       company,
-      matchScore: scoreTextAgainstTerms(
+      matchScore: scoreExactTermsAgainstText(
         normalize([company.vertical, company.taxonomy_tokens, getCompanyName(company)].filter(Boolean).join(" ")),
         terms,
       ),
@@ -1085,7 +1098,10 @@ function askForCompaniesByVertical(companies: CompanyNode[], terms: string[]): C
       answer: "These companies are the closest matches for that sector or vertical.",
       highlights: rankedCompanies.map(
         (entry) =>
-          `${getCompanyName(entry.company)}${entry.company.vertical ? ` — ${entry.company.vertical}` : ""}${entry.company.stage ? ` | ${entry.company.stage}` : ""}`,
+          buildCompanyModalHighlight(
+            entry.company,
+            `${getCompanyName(entry.company)}${entry.company.vertical ? ` — ${entry.company.vertical}` : ""}${entry.company.stage ? ` | ${entry.company.stage}` : ""}`,
+          ),
       ),
     };
   }
@@ -1188,9 +1204,19 @@ function askForWhoSolvedPainPoint(companies: CompanyNode[], people: PeopleNode[]
         const person = entry.person;
         const role = cleanText(person.title ?? person.suggested_role) || "Network contact";
         const resolvedContext = cleanText(person.resolved_pain_points_label) || cleanText(person.connection_summary);
-        return `${getPersonName(person)} (${role}) at ${cleanText(person.company) || "Unknown company"} — ${resolvedContext.slice(0, 160)}${
-          resolvedContext.length > 160 ? "..." : ""
-        }`;
+        return buildStructuredPersonHighlight(
+          {
+            personId: cleanText(person.id),
+            personName: getPersonName(person),
+            company: cleanText(person.company) || "Unknown company",
+            reason: resolvedContext,
+          },
+          0,
+          companies,
+          `${getPersonName(person)} (${role}) at ${cleanText(person.company) || "Unknown company"} — ${resolvedContext.slice(0, 160)}${
+            resolvedContext.length > 160 ? "..." : ""
+          }`,
+        );
       }),
     };
   }
@@ -1220,7 +1246,12 @@ function askForWhoSolvedPainPoint(companies: CompanyNode[], people: PeopleNode[]
       answer: "These companies show the strongest resolved signals for that challenge.",
       highlights: rankedCompanies.map(
         (entry) =>
-          `${getCompanyName(entry.company)} — ${entry.resolvedTags.length > 0 ? entry.resolvedTags.map(formatTagLabel).join(", ") : "resolved pain point metadata is sparse"}`,
+          buildCompanyModalHighlight(
+            entry.company,
+            `${getCompanyName(entry.company)} — ${
+              entry.resolvedTags.length > 0 ? entry.resolvedTags.map(formatTagLabel).join(", ") : "resolved pain point metadata is sparse"
+            }`,
+          ),
       ),
     };
   }
@@ -1290,11 +1321,13 @@ function askForCompaniesWithRecentNews(companies: CompanyNode[], terms: string[]
   return {
     intent: "companies_with_recent_news",
     answer: "These companies currently have mapped recent news in the graph bundle.",
-    highlights: rankedCompanies.map(
-      (entry) =>
+    highlights: rankedCompanies.map((entry) =>
+      buildLatestNewsModalHighlight(
+        entry.company,
         `${getCompanyName(entry.company)} — ${entry.newsItems.length} article${entry.newsItems.length === 1 ? "" : "s"}${
           entry.newsItems[0] ? ` | Latest: ${entry.newsItems[0].title.slice(0, 90)}${entry.newsItems[0].title.length > 90 ? "..." : ""}` : ""
         }`,
+      ),
     ),
   };
 }
@@ -1349,13 +1382,17 @@ function answerGraphQuestion(question: string, companyPayload: CompanyNetworkPay
       intent: "general",
       answer: `Here is the current network snapshot for ${getCompanyName(companyMatch)}.`,
       highlights: [
+        buildCompanyModalHighlight(
+          companyMatch,
+          `Open ${getCompanyName(companyMatch)} company snapshot`,
+        ),
         companyMatch.vertical ? `Vertical: ${companyMatch.vertical}` : "Vertical: not labeled",
         `Company bridges: ${parseScore(companyMatch.degree)}`,
         currentPainPoints.length > 0
           ? `Current pain points: ${currentPainPoints.map(formatTagLabel).join(", ")}`
           : "Current pain points: none mapped",
-        lpOwners.length > 0 ? `LPs involved: ${lpOwners.map((owner) => owner.ownerName).join(", ")}` : "LPs involved: none mapped",
-        `Latest news items mapped: ${newsItems.length}`,
+        ...(lpOwners.length > 0 ? lpOwners.slice(0, 2).map((owner) => buildCompanyPartnerHighlight(owner, companyMatch)) : ["LPs involved: none mapped"]),
+        ...(newsItems.length > 0 ? [buildLatestNewsModalHighlight(companyMatch, `Latest news items mapped: ${newsItems.length}`)] : [`Latest news items mapped: ${newsItems.length}`]),
       ],
     };
   }
@@ -1376,7 +1413,10 @@ function answerGraphQuestion(question: string, companyPayload: CompanyNetworkPay
         answer: "Here are the best-matched companies from your current graph for that question.",
         highlights: companyMatches.map(
           (entry) =>
-            `${getCompanyName(entry.company)} — match score ${entry.score}${entry.company.vertical ? ` | ${entry.company.vertical}` : ""}`,
+            buildCompanyModalHighlight(
+              entry.company,
+              `${getCompanyName(entry.company)} — match score ${entry.score}${entry.company.vertical ? ` | ${entry.company.vertical}` : ""}`,
+            ),
         ),
       };
     }
