@@ -1,6 +1,6 @@
 type DynamicInviteKind = "portfolio_member" | "vc_member";
 
-type DynamicInviteRecord = {
+export type DynamicInviteRecord = {
   email: string;
   kind: DynamicInviteKind;
   nextRoute: DynamicNextRoute;
@@ -17,7 +17,7 @@ type DynamicInviteRecord = {
 
 export type DynamicNextRoute = "/human-idv";
 
-function parseDynamicInviteEmailsFromEnv() {
+function parseDynamicInviteEmailsFromEnv(): DynamicInviteRecord[] {
   const configured = process.env.DYNAMIC_INVITATION_EMAILS;
 
   if (!configured) {
@@ -72,7 +72,7 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-export function getDynamicInvitationAccess(email: string) {
+export function getDynamicInvitationAccess(email: string): DynamicInviteRecord {
   const normalized = normalizeEmail(email);
   const invite = inviteRegistry.find((record) => record.email === normalized);
   if (invite) {

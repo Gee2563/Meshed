@@ -70,7 +70,7 @@ const featuredSynopsis = {
   ],
 };
 
-export function MeshedAISummary() {
+export default function MeshedAISummary() {
   const [showMatch, setShowMatch] = useState(true);
 
   return (
@@ -123,5 +123,3 @@ export function MeshedAISummary() {
     </main>
   );
 }
-
-export default MeshedAISummary;
