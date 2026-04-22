@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import { getDashboardScopeConfig, type MeshedDashboardScope } from "@/lib/server/meshed-network/dashboard-scope";
 
@@ -114,6 +115,13 @@ export type A16zCompanyGraphPartner = {
   investments: string[];
   pictureUrl: string | null;
   picturePath: string | null;
+  meshedReviews: A16zCompanyGraphPartnerReview[];
+};
+
+export type A16zCompanyGraphPartnerReview = {
+  from: string;
+  imageUrl: string | null;
+  review: string;
 };
 
 export type A16zCompanyGraphNewsItem = {
@@ -210,7 +218,16 @@ type TeamProfilePayload = {
   investments?: string[] | null;
   picture_url?: string | null;
   picture_path?: string | null;
+  meshed_reviews?:
+    | Array<{
+        from?: string | null;
+        image_url?: string | null;
+        review?: string | null;
+      }>
+    | null;
 };
+
+const FLEXPOINT_PUBLIC_ROOT = path.resolve(process.cwd(), "../network_pipeline/public/flexpoint-ford");
 
 async function readJson<T>(scope: MeshedDashboardScope, fileName: string) {
   const payload = await readFile(`${getDashboardScopeConfig(scope).bundleRoot}/${fileName}`, "utf-8");
@@ -309,6 +326,54 @@ function parseNewsItems(value: unknown): A16zCompanyGraphNewsItem[] {
   return [];
 }
 
+function resolveFlexpointAssetUrl(value: string | null | undefined) {
+  const cleaned = String(value ?? "").trim();
+
+  if (!cleaned) {
+    return null;
+  }
+
+  if (cleaned.startsWith("/flexpoint-ford/") || /^https?:\/\//i.test(cleaned)) {
+    return cleaned;
+  }
+
+  const candidate = path.normalize(cleaned);
+  const relative = path.relative(FLEXPOINT_PUBLIC_ROOT, candidate);
+
+  if (relative && !relative.startsWith("..") && !path.isAbsolute(relative)) {
+    return `/flexpoint-ford/assets/${relative.split(path.sep).join("/")}`;
+  }
+
+  return cleaned;
+}
+
+function parsePartnerMeshedReviews(value: TeamProfilePayload["meshed_reviews"]): A16zCompanyGraphPartnerReview[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") {
+        return null;
+      }
+
+      const from = String(item.from ?? "").trim();
+      const review = String(item.review ?? "").trim();
+
+      if (!from || !review) {
+        return null;
+      }
+
+      return {
+        from,
+        imageUrl: resolveFlexpointAssetUrl(item.image_url),
+        review,
+      } satisfies A16zCompanyGraphPartnerReview;
+    })
+    .filter((item): item is A16zCompanyGraphPartnerReview => item !== null);
+}
+
 export async function loadDashboardData(scope: MeshedDashboardScope): Promise<A16zCryptoDashboardData | null> {
   try {
     const [snapshot, companyNetwork, peopleNetwork, teamProfiles] = await Promise.all([
@@ -396,6 +461,7 @@ export async function loadDashboardData(scope: MeshedDashboardScope): Promise<A1
           investments: parseStringArray(partnerProfile?.investments ?? []),
           pictureUrl: partnerProfile?.picture_url ?? null,
           picturePath: partnerProfile?.picture_path ?? null,
+          meshedReviews: parsePartnerMeshedReviews(partnerProfile?.meshed_reviews ?? null),
         } satisfies A16zCompanyGraphPartner;
       });
 

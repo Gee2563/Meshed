@@ -107,6 +107,34 @@ export function dispatchGraphConnectRequest(person: A16zCompanyGraphPerson) {
   });
 }
 
+export function dispatchPartnerConnectRequest(partner: A16zCompanyGraphPartner, companyName: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.postMessage(
+    {
+      type: "meshed:graph-connect-request",
+      payload: {
+        id: partner.id,
+        name: partner.name,
+        company: companyName,
+        role: partner.jobTitle ?? "LP partner",
+        why:
+          partner.summary ??
+          partner.meshedReviews[0]?.review ??
+          `${partner.name} was surfaced from the LP coverage mapped to ${companyName}.`,
+      },
+    },
+    window.location.origin,
+  );
+
+  document.getElementById("meshed-connections-panel")?.scrollIntoView?.({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
 export function partnerInitials(name: string) {
   return name
     .split(/\s+/)
@@ -352,6 +380,45 @@ export function PartnerDetailModal({
           </div>
         ) : null}
 
+        {partner.meshedReviews.length ? (
+          <details className="mt-6 rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
+            <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Meshed reviews</p>
+                <span className="rounded-full border border-slate-200 bg-mist/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate">
+                  {partner.meshedReviews.length}
+                </span>
+              </div>
+            </summary>
+            <div className="mt-4 space-y-3">
+              {partner.meshedReviews.map((review) => (
+                <div
+                  key={`${review.from}-${review.review.slice(0, 32)}`}
+                  className="rounded-[1rem] border border-slate-200 bg-mist/40 px-4 py-4"
+                >
+                  <div className="flex items-start gap-3">
+                    {review.imageUrl ? (
+                      <img
+                        src={review.imageUrl}
+                        alt={review.from}
+                        className="h-12 w-12 rounded-2xl border border-slate-200 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-ink">
+                        {partnerInitials(review.from)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-ink">{review.from}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate">{review.review}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </details>
+        ) : null}
+
         <div className="mt-6 rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Portfolio coverage</p>
           {highlightedInvestments.length ? (
@@ -375,6 +442,7 @@ export function PartnerDetailModal({
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
+          <Button onClick={() => dispatchPartnerConnectRequest(partner, companyName)}>Connect on Meshed</Button>
           <Button variant="secondary" onClick={onClose}>
             Close
           </Button>
