@@ -264,7 +264,11 @@ function getPersonName(person: PeopleNode): string {
 
 function getPersonRole(person: PeopleNode): string {
   const preferredTitle = cleanText(person.title);
-  if (preferredTitle) {
+  if (
+    preferredTitle &&
+    !/company:|current pain point:|resolved pain points?:/i.test(preferredTitle) &&
+    normalize(preferredTitle) !== normalize(getPersonName(person))
+  ) {
     return preferredTitle;
   }
 
@@ -373,6 +377,34 @@ function buildLpExposureSearchText(company: CompanyNode): string {
       .filter(Boolean)
       .join(" "),
   );
+}
+
+function buildExactTermIndex(searchText: string): Set<string> {
+  const words = normalize(searchText).split(" ").filter(Boolean);
+  const indexedTerms = new Set(words);
+
+  for (let index = 0; index < words.length - 1; index += 1) {
+    indexedTerms.add(`${words[index]} ${words[index + 1]}`);
+  }
+
+  return indexedTerms;
+}
+
+function scoreExactTermsAgainstText(searchText: string, terms: string[]): number {
+  const indexedTerms = buildExactTermIndex(searchText);
+  let score = 0;
+
+  for (const term of terms) {
+    const normalizedTerm = normalize(term);
+    if (!normalizedTerm) {
+      continue;
+    }
+    if (indexedTerms.has(normalizedTerm)) {
+      score += normalizedTerm.includes(" ") ? 2 : 1;
+    }
+  }
+
+  return score;
 }
 
 function scoreTextAgainstTerms(searchText: string, terms: string[]): number {
@@ -542,7 +574,7 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
   const matchingCompanies = companies
     .map((company) => ({
       company,
-      matchScore: terms.length > 0 ? scoreTextAgainstTerms(buildLpExposureSearchText(company), terms) : 1,
+      matchScore: terms.length > 0 ? scoreExactTermsAgainstText(buildLpExposureSearchText(company), terms) : 1,
     }))
     .filter((entry) => terms.length === 0 || entry.matchScore > 0)
     .sort((left, right) => right.matchScore - left.matchScore);
@@ -567,6 +599,9 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
   const topOwner = rankedOwners[0];
   const tiedOwners = rankedOwners.filter((owner) => owner.count === topOwner.count);
   const topMatchingCompanies = matchingCompanies.slice(0, 5).map((entry) => getCompanyName(entry.company));
+  const otherStrongOwners = rankedOwners
+    .slice(tiedOwners.length > 1 ? tiedOwners.length : 1, tiedOwners.length > 1 ? tiedOwners.length + 3 : 4)
+    .map((owner) => owner.ownerName);
 
   if (tiedOwners.length > 1) {
     return {
@@ -579,13 +614,11 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
             .map((owner) => owner.ownerName)
             .join(", ")}.`,
       highlights: [
-        `Top matching companies: ${topMatchingCompanies.join(", ")}`,
-        ...rankedOwners.slice(0, 4).map(
-          (owner) =>
-            `${owner.ownerName} — exposure score ${owner.count} across ${owner.companyNames.length} companies: ${owner.companyNames
-              .slice(0, 4)
-              .join(", ")}`,
-        ),
+        `The clearest matching companies for this theme are ${topMatchingCompanies.join(", ")}.`,
+        `${tiedOwners
+          .map((owner) => owner.ownerName)
+          .join(", ")} each show up across ${topOwner.companyNames.length} matching compan${topOwner.companyNames.length === 1 ? "y" : "ies"} in this demo graph.`,
+        ...(otherStrongOwners.length > 0 ? [`Other LPs close behind are ${otherStrongOwners.join(", ")}.`] : []),
       ],
     };
   }
@@ -593,16 +626,14 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
   return {
     intent: "lp_exposure",
     answer: topOwner.usesInvestorProxy
-      ? `${topOwner.ownerName} has the strongest investor-level exposure proxy for that theme.`
-      : `${topOwner.ownerName} has the strongest LP exposure for that theme.`,
+      ? `${topOwner.ownerName} looks like the strongest investor-level match for that theme in this demo graph.`
+      : `${topOwner.ownerName} looks like the strongest LP match for that theme in this demo graph.`,
     highlights: [
-      `Top matching companies: ${topMatchingCompanies.join(", ")}`,
-      ...rankedOwners.slice(0, 4).map(
-        (owner) =>
-          `${owner.ownerName} — exposure score ${owner.count} across ${owner.companyNames.length} companies: ${owner.companyNames
-            .slice(0, 4)
-            .join(", ")}`,
-      ),
+      `${topOwner.ownerName} is attached to ${topOwner.companyNames.length} matching compan${topOwner.companyNames.length === 1 ? "y" : "ies"}: ${topOwner.companyNames
+        .slice(0, 5)
+        .join(", ")}.`,
+      `The clearest matching companies for this theme are ${topMatchingCompanies.join(", ")}.`,
+      ...(otherStrongOwners.length > 0 ? [`Other LPs with relevant exposure here are ${otherStrongOwners.join(", ")}.`] : []),
     ],
   };
 }
@@ -705,10 +736,6 @@ function askForFounderRecommendations(question: string, companies: CompanyNode[]
     answer: "These are the strongest people to reach out to from the current network graph.",
     highlights: rankedPeople.map((person) => {
       const reason = formatPeopleRecommendationReason(person.reason);
-      if (person.role && person.role !== "Network contact") {
-        return `${person.personName} at ${person.company} is a strong person to reach out to. They are a ${person.role.toLowerCase()} and stand out because ${reason}.`;
-      }
-
       return `${person.personName} at ${person.company} is a strong person to reach out to because ${reason}.`;
     }),
   };
