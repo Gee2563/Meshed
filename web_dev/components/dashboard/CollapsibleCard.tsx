@@ -8,6 +8,7 @@ type CollapsibleCardProps = {
   title: string;
   description?: string;
   children: ReactNode;
+  headerVisual?: ReactNode;
   className?: string;
   contentClassName?: string;
   defaultOpen?: boolean;
@@ -36,6 +37,7 @@ export function CollapsibleCard({
   title,
   description,
   children,
+  headerVisual,
   className,
   contentClassName,
   defaultOpen = true,
@@ -48,9 +50,10 @@ export function CollapsibleCard({
       <summary className="cursor-pointer list-none px-6 py-5 sm:px-6 sm:py-6 [&::-webkit-details-marker]:hidden">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
-            <p className={cn("text-xs font-semibold uppercase tracking-[0.22em]", theme.eyebrow)}>{eyebrow}</p>
-            <h2 className={cn("mt-2 font-display text-3xl tracking-tight", theme.title)}>{title}</h2>
-            {description ? <p className={cn("mt-3 text-sm leading-6", theme.description)}>{description}</p> : null}
+            {headerVisual ? <div className="mb-3">{headerVisual}</div> : null}
+            {eyebrow ? <p className={cn("text-xs font-semibold uppercase tracking-[0.22em]", theme.eyebrow)}>{eyebrow}</p> : null}
+            <h2 className={cn(eyebrow ? "mt-2" : "", "font-display text-3xl tracking-tight", theme.title)}>{title}</h2>
+            {description ? <p className={cn("mt-3 text-[12px] leading-5", theme.description)}>{description}</p> : null}
           </div>
           <span
             className={cn(

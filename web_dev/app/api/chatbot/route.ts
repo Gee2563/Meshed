@@ -86,7 +86,19 @@ type ChatIntent =
   | "companies_with_recent_news"
   | "general";
 
-type ChatHighlight = string | { text: string; url?: string | null };
+type ChatHighlight =
+  | string
+  | {
+      text: string;
+      url?: string | null;
+      modalType?: "company" | "person" | "partner" | "latest_news";
+      companyId?: string | null;
+      companyName?: string | null;
+      personId?: string | null;
+      personName?: string | null;
+      partnerId?: string | null;
+      partnerName?: string | null;
+    };
 
 type ChatReply = {
   intent: ChatIntent;
@@ -258,6 +270,24 @@ function getCompanyIds(company: CompanyNode): string[] {
   return [cleanText(company.company_id), cleanText(company.id)].filter(Boolean);
 }
 
+function getCompanyLookupId(company: CompanyNode | null | undefined): string | null {
+  if (!company) {
+    return null;
+  }
+
+  return cleanText(company.id ?? company.company_id) || cleanText(company.company_name) || null;
+}
+
+function findCompanyByName(companyName: string | null | undefined, companies: CompanyNode[]): CompanyNode | null {
+  const normalizedName = normalize(companyName);
+
+  if (!normalizedName) {
+    return null;
+  }
+
+  return companies.find((company) => normalize(getCompanyName(company)) === normalizedName) ?? null;
+}
+
 function getPersonName(person: PeopleNode): string {
   return cleanText(person.name ?? person.label) || "Unknown person";
 }
@@ -316,6 +346,103 @@ function formatPeopleRecommendationReason(reason: string): string {
   }
 
   return cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
+}
+
+function formatOutreachPersonHighlight(
+  person: { personName: string; company: string; reason: string },
+  index: number,
+): string {
+  const reason = formatPeopleRecommendationReason(person.reason);
+  const templates = [
+    `${person.personName} at ${person.company} looks especially relevant because ${reason}.`,
+    `${person.personName} from ${person.company} could be a useful contact here because ${reason}.`,
+    `Another strong option is ${person.personName} at ${person.company}, because ${reason}.`,
+    `${person.personName} is also worth considering. At ${person.company}, ${reason}.`,
+  ];
+
+  return templates[index % templates.length];
+}
+
+function formatLpOutreachHighlight(
+  owner: { ownerName: string; companyNames: string[]; count: number; usesInvestorProxy: boolean },
+  index: number,
+): string {
+  const exampleCompanies = owner.companyNames.slice(0, 3).join(", ");
+  const coverageNoun = owner.usesInvestorProxy ? "investor-side" : "LP";
+  const templates = [
+    `${owner.ownerName} could also be a strong ${coverageNoun} contact because they are already connected to ${exampleCompanies}.`,
+    `On the ${coverageNoun} side, ${owner.ownerName} stands out because they already cover ${exampleCompanies}.`,
+    `${owner.ownerName} is also worth considering as a ${coverageNoun} contact, with exposure across ${owner.count} matching companies including ${exampleCompanies}.`,
+  ];
+
+  return templates[index % templates.length];
+}
+
+function buildStructuredPersonHighlight(
+  person: { personId: string; personName: string; company: string; reason: string },
+  index: number,
+  companies: CompanyNode[],
+): ChatHighlight {
+  const company = findCompanyByName(person.company, companies);
+
+  return {
+    text: formatOutreachPersonHighlight(person, index),
+    modalType: "person",
+    companyId: getCompanyLookupId(company),
+    companyName: company ? getCompanyName(company) : person.company,
+    personId: person.personId || null,
+    personName: person.personName,
+  };
+}
+
+function buildStructuredPartnerHighlight(
+  owner: { ownerName: string; companyNames: string[]; count: number; usesInvestorProxy: boolean },
+  index: number,
+  companies: CompanyNode[],
+  preferredCompanyName?: string | null,
+  textOverride?: string | null,
+): ChatHighlight {
+  const fallbackCompanyName = preferredCompanyName || owner.companyNames[0] || null;
+  const company = findCompanyByName(fallbackCompanyName, companies);
+
+  return {
+    text: textOverride || formatLpOutreachHighlight(owner, index),
+    modalType: "partner",
+    companyId: getCompanyLookupId(company),
+    companyName: company ? getCompanyName(company) : fallbackCompanyName,
+    partnerName: owner.ownerName,
+  };
+}
+
+function buildCompanyPartnerHighlight(
+  owner: { ownerName: string },
+  company: CompanyNode,
+): ChatHighlight {
+  return {
+    text: owner.ownerName,
+    modalType: "partner",
+    companyId: getCompanyLookupId(company),
+    companyName: getCompanyName(company),
+    partnerName: owner.ownerName,
+  };
+}
+
+function buildLatestNewsModalHighlight(company: CompanyNode): ChatHighlight {
+  return {
+    text: `Open ${getCompanyName(company)} latest news`,
+    modalType: "latest_news",
+    companyId: getCompanyLookupId(company),
+    companyName: getCompanyName(company),
+  };
+}
+
+function buildCompanyModalHighlight(company: CompanyNode, text: string): ChatHighlight {
+  return {
+    text,
+    modalType: "company",
+    companyId: getCompanyLookupId(company),
+    companyName: getCompanyName(company),
+  };
 }
 
 function buildCompanySearchText(company: CompanyNode): string {
@@ -599,9 +726,11 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
   const topOwner = rankedOwners[0];
   const tiedOwners = rankedOwners.filter((owner) => owner.count === topOwner.count);
   const topMatchingCompanies = matchingCompanies.slice(0, 5).map((entry) => getCompanyName(entry.company));
-  const otherStrongOwners = rankedOwners
-    .slice(tiedOwners.length > 1 ? tiedOwners.length : 1, tiedOwners.length > 1 ? tiedOwners.length + 3 : 4)
-    .map((owner) => owner.ownerName);
+  const otherStrongOwnerEntries = rankedOwners.slice(tiedOwners.length > 1 ? tiedOwners.length : 1, tiedOwners.length > 1 ? tiedOwners.length + 3 : 4);
+
+  function preferredCompanyNameForOwner(owner: { companyNames: string[] }) {
+    return topMatchingCompanies.find((companyName) => owner.companyNames.includes(companyName)) ?? owner.companyNames[0] ?? null;
+  }
 
   if (tiedOwners.length > 1) {
     return {
@@ -615,10 +744,24 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
             .join(", ")}.`,
       highlights: [
         `The clearest matching companies for this theme are ${topMatchingCompanies.join(", ")}.`,
-        `${tiedOwners
-          .map((owner) => owner.ownerName)
-          .join(", ")} each show up across ${topOwner.companyNames.length} matching compan${topOwner.companyNames.length === 1 ? "y" : "ies"} in this demo graph.`,
-        ...(otherStrongOwners.length > 0 ? [`Other LPs close behind are ${otherStrongOwners.join(", ")}.`] : []),
+        ...tiedOwners.slice(0, 3).map((owner, index) =>
+          buildStructuredPartnerHighlight(
+            owner,
+            index,
+            companies,
+            preferredCompanyNameForOwner(owner),
+            `${owner.ownerName} is tied for the strongest LP exposure here, spanning ${owner.companyNames.length} matching compan${owner.companyNames.length === 1 ? "y" : "ies"}.`,
+          ),
+        ),
+        ...otherStrongOwnerEntries.slice(0, 1).map((owner, index) =>
+          buildStructuredPartnerHighlight(
+            owner,
+            index + tiedOwners.length,
+            companies,
+            preferredCompanyNameForOwner(owner),
+            `${owner.ownerName} is close behind on this theme.`,
+          ),
+        ),
       ],
     };
   }
@@ -629,11 +772,25 @@ function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply 
       ? `${topOwner.ownerName} looks like the strongest investor-level match for that theme in this demo graph.`
       : `${topOwner.ownerName} looks like the strongest LP match for that theme in this demo graph.`,
     highlights: [
-      `${topOwner.ownerName} is attached to ${topOwner.companyNames.length} matching compan${topOwner.companyNames.length === 1 ? "y" : "ies"}: ${topOwner.companyNames
-        .slice(0, 5)
-        .join(", ")}.`,
+      buildStructuredPartnerHighlight(
+        topOwner,
+        0,
+        companies,
+        preferredCompanyNameForOwner(topOwner),
+        `${topOwner.ownerName} is attached to ${topOwner.companyNames.length} matching compan${topOwner.companyNames.length === 1 ? "y" : "ies"}: ${topOwner.companyNames
+          .slice(0, 5)
+          .join(", ")}.`,
+      ),
       `The clearest matching companies for this theme are ${topMatchingCompanies.join(", ")}.`,
-      ...(otherStrongOwners.length > 0 ? [`Other LPs with relevant exposure here are ${otherStrongOwners.join(", ")}.`] : []),
+      ...otherStrongOwnerEntries.map((owner, index) =>
+        buildStructuredPartnerHighlight(
+          owner,
+          index + 1,
+          companies,
+          preferredCompanyNameForOwner(owner),
+          `${owner.ownerName} also has relevant exposure here.`,
+        ),
+      ),
     ],
   };
 }
@@ -682,23 +839,24 @@ function askForLpCoverageForCompany(question: string, companies: CompanyNode[]):
   return {
     intent: "lp_coverage_for_company",
     answer: `These are the LPs or coverage owners attached to ${getCompanyName(company)}.`,
-    highlights: [
-      ...rankedOwners.map((owner) => owner.ownerName),
-      company.vertical ? `Vertical: ${company.vertical}` : "",
-    ].filter(Boolean),
+    highlights: rankedOwners.map((owner) => buildCompanyPartnerHighlight(owner, company)),
   };
 }
 
 function askForFounderRecommendations(question: string, companies: CompanyNode[], people: PeopleNode[], terms: string[]): ChatReply {
   const companyMatch = findBestCompanyMatch(question, companies);
   const companyName = companyMatch ? normalize(getCompanyName(companyMatch)) : "";
+  const normalizedQuestion = normalize(question);
+  const shouldIncludeLpContacts = /(fundraising|fund raising|raise capital|raise money|investor|investors|lp|lps|limited partner)/.test(
+    normalizedQuestion,
+  );
 
   const rankedPeople = people
     .filter((person) => person.name || person.label)
     .map((person) => {
       const searchText = buildPersonSearchText(person);
       const trustSignals = person.trust_signals ?? [];
-      const matchScore = terms.length > 0 ? scoreTextAgainstTerms(searchText, terms) : 0;
+      const matchScore = terms.length > 0 ? scoreExactTermsAgainstText(searchText, terms) : 0;
       const companyBoost = companyName && normalize(person.company) === companyName ? 4 : 0;
       const baseScore =
         parseScore(person.network_importance_score) * 1.5 +
@@ -709,6 +867,7 @@ function askForFounderRecommendations(question: string, companies: CompanyNode[]
         trustSignals.length;
 
       return {
+        personId: cleanText(person.id),
         personName: getPersonName(person),
         company: cleanText(person.company) || "Unknown company",
         role: getPersonRole(person),
@@ -721,23 +880,38 @@ function askForFounderRecommendations(question: string, companies: CompanyNode[]
       };
     })
     .sort((left, right) => right.score - left.score)
-    .slice(0, 4);
+    .slice(0, shouldIncludeLpContacts ? 3 : 4);
 
-  if (rankedPeople.length === 0) {
+  const rankedLpContacts = shouldIncludeLpContacts
+    ? buildOwnerCoverageRanking(
+        companies
+          .map((company) => ({
+            company,
+            weight: terms.length > 0 ? scoreExactTermsAgainstText(buildCompanySearchText(company), terms) : 0,
+          }))
+          .filter((entry) => entry.weight > 0),
+      ).slice(0, 2)
+    : [];
+
+  if (rankedPeople.length === 0 && rankedLpContacts.length === 0) {
     return {
       intent: "founder_recommendation",
-      answer: "I could not build a strong outreach recommendation from the current people graph.",
-      highlights: ["Try adding a company, vertical, or pain-point term to focus the ranking."],
+      answer: "I could not build a strong outreach recommendation from the current graph.",
+      highlights: ["Try adding a company, vertical, pain point, or fundraising theme to focus the ranking."],
     };
   }
 
+  const personHighlights = rankedPeople.map((person, index) => buildStructuredPersonHighlight(person, index, companies));
+  const lpHighlights = rankedLpContacts.map((owner, index) =>
+    buildStructuredPartnerHighlight(owner, index, companies, companyMatch ? getCompanyName(companyMatch) : null),
+  );
+
   return {
     intent: "founder_recommendation",
-    answer: "These are the strongest people to reach out to from the current network graph.",
-    highlights: rankedPeople.map((person) => {
-      const reason = formatPeopleRecommendationReason(person.reason);
-      return `${person.personName} at ${person.company} is a strong person to reach out to because ${reason}.`;
-    }),
+    answer: shouldIncludeLpContacts
+      ? "These are the strongest people and LP-side contacts to reach out to from the current network graph."
+      : "These are the strongest people to reach out to from the current network graph.",
+    highlights: [...personHighlights, ...lpHighlights].slice(0, 4),
   };
 }
 
@@ -769,14 +943,20 @@ function askForTopConnected(companies: CompanyNode[], terms: string[]): ChatRepl
       const bridgeLabel = `${entry.degree} company bridge${entry.degree === 1 ? "" : "s"}`;
 
       if (terms.length > 0) {
-        return entry.company.vertical
-          ? `${companyName} is one of the most connected companies in that theme, with ${bridgeLabel}. It sits in ${entry.company.vertical}.`
-          : `${companyName} is one of the most connected companies in that theme, with ${bridgeLabel}.`;
+        return buildCompanyModalHighlight(
+          entry.company,
+          entry.company.vertical
+            ? `${companyName} is one of the most connected companies in that theme, with ${bridgeLabel}. It sits in ${entry.company.vertical}.`
+            : `${companyName} is one of the most connected companies in that theme, with ${bridgeLabel}.`,
+        );
       }
 
-      return entry.company.vertical
-        ? `${companyName} is one of the most connected companies in the current graph, with ${bridgeLabel}. It sits in ${entry.company.vertical}.`
-        : `${companyName} is one of the most connected companies in the current graph, with ${bridgeLabel}.`;
+      return buildCompanyModalHighlight(
+        entry.company,
+        entry.company.vertical
+          ? `${companyName} is one of the most connected companies in the current graph, with ${bridgeLabel}. It sits in ${entry.company.vertical}.`
+          : `${companyName} is one of the most connected companies in the current graph, with ${bridgeLabel}.`,
+      );
     }),
   };
 }
@@ -869,9 +1049,12 @@ function askForBridgeInsights(question: string, companies: CompanyNode[], edges:
         if (company) {
           const companyName = getCompanyName(company);
           const counterpart = item.source === companyName ? item.target : item.source;
-          return `${counterpart} is one of the strongest bridge matches for ${companyName} with a score of ${item.score.toFixed(
+          const counterpartCompany = findCompanyByName(counterpart, companies);
+          const highlightText = `${counterpart} is one of the strongest bridge matches for ${companyName} with a score of ${item.score.toFixed(
             3,
           )} because ${formatBridgeReason(item.reason)}.`;
+
+          return counterpartCompany ? buildCompanyModalHighlight(counterpartCompany, highlightText) : highlightText;
         }
 
         return `${item.source} and ${item.target} form a strong bridge with a score of ${item.score.toFixed(
@@ -952,7 +1135,9 @@ function askForCompaniesWithPainPoint(companies: CompanyNode[], terms: string[])
     return {
       intent: "companies_with_pain_point",
       answer: "These companies are the strongest matches for that current pain point.",
-      highlights: rankedCompanies.map((entry) => getCompanyName(entry.company)),
+      highlights: rankedCompanies.map((entry) =>
+        buildCompanyModalHighlight(entry.company, getCompanyName(entry.company)),
+      ),
     };
   }
 
@@ -1068,11 +1253,14 @@ function askForLatestNewsForCompany(question: string, companies: CompanyNode[]):
 
   return {
     intent: "latest_news_for_company",
-    answer: `Here is the latest news I found for ${getCompanyName(company)}.`,
-    highlights: newsItems.slice(0, 4).map((item) => ({
-      text: `${item.datePublished ? `${item.datePublished} — ` : ""}${item.title}`,
-      url: item.articleUrl,
-    })),
+    answer: `Here is the latest news I found for ${getCompanyName(company)}. You can open the full news list or jump straight to the newest articles.`,
+    highlights: [
+      buildLatestNewsModalHighlight(company),
+      ...newsItems.slice(0, 3).map((item) => ({
+        text: `${item.datePublished ? `${item.datePublished} — ` : ""}${item.title}`,
+        url: item.articleUrl,
+      })),
+    ],
   };
 }
 

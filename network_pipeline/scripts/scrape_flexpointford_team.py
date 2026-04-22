@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import mimetypes
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -14,7 +16,9 @@ from bs4 import BeautifulSoup, Tag
 TEAM_URL = "https://flexpointford.com/team/"
 USER_AGENT = "meshed-network-pipeline/0.1 (+flexpoint ford team scraper)"
 REQUEST_TIMEOUT_SECONDS = 20
-DEFAULT_OUTPUT_PATH = Path(__file__).resolve().parents[1] / "public" / "flexpoint-ford" / "team_profiles.json"
+PUBLIC_ROOT = Path(__file__).resolve().parents[1] / "public" / "flexpoint-ford"
+DEFAULT_OUTPUT_PATH = PUBLIC_ROOT / "team_profiles.json"
+DEFAULT_PICTURE_DIR = PUBLIC_ROOT / "team-pictures"
 SUFFIX_TOKENS = {"jr", "sr", "ii", "iii", "iv", "v"}
 
 
@@ -36,6 +40,8 @@ class TeamProfile:
     location: str | None
     summary: str | None
     investments: list[str] | None
+    picture_url: str | None
+    picture_path: str | None
 
 
 def _clean_text(value: object) -> str:
@@ -49,6 +55,28 @@ def _slugify(value: str) -> str:
     cleaned = re.sub(r"[.,']", "", cleaned)
     cleaned = re.sub(r"[^a-z0-9]+", "-", cleaned)
     return cleaned.strip("-")
+
+
+def _normalize_url(value: str | None) -> str | None:
+    cleaned = _clean_text(value)
+    if not cleaned:
+        return None
+    if cleaned.startswith("//"):
+        cleaned = f"https:{cleaned}"
+    if not re.match(r"^https?://", cleaned, flags=re.IGNORECASE):
+        cleaned = urljoin(TEAM_URL, cleaned)
+    return cleaned
+
+
+def _guess_extension(url: str, content_type: str | None) -> str:
+    suffix = Path(urlparse(url).path).suffix.lower()
+    if suffix:
+        return suffix
+    if content_type:
+        guessed = mimetypes.guess_extension(content_type.split(";")[0].strip())
+        if guessed:
+            return guessed
+    return ".jpg"
 
 
 def _is_middle_initial(token: str) -> bool:
@@ -146,7 +174,44 @@ def _extract_investments(section: Tag) -> list[str] | None:
     return investments or None
 
 
-def _extract_profiles_from_team_page(session: requests.Session, html: str) -> list[TeamProfile]:
+def _extract_picture_url(card: Tag) -> str | None:
+    image = card.select_one(".headshot img")
+    if image is None:
+        return None
+
+    for attribute in ("data-src", "src", "data-lazy-src"):
+        value = _normalize_url(image.get(attribute))
+        if value and not value.lower().startswith("data:"):
+            return value
+
+    return None
+
+
+def _download_team_picture(
+    session: requests.Session,
+    picture_url: str | None,
+    parsed_name: ParsedName,
+    picture_dir: Path,
+) -> str | None:
+    normalized_url = _normalize_url(picture_url)
+    if not normalized_url:
+        return None
+
+    try:
+        response = session.get(normalized_url, timeout=REQUEST_TIMEOUT_SECONDS)
+        response.raise_for_status()
+    except requests.RequestException:
+        return None
+
+    extension = _guess_extension(normalized_url, response.headers.get("content-type"))
+    picture_dir.mkdir(parents=True, exist_ok=True)
+    file_name = f"{_slugify(parsed_name.name)}{extension}"
+    output_path = picture_dir / file_name
+    output_path.write_bytes(response.content)
+    return f"/flexpoint-ford/team-pictures/{file_name}"
+
+
+def _extract_profiles_from_team_page(session: requests.Session, html: str, picture_dir: Path) -> list[TeamProfile]:
     soup = BeautifulSoup(html, "html.parser")
     cards = soup.select("section.filtered-grid.team a.item")
     detail_sections = {
@@ -167,6 +232,8 @@ def _extract_profiles_from_team_page(session: requests.Session, html: str) -> li
         section = detail_sections.get(slug)
 
         _resolve_profile_source_url(session, parsed_name, slug)
+        picture_url = _extract_picture_url(card)
+        picture_path = _download_team_picture(session, picture_url, parsed_name, picture_dir)
 
         job_title = None
         location = None
@@ -198,18 +265,20 @@ def _extract_profiles_from_team_page(session: requests.Session, html: str) -> li
                 location=location,
                 summary=summary,
                 investments=investments,
+                picture_url=picture_url,
+                picture_path=picture_path,
             )
         )
 
     return profiles
 
 
-def scrape_flexpoint_ford_team() -> list[TeamProfile]:
+def scrape_flexpoint_ford_team(picture_dir: Path = DEFAULT_PICTURE_DIR) -> list[TeamProfile]:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     response = session.get(TEAM_URL, timeout=REQUEST_TIMEOUT_SECONDS)
     response.raise_for_status()
-    return _extract_profiles_from_team_page(session, response.text)
+    return _extract_profiles_from_team_page(session, response.text, picture_dir)
 
 
 def write_profiles(output_path: Path, profiles: Iterable[TeamProfile]) -> Path:
@@ -232,6 +301,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print JSON to stdout instead of writing a file.",
     )
+    parser.add_argument(
+        "--picture-dir",
+        type=Path,
+        default=DEFAULT_PICTURE_DIR,
+        help=f"Directory to save downloaded team images. Defaults to {DEFAULT_PICTURE_DIR}.",
+    )
     return parser
 
 
@@ -239,7 +314,7 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
-    profiles = scrape_flexpoint_ford_team()
+    profiles = scrape_flexpoint_ford_team(args.picture_dir)
     payload = [asdict(profile) for profile in profiles]
 
     if args.stdout:

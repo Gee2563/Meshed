@@ -27,7 +27,7 @@ const DASHBOARD_SCOPE_CONFIG: Record<MeshedDashboardScope, Omit<MeshedDashboardS
     scope: "flexpoint-ford",
     scopeLabel: "Flexpoint Ford",
     organizationName: "Flexpoint Ford",
-    heroTitle: "Welcome to your Flexpoint Ford meshed network",
+    heroTitle: "Welcome to your Flexpoint Ford Meshed Network",
     graphTitle: "Flexpoint Ford's Meshed Network Interactive Graph",
     bundleRelativePath: "network_pipeline/public/flexpoint-ford",
   },
