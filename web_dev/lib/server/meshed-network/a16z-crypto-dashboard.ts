@@ -112,6 +112,8 @@ export type A16zCompanyGraphPartner = {
   location: string | null;
   summary: string | null;
   investments: string[];
+  pictureUrl: string | null;
+  picturePath: string | null;
 };
 
 export type A16zCompanyGraphNewsItem = {
@@ -206,6 +208,8 @@ type TeamProfilePayload = {
   location?: string | null;
   summary?: string | null;
   investments?: string[] | null;
+  picture_url?: string | null;
+  picture_path?: string | null;
 };
 
 async function readJson<T>(scope: MeshedDashboardScope, fileName: string) {
@@ -390,6 +394,8 @@ export async function loadDashboardData(scope: MeshedDashboardScope): Promise<A1
           location: partnerProfile?.location ?? null,
           summary: partnerProfile?.summary ?? null,
           investments: parseStringArray(partnerProfile?.investments ?? []),
+          pictureUrl: partnerProfile?.picture_url ?? null,
+          picturePath: partnerProfile?.picture_path ?? null,
         } satisfies A16zCompanyGraphPartner;
       });
 

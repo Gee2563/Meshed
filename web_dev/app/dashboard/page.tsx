@@ -1,6 +1,7 @@
 import { CompanyNetworkGraph } from "@/components/dashboard/CompanyNetworkGraph";
 import { ConnectionsPanel } from "@/components/dashboard/ConnectionsPanel";
 import { CollapsibleCard } from "@/components/dashboard/CollapsibleCard";
+import { DashboardTopPanels } from "@/components/dashboard/DashboardTopPanels";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
 import { loadDashboardData } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
@@ -173,6 +174,11 @@ export default async function DashboardPage() {
 
   const { snapshot, strongestBridges, companyGraph } = dashboard;
   const scopeLabel = snapshot.scope_label || dashboardScopeConfig.scopeLabel;
+  const dashboardBrandDomain = dashboardScope === "flexpoint-ford" ? "flexpointford.com" : "a16z.com";
+  const logoDevToken = process.env.LOGO_DEV_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY ?? "";
+  const dashboardBrandLogoUrl = `https://img.logo.dev/${dashboardBrandDomain}?size=160&format=png${
+    logoDevToken ? `&token=${logoDevToken}` : ""
+  }`;
   const heroDescription = `Here's your daily AI-powered update on the ${dashboardScopeConfig.organizationName} Meshed network`;
   const statusItems = [
     { label: "Role", value: titleCase(currentUser.role) },
@@ -185,28 +191,24 @@ export default async function DashboardPage() {
   return (
     <main className="px-4 py-8 sm:px-6 lg:px-10">
       <section className="mx-auto max-w-7xl space-y-6">
-        <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-          <CollapsibleCard
-            eyebrow={scopeLabel}
-            title={dashboardScopeConfig.heroTitle}
-            description={heroDescription}
-            className="bg-white/65 backdrop-blur"
-          >
+        <DashboardTopPanels
+          leftHeaderVisual={
+            <div className="inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-[1.3rem] border border-slate-200 bg-white shadow-sm">
+              <img
+                src={dashboardBrandLogoUrl}
+                alt={`${dashboardScopeConfig.organizationName} logo`}
+                className="h-full w-full object-contain p-2.5"
+              />
+            </div>
+          }
+          leftTitle={dashboardScopeConfig.heroTitle}
+          leftDescription={heroDescription}
+          leftChildren={
             <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full border border-sky-200 bg-sky-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-                  {scopeLabel}
-                </span>
-                <span className="rounded-full border border-white/80 bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate">
-                  Demo dashboard
-                </span>
-              </div>
-
               <div>
-                <p className="text-sm font-medium text-slate">Signed in as {currentUser.name}</p>
-                <p className="mt-4 max-w-3xl text-lg leading-8 text-slate">
+                <p className="max-w-3xl text-lg leading-8 text-slate">
                   An AI Driven Network Intelligence for your Investments
-                  
+
                   <br />
                   From static portfolio lists to living AI graphs that amplify your investment portfolio communities
                 </p>
@@ -239,38 +241,39 @@ export default async function DashboardPage() {
                 />
               </div>
             </div>
-          </CollapsibleCard>
-
-          <CollapsibleCard
-            eyebrow="Session context"
-            title="World ID and Dynamic Verified"
-            className="bg-[linear-gradient(180deg,rgba(238,242,247,0.84),rgba(255,255,255,0.92))]"
-          >
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              {statusItems.map((item) => (
-                <div key={item.label} className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">{item.label}</p>
-                  <p className="mt-2 text-sm font-medium text-ink">{item.value}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Generated via</p>
-              <p className="mt-2 text-sm text-ink">{snapshot.generated_via ?? "network pipeline"}</p>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Button href="/" variant="secondary">
-                Return home
-              </Button>
-              <LogoutButton />
-            </div>
-          </CollapsibleCard>
-        </div>
+          }
+          rightEyebrow=""
+          rightTitle="World ID and Dynamic Verified"
+          rightDescription="World ID verifies that you are a real, unique human in the Meshed network trust layer, while Dynamic handles wallet and credential access."
+          rightChildren={
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                {statusItems.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">{item.label}</p>
+                    <p className="mt-2 text-sm font-medium text-ink">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Generated via</p>
+                <p className="mt-2 text-sm text-ink">{snapshot.generated_via ?? "network pipeline"}</p>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Button href="/" variant="secondary">
+                  Return home
+                </Button>
+                <LogoutButton />
+              </div>
+            </>
+          }
+        />
 
         <CollapsibleCard
           eyebrow="Network graph"
           title={dashboardScopeConfig.graphTitle}
           description="Neural Portfolio Graphs for Modern Investors. Transform your portfolio data into actionable insights and strategic connections."
+          defaultOpen={false}
         >
           <CompanyNetworkGraph nodes={companyGraph.nodes} edges={companyGraph.edges} graphLabel={scopeLabel} />
         </CollapsibleCard>
@@ -279,6 +282,7 @@ export default async function DashboardPage() {
           eyebrow="People connections"
           title="Meshed people connections"
           description="This ports the existing LinkedIn simulation and people-connection flow into the current repo: attested LinkedIn handoff, seeded connection requests, and Flare-backed request acceptance without chat."
+          defaultOpen={false}
         >
           <ConnectionsPanel
             contacts={contacts}
@@ -299,13 +303,14 @@ export default async function DashboardPage() {
           />
         </CollapsibleCard>
 
-        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <CollapsibleCard
-            eyebrow="Top companies"
-            title="Most connected companies"
-            description={`These are the most central companies in the current ${scopeLabel} graph, ranked by company bridge degree with people density as the tie-breaker.`}
-            defaultOpen={false}
-          >
+        <DashboardTopPanels
+          gridClassName="xl:grid-cols-[1.05fr_0.95fr]"
+          leftClassName="bg-white/90 backdrop-blur"
+          rightClassName="bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.98))]"
+          leftEyebrow="Top companies"
+          leftTitle="Most connected companies"
+          leftDescription={`These are the most central companies in the current ${scopeLabel} graph, ranked by company bridge degree with people density as the tie-breaker.`}
+          leftChildren={
             <div className="grid gap-3 md:grid-cols-2">
               {snapshot.top_companies.map((company) => (
                 <article key={company.id} className="rounded-[1.5rem] border border-slate-200 bg-mist/70 px-5 py-5">
@@ -328,14 +333,11 @@ export default async function DashboardPage() {
                 </article>
               ))}
             </div>
-          </CollapsibleCard>
-
-          <CollapsibleCard
-            eyebrow="Network bridges"
-            title="Strongest company bridges"
-            description="These explanations come straight from the generated company-network payload and give the clearest handoff into redeployment opportunities."
-            defaultOpen={false}
-          >
+          }
+          rightEyebrow="Network bridges"
+          rightTitle="Strongest company bridges"
+          rightDescription="These explanations come straight from the generated company-network payload and give the clearest handoff into redeployment opportunities."
+          rightChildren={
             <div className="space-y-3">
               {strongestBridges.map((bridge) => (
                 <article key={bridge.id} className="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 shadow-sm">
@@ -352,8 +354,8 @@ export default async function DashboardPage() {
                 </article>
               ))}
             </div>
-          </CollapsibleCard>
-        </div>
+          }
+        />
       </section>
     </main>
   );
