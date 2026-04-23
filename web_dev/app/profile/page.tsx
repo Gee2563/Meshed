@@ -2,6 +2,7 @@ import { AppShell } from "@/app/layout/AppShell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
 import { getCurrentUser } from "@/lib/server/current-user";
+import { getDemoRoleLabel } from "@/lib/demo-role-label";
 import { prisma } from "@/lib/server/prisma";
 import { userRepository } from "@/lib/server/repositories/user-repository";
 import { connectionRequestService } from "@/lib/server/services/connection-request-service";
@@ -70,7 +71,7 @@ export default async function ProfilePage() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[1.4rem] border border-slate-200 bg-mist/70 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Role</p>
-                <p className="mt-2 text-sm font-medium text-ink">{titleCase(currentUser.role)}</p>
+                <p className="mt-2 text-sm font-medium text-ink">{getDemoRoleLabel(currentUser)}</p>
               </div>
               <div className="rounded-[1.4rem] border border-slate-200 bg-mist/70 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Wallet</p>

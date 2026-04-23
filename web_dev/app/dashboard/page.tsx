@@ -4,6 +4,7 @@ import { CollapsibleCard } from "@/components/dashboard/CollapsibleCard";
 import { DashboardTopPanels } from "@/components/dashboard/DashboardTopPanels";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
+import { getDemoRoleLabel } from "@/lib/demo-role-label";
 import { loadDashboardData } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
 import { getDashboardScopeConfig, resolveDashboardScopeForEmail } from "@/lib/server/meshed-network/dashboard-scope";
 import { getCurrentUser } from "@/lib/server/current-user";
@@ -181,7 +182,7 @@ export default async function DashboardPage() {
   }`;
   const heroDescription = `Here's your daily AI-powered update on the ${dashboardScopeConfig.organizationName} Meshed network`;
   const statusItems = [
-    { label: "Role", value: titleCase(currentUser.role) },
+    { label: "Role", value: getDemoRoleLabel(currentUser) },
     { label: "Dynamic wallet", value: currentUser.walletAddress ? "Connected" : "Pending" },
     { label: "World ID", value: currentUser.worldVerified ? "Verified" : "Not verified" },
     { label: "Trust badges", value: formatRelativeCount(currentUser.verificationBadges.length, "badge") },

@@ -2,7 +2,7 @@ import { DynamicRegistrationPanel } from "@/components/DynamicRegistrationPanel"
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
 import { getCurrentUser } from "@/lib/server/current-user";
-import { titleCase } from "@/lib/utils";
+import { getDemoRoleLabel } from "@/lib/demo-role-label";
 import { Globe, Rocket, Shield, TrendingUp, Users, Zap } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -19,17 +19,16 @@ export default async function HomePage() {
       <section className="mx-auto w-full max-w-7xl rounded-[2.5rem] border border-white/70 bg-white/55 px-5 py-5 shadow-halo backdrop-blur sm:px-8 sm:py-8">
         <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10">
           <div className="space-y-6">
-            <div className="rounded-[2.2rem] border border-white/80 bg-[linear-gradient(135deg,rgba(255,250,244,0.98),rgba(247,240,229,0.72))] p-6 shadow-[0_18px_60px_rgba(21,38,58,0.08)] sm:p-8">
+            <div className="rounded-[2.2rem] border border-white/80 bg-white p-6 shadow-[0_18px_60px_rgba(21,38,58,0.08)] sm:p-8">
               <div className="flex justify-center">
                 <img src="/meshed-logo.png" alt="Meshed" className="h-auto w-full max-w-[23rem]" />
               </div>
-              <h1 className="mt-6 font-display text-3xl leading-tight tracking-tight text-ink sm:text-4xl">
-                Meshed turns static VC portfolios into intelligent trust networks that drive better outcomes.
+              <h1 className="mt-1 font-display text-[32px] leading-tight tracking-tight text-ink">
+                An AI-powered Trust and Intelligence Network
               </h1>
-              <p className="mt-5 max-w-3xl text-base leading-7 text-slate">
-                By combining real-time data systems with verifiable identity and attestation layers, we built a
-                platform that transforms fragmented, untrusted professional networks into a cohesive, intelligent, and
-                provably trustworthy ecosystem.
+              <p className="mt-5 max-w-3xl text-[14px] leading-7 text-slate">
+                Transform your investment portfolio from static lists into a thriving, interconnected community that
+                drives long-term value creation.
               </p>
             </div>
           </div>
@@ -42,6 +41,7 @@ export default async function HomePage() {
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Session active</p>
                       <h2 className="mt-2 font-display text-3xl tracking-tight text-ink">Welcome back, {currentUser.name}.</h2>
+                      <p className="mt-2 text-sm font-medium text-slate">{getDemoRoleLabel(currentUser)}</p>
                     </div>
                     <p className="text-sm leading-7 text-slate">
                       Your Meshed account is already active. Continue into the dashboard, update your profile, or finish
@@ -50,7 +50,7 @@ export default async function HomePage() {
                     <dl className="grid gap-3 sm:grid-cols-3">
                       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                         <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Role</dt>
-                        <dd className="mt-2 text-sm font-medium text-ink">{titleCase(currentUser.role)}</dd>
+                        <dd className="mt-2 text-sm font-medium text-ink">{getDemoRoleLabel(currentUser)}</dd>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                         <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Dynamic Wallet</dt>
