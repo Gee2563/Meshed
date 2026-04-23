@@ -3,6 +3,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
 import { getCurrentUser } from "@/lib/server/current-user";
 import { titleCase } from "@/lib/utils";
+import { Globe, Rocket, Shield, TrendingUp, Users, Zap } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,86 @@ export default async function HomePage() {
               )}
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-8 w-full max-w-7xl rounded-[2.5rem] border border-white/70 bg-white/60 px-5 py-8 shadow-halo backdrop-blur sm:px-8 sm:py-10">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate">Portfolio intelligence</p>
+          <h2 className="mt-4 font-display text-3xl tracking-tight text-ink sm:text-4xl">
+            Neural Portfolio Graphs for Modern Investors
+          </h2>
+          <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-slate">
+            Surface high-value introductions, and opportunities that would otherwise stay hidden.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <article className="rounded-[1.8rem] border border-white/80 bg-white/90 p-6 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+              <Users className="h-6 w-6" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">AI-Powered Relationship Graphs</h3>
+            <p className="mt-3 text-sm leading-7 text-slate">
+              Map company, founder, and investor relationships to identify strategic partnerships and collaboration
+              opportunities across your portfolio.
+            </p>
+          </article>
+
+          <article className="rounded-[1.8rem] border border-white/80 bg-white/90 p-6 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">Ranked Recommendations</h3>
+            <p className="mt-3 text-sm leading-7 text-slate">
+              Turn portfolio data into ranked, explainable founder connection recommendations that help investors move
+              from insight to action.
+            </p>
+          </article>
+
+          <article className="rounded-[1.8rem] border border-white/80 bg-white/90 p-6 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+              <Rocket className="h-6 w-6" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">Post-Investment Value Creation</h3>
+            <p className="mt-3 text-sm leading-7 text-slate">
+              Identify enterprise-level pain points and connect companies facing challenges with others that have
+              already solved them.
+            </p>
+          </article>
+
+          <article className="rounded-[1.8rem] border border-white/80 bg-white/90 p-6 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+              <Globe className="h-6 w-6" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">Multi-Entity Support</h3>
+            <p className="mt-3 text-sm leading-7 text-slate">
+              Built for VCs, family offices, private equity firms, and live investor communities that need better
+              network visibility.
+            </p>
+          </article>
+
+          <article className="rounded-[1.8rem] border border-white/80 bg-white/90 p-6 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-700">
+              <Shield className="h-6 w-6" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">Enhanced Community Participation</h3>
+            <p className="mt-3 text-sm leading-7 text-slate">
+              Authenticate participation across investment ecosystems with verified identities, trusted profiles, and
+              higher-confidence introductions.
+            </p>
+          </article>
+
+          <article className="rounded-[1.8rem] border border-white/80 bg-white/90 p-6 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
+              <Zap className="h-6 w-6" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">Strategic Partnership Discovery</h3>
+            <p className="mt-3 text-sm leading-7 text-slate">
+              Uncover shared customers, operating similarities, and strategic synergies that unlock growth
+              opportunities across the network.
+            </p>
+          </article>
         </div>
       </section>
     </main>

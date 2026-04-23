@@ -38,7 +38,11 @@ npm install
 Quick local DB setup (for /api/auth routes):
 
 cd web_dev
-cp .env.example .env.local (edit if needed)
+[ -f .env.example ] && cp .env.example .env.local
+[ -f .env.local ] || touch .env.local
+npm run db:setup
+
+If you prefer manual steps:
 npm run db:up
 npm run db:push
 

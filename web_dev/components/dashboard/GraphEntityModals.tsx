@@ -76,6 +76,12 @@ function companyOverview(node: A16zCompanyGraphNode) {
     .join(". ");
 }
 
+const modalOverlayClassName =
+  "fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[rgba(15,23,42,0.52)] px-4 py-8";
+
+const modalPanelBaseClassName =
+  "w-full rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.25)] max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain sm:p-7";
+
 export function personAvatarUrl(person: A16zCompanyGraphPerson) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=0f172a&color=ffffff&size=96&bold=true`;
 }
@@ -156,7 +162,7 @@ export function PersonDetailModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.52)] px-4 py-8"
+      className={modalOverlayClassName}
       role="presentation"
       onClick={onClose}
     >
@@ -165,7 +171,7 @@ export function PersonDetailModal({
         aria-modal="true"
         aria-label={`${person.name} details`}
         data-testid="company-person-modal"
-        className="w-full max-w-2xl rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-7"
+        className={`${modalPanelBaseClassName} max-w-2xl`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -307,7 +313,7 @@ export function PartnerDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.52)] px-4 py-8"
+      className={modalOverlayClassName}
       role="presentation"
       onClick={onClose}
     >
@@ -315,7 +321,7 @@ export function PartnerDetailModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${partner.name} details`}
-        className="w-full max-w-2xl rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-7"
+        className={`${modalPanelBaseClassName} max-w-2xl`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -381,7 +387,7 @@ export function PartnerDetailModal({
         ) : null}
 
         {partner.meshedReviews.length ? (
-          <details className="mt-6 rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
+          <details open className="mt-6 rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4">
             <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Meshed reviews</p>
@@ -463,7 +469,7 @@ export function LatestNewsModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.52)] px-4 py-8"
+      className={modalOverlayClassName}
       role="presentation"
       onClick={onClose}
     >
@@ -471,7 +477,7 @@ export function LatestNewsModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${companyName} latest news`}
-        className="w-full max-w-2xl rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-7"
+        className={`${modalPanelBaseClassName} max-w-2xl`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -537,7 +543,7 @@ export function CompanyDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.52)] px-4 py-8"
+      className={modalOverlayClassName}
       role="presentation"
       onClick={onClose}
     >
@@ -545,7 +551,7 @@ export function CompanyDetailModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${company.companyName} details`}
-        className="w-full max-w-4xl rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-7"
+        className={`${modalPanelBaseClassName} max-w-4xl`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">

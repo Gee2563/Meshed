@@ -50,7 +50,6 @@ type ChatbotClientProps = {
 const samplePrompts = [
   "Which LP has the most exposure to Music and live events?",
   "Given my pain points in fundraising in my industry (Music & live events), who should I reach out to?",
-  "Which companies are most connected in this network?",
   "What are the strongest bridges for GeoVera Holdings?",
   "Which companies are facing customer churn?",
   "Show me the latest news for Baker Hill.",
@@ -397,6 +396,12 @@ export default function ChatbotClient({ companyNodes }: ChatbotClientProps) {
                 value={input}
                 onChange={(event) => {
                   setInput(event.target.value);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    void ask(input);
+                  }
                 }}
                 disabled={loading}
                 className="mt-4 h-28 w-full resize-y rounded-2xl border border-slate-200 bg-white p-4 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"

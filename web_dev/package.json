@@ -21,6 +21,7 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f db",
+    "db:setup": "./scripts/setup_db.sh",
     "db:reset": "docker compose down -v && docker compose up -d",
     "prisma:generate": "node scripts/run-prisma-with-db-url.cjs generate",
     "prisma:migrate": "node scripts/run-prisma-with-db-url.cjs migrate dev",
