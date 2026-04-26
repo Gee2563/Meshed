@@ -15,12 +15,14 @@ describe("POST /api/linkedin/webhook", () => {
     mocks.ingestWebhookEvent.mockReset();
   });
 
-  it("passes the LinkedIn event into the attestation service", async () => {
+  it("passes the LinkedIn event into the human-backed interaction service", async () => {
     mocks.ingestWebhookEvent.mockResolvedValue({
-      status: "attested",
+      status: "recorded",
       eventId: "li_evt_123",
       notificationsCreated: 2,
-      relationshipId: "0xrelationship",
+      interactionId: "int_1",
+      interactionType: "MATCH_SUGGESTED",
+      verified: true,
     });
 
     const { POST } = await import("@/app/api/linkedin/webhook/route");
@@ -49,10 +51,12 @@ describe("POST /api/linkedin/webhook", () => {
     await expect(response.json()).resolves.toEqual({
       ok: true,
       data: {
-        status: "attested",
+        status: "recorded",
         eventId: "li_evt_123",
         notificationsCreated: 2,
-        relationshipId: "0xrelationship",
+        interactionId: "int_1",
+        interactionType: "MATCH_SUGGESTED",
+        verified: true,
       },
     });
   });

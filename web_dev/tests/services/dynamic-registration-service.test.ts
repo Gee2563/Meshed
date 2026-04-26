@@ -272,7 +272,7 @@ describe("dynamic registration service", () => {
       name: "George",
     });
 
-    expect(result.nextRoute).toBe("/human-idv");
+    expect(result.nextRoute).toBe("/agent");
     expect(result.user.role).toBe("operator");
     expect(result.user.outsideNetworkAccessEnabled).toBe(false);
     expect(result.onboardingProfile.mode).toBe("individual");
@@ -312,7 +312,7 @@ describe("dynamic registration service", () => {
       name: "George VC",
     });
 
-    expect(result.nextRoute).toBe("/human-idv");
+    expect(result.nextRoute).toBe("/agent");
     expect(result.user.role).toBe("investor");
     expect(result.user.outsideNetworkAccessEnabled).toBe(true);
     expect(result.onboardingProfile.mode).toBe("company");
@@ -322,17 +322,21 @@ describe("dynamic registration service", () => {
     expect(memberships).toHaveLength(0);
   });
 
-  it("rejects non-invited Dynamic emails", async () => {
+  it("falls back to the default investor onboarding path for unknown emails", async () => {
     const { deps } = createRepoStubs();
     const service = createDynamicRegistrationService(deps as never);
 
-    await expect(
-      service.register({
-        dynamicUserId: "dyn_unknown",
-        walletAddress: "0x9999999999999999999999999999999999999999",
-        email: "unknown@example.com",
-        name: "Unknown",
-      }),
-    ).rejects.toThrow("This Meshed onboarding flow is invitation-only.");
+    const result = await service.register({
+      dynamicUserId: "dyn_unknown",
+      walletAddress: "0x9999999999999999999999999999999999999999",
+      email: "unknown@example.com",
+      name: "Unknown",
+    });
+
+    expect(result.nextRoute).toBe("/agent");
+    expect(result.user.role).toBe("investor");
+    expect(result.user.outsideNetworkAccessEnabled).toBe(true);
+    expect(result.onboardingProfile.mode).toBe("individual");
+    expect(result.onboardingProfile.currentStep).toBe("complete");
   });
 });

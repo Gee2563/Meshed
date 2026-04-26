@@ -101,7 +101,7 @@ function ensureWorldClientConfig() {
     worldRpId: clientEnv.worldRpId,
     worldAction: clientEnv.worldAction,
     worldEnvironment: clientEnv.worldEnvironment,
-    returnTo: `${normalizeAppOrigin(clientEnv.appUrl)}/human-idv`,
+    returnTo: `${normalizeAppOrigin(clientEnv.appUrl)}/agent`,
   };
 }
 

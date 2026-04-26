@@ -22,7 +22,7 @@ type DynamicRegistrationInput = {
 type DynamicRegistrationResult = {
   user: UserSummary;
   onboardingProfile: OnboardingProfileSummary;
-  nextRoute: "/human-idv";
+  nextRoute: "/agent";
   contractArtifact: null;
 };
 

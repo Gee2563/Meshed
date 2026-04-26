@@ -118,7 +118,7 @@ describe("LiveWorldVerificationWidget", () => {
       action: "meshed-network-access",
       allow_legacy_proofs: true,
       environment: "staging",
-      return_to: "http://localhost:3000/human-idv",
+      return_to: "http://localhost:3000/agent",
       preset: {
         type: "OrbLegacy",
         signal: "0xsignal",

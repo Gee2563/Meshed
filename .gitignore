@@ -20,3 +20,6 @@ __pycache__/
 *.svg
 *.jpg
 *.jpeg
+
+# Runtime scraper artifacts
+network_pipeline/generated/

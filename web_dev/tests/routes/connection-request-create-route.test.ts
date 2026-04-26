@@ -23,13 +23,20 @@ describe("POST /api/connections/requests", () => {
     mocks.createRequest.mockReset();
   });
 
-  it("creates a request for the signed-in user", async () => {
+  it("creates a request plus a verified interaction for the signed-in user", async () => {
     mocks.requireCurrentUser.mockResolvedValue({ id: "usr_sender" });
     mocks.createRequest.mockResolvedValue({
-      id: "req_1",
-      requesterUserId: "usr_sender",
-      recipientUserId: "usr_target",
-      status: "pending",
+      request: {
+        id: "req_1",
+        requesterUserId: "usr_sender",
+        recipientUserId: "usr_target",
+        status: "pending",
+      },
+      interaction: {
+        id: "int_1",
+        interactionType: "INTRO_REQUESTED",
+        verified: true,
+      },
     });
 
     const { POST } = await import("@/app/api/connections/requests/route");
@@ -43,6 +50,8 @@ describe("POST /api/connections/requests", () => {
           recipientUserId: "usr_target",
           type: "intro",
           message: "Let's connect on Meshed.",
+          painPointTag: "pricing",
+          matchScore: 88,
         }),
       }),
     );
@@ -51,6 +60,8 @@ describe("POST /api/connections/requests", () => {
       recipientUserId: "usr_target",
       type: "intro",
       message: "Let's connect on Meshed.",
+      painPointTag: "pricing",
+      matchScore: 88,
     });
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
@@ -61,6 +72,11 @@ describe("POST /api/connections/requests", () => {
           requesterUserId: "usr_sender",
           recipientUserId: "usr_target",
           status: "pending",
+        },
+        interaction: {
+          id: "int_1",
+          interactionType: "INTRO_REQUESTED",
+          verified: true,
         },
       },
     });

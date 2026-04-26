@@ -5,7 +5,8 @@ import { getCurrentUser } from "@/lib/server/current-user";
 import { prisma } from "@/lib/server/prisma";
 import { userRepository } from "@/lib/server/repositories/user-repository";
 import { connectionRequestService } from "@/lib/server/services/connection-request-service";
-import type { UserSummary } from "@/lib/types";
+import { verifiedInteractionService } from "@/lib/server/services/verified-interaction-service";
+import type { UserSummary, VerifiedInteractionSummary } from "@/lib/types";
 import { formatRelativeCount, titleCase } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -52,11 +53,21 @@ export default async function ProfilePage() {
     },
   });
   const demoUsers: UserSummary[] = await userRepository.listDemoUsers();
+  const recentInteractions = await verifiedInteractionService.listRecentForUser(currentUser.id, 6);
 
   const connectedContacts = demoUsers.filter((user: UserSummary) => connectionState.connectedContactIds.includes(user.id));
   const outgoingContacts = demoUsers.filter((user: UserSummary) =>
     connectionState.outgoingPendingContactIds.includes(user.id),
   );
+
+  function interactionLabel(interaction: VerifiedInteractionSummary) {
+    return interaction.interactionType.replaceAll("_", " ");
+  }
+
+  function worldChainExplorerUrl(interaction: VerifiedInteractionSummary) {
+    const metadata = interaction.metadata as { worldChain?: { explorerUrl?: unknown } } | null | undefined;
+    return typeof metadata?.worldChain?.explorerUrl === "string" ? metadata.worldChain.explorerUrl : null;
+  }
 
   return (
     <AppShell>
@@ -79,8 +90,10 @@ export default async function ProfilePage() {
                 </p>
               </div>
               <div className="rounded-[1.4rem] border border-slate-200 bg-mist/70 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Human IDV</p>
-                <p className="mt-2 text-sm font-medium text-ink">{currentUser.worldVerified ? "Verified" : "Pending"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">World verification</p>
+                <p className="mt-2 text-sm font-medium text-ink">
+                  {currentUser.worldVerified ? "Verified Human" : "Pending"}
+                </p>
               </div>
               <div className="rounded-[1.4rem] border border-slate-200 bg-mist/70 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Badges</p>
@@ -88,6 +101,33 @@ export default async function ProfilePage() {
                   {currentUser.verificationBadges.length
                     ? currentUser.verificationBadges.map(titleCase).join(", ")
                     : "No trust badges yet"}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Skills</p>
+                <p className="mt-2 text-sm text-ink">
+                  {currentUser.skills.length ? currentUser.skills.join(", ") : "No skills saved yet"}
+                </p>
+              </div>
+              <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Sectors</p>
+                <p className="mt-2 text-sm text-ink">
+                  {currentUser.sectors.length ? currentUser.sectors.join(", ") : "No sectors saved yet"}
+                </p>
+              </div>
+              <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">LinkedIn</p>
+                <p className="mt-2 break-all text-sm text-ink">
+                  {currentUser.linkedinUrl ?? "Not linked yet"}
+                </p>
+              </div>
+              <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Outside-network access</p>
+                <p className="mt-2 text-sm text-ink">
+                  {currentUser.outsideNetworkAccessEnabled ? "Enabled for trusted intros" : "Limited to current network"}
                 </p>
               </div>
             </div>
@@ -113,6 +153,12 @@ export default async function ProfilePage() {
             </div>
 
             <div className="mt-5 flex flex-wrap gap-3">
+              <Button href="/agent" variant="secondary">
+                Open Agent
+              </Button>
+              <Button href="/agent?mode=setup" variant="secondary">
+                Update setup with Agent
+              </Button>
               <Button href="/dashboard" variant="secondary">
                 Open dashboard
               </Button>
@@ -214,6 +260,46 @@ export default async function ProfilePage() {
             </p>
           </article>
         </div>
+
+        <article className="rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-sm sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate">Recent verified interactions</p>
+          <div className="mt-4 space-y-3">
+            {recentInteractions.length === 0 ? (
+              <div className="rounded-[1.4rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate">
+                No verified interactions recorded yet.
+              </div>
+            ) : (
+              recentInteractions.map((interaction: VerifiedInteractionSummary) => (
+                <div key={interaction.id} className="rounded-[1.4rem] border border-slate-200 bg-mist/60 px-4 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-ink">{interactionLabel(interaction)}</p>
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate">
+                      {interaction.rewardStatus.replaceAll("_", " ")}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate">
+                    {interaction.verified ? "World-backed trust layer confirmed." : "Waiting for full verification."}
+                  </p>
+                  {interaction.transactionHash ? (
+                    worldChainExplorerUrl(interaction) ? (
+                      <a
+                        href={worldChainExplorerUrl(interaction) ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 block break-all text-xs text-sky-700 underline-offset-4 hover:underline"
+                      >
+                        {interaction.transactionHash}
+                      </a>
+                    ) : (
+                      <p className="mt-2 break-all text-xs text-slate">{interaction.transactionHash}</p>
+                    )
+                  ) : null}
+                  <p className="mt-1 text-xs text-slate">{interaction.createdAt}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </article>
       </section>
     </AppShell>
   );

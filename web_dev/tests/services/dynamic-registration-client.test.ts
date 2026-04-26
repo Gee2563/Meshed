@@ -23,7 +23,7 @@ describe("dynamic registration client", () => {
         JSON.stringify({
           ok: true,
           data: {
-            nextRoute: "/human-idv",
+            nextRoute: "/agent",
           },
         }),
         {
@@ -46,11 +46,11 @@ describe("dynamic registration client", () => {
     );
 
     expect(result).toEqual({
-      nextRoute: "/human-idv",
+      nextRoute: "/agent",
     });
   });
 
-  it("falls back to the human IDV route when the server returns an unexpected next route", async () => {
+  it("falls back to the Agent route when the server returns an unexpected next route", async () => {
     const fetchMock = vi.fn(async () => {
       return new Response(
         JSON.stringify({
@@ -79,7 +79,7 @@ describe("dynamic registration client", () => {
     );
 
     expect(result).toEqual({
-      nextRoute: "/human-idv",
+      nextRoute: "/agent",
     });
   });
 

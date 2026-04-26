@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   ensureDemoState: vi.fn(),
   listDemoUsers: vi.fn(),
+  listRecentForUser: vi.fn(),
   findMany: vi.fn(),
 }));
 
@@ -22,6 +23,12 @@ vi.mock("@/lib/server/services/connection-request-service", () => ({
 vi.mock("@/lib/server/repositories/user-repository", () => ({
   userRepository: {
     listDemoUsers: mocks.listDemoUsers,
+  },
+}));
+
+vi.mock("@/lib/server/services/verified-interaction-service", () => ({
+  verifiedInteractionService: {
+    listRecentForUser: mocks.listRecentForUser,
   },
 }));
 
@@ -47,6 +54,7 @@ describe("profile page", () => {
     mocks.getCurrentUser.mockReset();
     mocks.ensureDemoState.mockReset();
     mocks.listDemoUsers.mockReset();
+    mocks.listRecentForUser.mockReset();
     mocks.findMany.mockReset();
   });
 
@@ -112,6 +120,30 @@ describe("profile page", () => {
         name: "Iris Hale",
       },
     ]);
+    mocks.listRecentForUser.mockResolvedValue([
+      {
+        id: "int_1",
+        interactionType: "INTRO_ACCEPTED",
+        actorUserId: "usr_dynamic",
+        targetUserId: "usr_consultant_nina",
+        authorizedByUserId: null,
+        companyId: null,
+        painPointTag: null,
+        matchScore: null,
+        verified: true,
+        actorWorldVerified: true,
+        actorWorldNullifier: "0xactor",
+        actorVerificationLevel: null,
+        targetWorldVerified: true,
+        targetWorldNullifier: "0xtarget",
+        targetVerificationLevel: null,
+        rewardStatus: "REWARDABLE",
+        transactionHash: null,
+        metadata: null,
+        createdAt: "2026-04-02T09:00:00.000Z",
+        updatedAt: "2026-04-02T09:00:00.000Z",
+      },
+    ]);
 
     const { default: ProfilePage } = await import("@/app/profile/page");
     const markup = renderToStaticMarkup(await ProfilePage());
@@ -120,6 +152,7 @@ describe("profile page", () => {
     expect(markup).toContain("MeshPay");
     expect(markup).toContain("Nina Volkov");
     expect(markup).toContain("Theo Mercer");
+    expect(markup).toContain("Recent verified interactions");
     expect(markup).toContain("LogoutButton");
   });
 });

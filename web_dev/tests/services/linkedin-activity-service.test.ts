@@ -7,8 +7,7 @@ const mocks = vi.hoisted(() => ({
   updateProfile: vi.fn(),
   create: vi.fn(),
   listDemoUsers: vi.fn(),
-  verifyExternalEvent: vi.fn(),
-  recordRelationship: vi.fn(),
+  recordInteraction: vi.fn(),
 }));
 
 describe("linkedin activity service", () => {
@@ -21,13 +20,7 @@ describe("linkedin activity service", () => {
     vi.useRealTimers();
   });
 
-  it("attests a LinkedIn event, writes the relationship, and creates bilateral notifications", async () => {
-    vi.doMock("@/lib/config/env", () => ({
-      env: {
-        USE_MOCK_FLARE: false,
-        USE_MOCK_MESHING: false,
-      },
-    }));
+  it("records a LinkedIn event as a verified interaction and creates bilateral notifications", async () => {
     vi.doMock("@/lib/server/repositories/user-repository", () => ({
       userRepository: {
         findByLinkedinUrl: mocks.findByLinkedinUrl,
@@ -38,24 +31,10 @@ describe("linkedin activity service", () => {
         listDemoUsers: mocks.listDemoUsers,
       },
     }));
-    vi.doMock("@/lib/server/adapters/flare", () => ({
-      getFlareAdapters: () => ({
-        external: {
-          verifyExternalEvent: mocks.verifyExternalEvent,
-        },
-      }),
-    }));
-    vi.doMock("@/lib/server/services/meshing-contract-service", () => ({
-      getRealMeshingConfig: () => ({
-        rpcUrl: "https://coston2.example",
-        privateKey: "0x1234",
-        relationshipRegistryAddress: "0x1111111111111111111111111111111111111111",
-        portfolioRegistryAddress: "0x2222222222222222222222222222222222222222",
-        opportunityAlertAddress: "0x3333333333333333333333333333333333333333",
-      }),
-      getMeshingContractsService: () => ({
-        recordRelationship: mocks.recordRelationship,
-      }),
+    vi.doMock("@/lib/server/services/verified-interaction-service", () => ({
+      verifiedInteractionService: {
+        recordInteraction: mocks.recordInteraction,
+      },
     }));
 
     const sender = {
@@ -74,23 +53,27 @@ describe("linkedin activity service", () => {
       if (url.includes("bob")) return recipient;
       return null;
     });
-    mocks.verifyExternalEvent.mockResolvedValue({
+    mocks.recordInteraction.mockResolvedValue({
+      id: "int_linkedin_1",
+      interactionType: "MATCH_SUGGESTED",
+      actorUserId: "usr_sender",
+      targetUserId: "usr_recipient",
+      authorizedByUserId: null,
+      companyId: null,
+      painPointTag: null,
+      matchScore: null,
       verified: true,
-      providerRef: "flare:oracle-signature:abc",
-    });
-    mocks.recordRelationship.mockResolvedValue({
-      relationship: {
-        relationshipId: "0xrelationship",
-      },
-      contractCall: {
-        network: "flare-coston2",
-        contractAddress: "0x1111111111111111111111111111111111111111",
-        contract: "RelationshipRegistry",
-        method: "recordRelationship",
-        args: ["Alice Chen", "Bob Singh", "LINKEDIN_MESSAGE"],
-        txHash: "0xflaretx",
-        blockNumber: 123,
-      },
+      actorWorldVerified: true,
+      actorWorldNullifier: "0xactor",
+      actorVerificationLevel: null,
+      targetWorldVerified: true,
+      targetWorldNullifier: "0xtarget",
+      targetVerificationLevel: null,
+      rewardStatus: "NOT_REWARDABLE",
+      transactionHash: null,
+      metadata: null,
+      createdAt: "2026-04-01T09:00:00.000Z",
+      updatedAt: "2026-04-01T09:00:00.000Z",
     });
 
     const { linkedinActivityService } = await import("@/lib/server/services/linkedin-activity-service");
@@ -101,25 +84,32 @@ describe("linkedin activity service", () => {
       messagePreview: "Hello from LinkedIn",
     });
 
-    expect(mocks.verifyExternalEvent).toHaveBeenCalledOnce();
-    expect(mocks.recordRelationship).toHaveBeenCalledWith({
-      entityA: "Alice Chen",
-      entityB: "Bob Singh",
-      relationshipType: "LINKEDIN_MESSAGE",
-    });
+    expect(mocks.recordInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        interactionType: "MATCH_SUGGESTED",
+        actorUserId: "usr_sender",
+        targetUserId: "usr_recipient",
+        metadata: expect.objectContaining({
+          source: "linkedin_webhook",
+          actorMode: "HUMAN",
+          linkedinAction: "message",
+        }),
+      }),
+    );
     expect(result).toMatchObject({
-      status: "attested",
+      status: "recorded",
       senderMeshedUserId: "usr_sender",
       recipientMeshedUserId: "usr_recipient",
       notificationsCreated: 2,
-      relationshipId: "0xrelationship",
-      attestationRef: "flare:oracle-signature:abc",
+      interactionId: "int_linkedin_1",
+      interactionType: "MATCH_SUGGESTED",
+      verified: true,
     });
 
     const notifications = await linkedinActivityService.listNotificationsForUser("usr_recipient");
     expect(notifications[0]).toMatchObject({
       counterpartUserId: "usr_sender",
-      attestationRef: "flare:oracle-signature:abc",
+      interactionId: "int_linkedin_1",
       action: "message",
     });
   });
@@ -128,12 +118,6 @@ describe("linkedin activity service", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-04T12:00:00.000Z"));
 
-    vi.doMock("@/lib/config/env", () => ({
-      env: {
-        USE_MOCK_FLARE: false,
-        USE_MOCK_MESHING: false,
-      },
-    }));
     vi.doMock("@/lib/server/repositories/user-repository", () => ({
       userRepository: {
         findByLinkedinUrl: mocks.findByLinkedinUrl,
@@ -144,24 +128,10 @@ describe("linkedin activity service", () => {
         listDemoUsers: mocks.listDemoUsers,
       },
     }));
-    vi.doMock("@/lib/server/adapters/flare", () => ({
-      getFlareAdapters: () => ({
-        external: {
-          verifyExternalEvent: mocks.verifyExternalEvent,
-        },
-      }),
-    }));
-    vi.doMock("@/lib/server/services/meshing-contract-service", () => ({
-      getRealMeshingConfig: () => ({
-        rpcUrl: "https://coston2.example",
-        privateKey: "0x1234",
-        relationshipRegistryAddress: "0x1111111111111111111111111111111111111111",
-        portfolioRegistryAddress: "0x2222222222222222222222222222222222222222",
-        opportunityAlertAddress: "0x3333333333333333333333333333333333333333",
-      }),
-      getMeshingContractsService: () => ({
-        recordRelationship: mocks.recordRelationship,
-      }),
+    vi.doMock("@/lib/server/services/verified-interaction-service", () => ({
+      verifiedInteractionService: {
+        recordInteraction: mocks.recordInteraction,
+      },
     }));
 
     const currentUser = {
@@ -192,23 +162,27 @@ describe("linkedin activity service", () => {
       if (url.includes("nina-volkov")) return seededCounterpart;
       return null;
     });
-    mocks.verifyExternalEvent.mockResolvedValue({
+    mocks.recordInteraction.mockResolvedValue({
+      id: "int_seeded_1",
+      interactionType: "INTRO_REQUESTED",
+      actorUserId: seededCounterpart.id,
+      targetUserId: currentUser.id,
+      authorizedByUserId: currentUser.id,
+      companyId: null,
+      painPointTag: null,
+      matchScore: null,
       verified: true,
-      providerRef: "flare:oracle-signature:seeded",
-    });
-    mocks.recordRelationship.mockResolvedValue({
-      relationship: {
-        relationshipId: "0xseededrelationship",
-      },
-      contractCall: {
-        network: "flare-coston2",
-        contractAddress: "0x1111111111111111111111111111111111111111",
-        contract: "RelationshipRegistry",
-        method: "recordRelationship",
-        args: ["Nina Volkov", "Current User", "LINKEDIN_CONNECT_REQUEST"],
-        txHash: "0xflaretxseeded",
-        blockNumber: 456,
-      },
+      actorWorldVerified: true,
+      actorWorldNullifier: "0xactor",
+      actorVerificationLevel: null,
+      targetWorldVerified: true,
+      targetWorldNullifier: "0xtarget",
+      targetVerificationLevel: null,
+      rewardStatus: "NOT_REWARDABLE",
+      transactionHash: null,
+      metadata: null,
+      createdAt: "2026-04-04T12:00:00.000Z",
+      updatedAt: "2026-04-04T12:00:00.000Z",
     });
 
     const { linkedinActivityService } = await import("@/lib/server/services/linkedin-activity-service");
@@ -221,12 +195,20 @@ describe("linkedin activity service", () => {
         role: "CONSULTANT",
       }),
     );
+    expect(mocks.recordInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorizedByUserId: "usr_current",
+        metadata: expect.objectContaining({
+          source: "linkedin_simulation",
+          actorMode: "AGENT",
+        }),
+      }),
+    );
     expect(result.counterpartName).toBe("Nina Volkov");
     expect(result.ingestion).toMatchObject({
-      status: "attested",
+      status: "recorded",
       notificationsCreated: 2,
-      relationshipId: "0xseededrelationship",
+      interactionId: "int_seeded_1",
     });
-
   });
 });

@@ -4,7 +4,6 @@ import type { z } from "zod";
 import { env } from "@/lib/config/env";
 import { ApiError } from "@/lib/server/http";
 import { worldVerificationNullifierRepository } from "@/lib/server/repositories/world-verification-nullifier-repository";
-import { worldOnboardingContractService } from "@/lib/server/services/world-onboarding-contract-service";
 import { worldVerifySchema } from "@/lib/server/validation/auth-schemas";
 import type { UserSummary } from "@/lib/types";
 
@@ -100,6 +99,38 @@ function requireRpId() {
   return env.WORLD_RP_ID;
 }
 
+async function verifyWorldPayload(
+  payload: WorldVerifyPayload,
+  input: {
+    fetch?: FetchLike;
+  } = {},
+) {
+  const fetcher = input.fetch ?? fetch;
+  const response = await fetcher(`${WORLD_VERIFY_API_BASE_URL}/${requireRpId()}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "User-Agent": WORLD_VERIFY_USER_AGENT,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const verification = (await response.json().catch(() => null)) as WorldVerifyApiResponse;
+  if (!response.ok) {
+    throw new ApiError(response.status >= 500 ? 502 : 400, verification?.message ?? "World verification failed.", verification);
+  }
+
+  if (!verification?.success) {
+    throw new ApiError(400, verification?.message ?? "World verification failed.", verification);
+  }
+
+  return {
+    verification,
+    replayKey: extractVerifiedReplayKey(payload, verification),
+  };
+}
+
 export const worldVerificationService = {
   createRpSignature(action: string) {
     const signature = signRequest({
@@ -113,6 +144,15 @@ export const worldVerificationService = {
       created_at: signature.createdAt,
       expires_at: signature.expiresAt,
     };
+  },
+
+  async verifyPayload(
+    payload: WorldVerifyPayload,
+    input: {
+      fetch?: FetchLike;
+    } = {},
+  ) {
+    return verifyWorldPayload(payload, input);
   },
 
   async verifyUser(
@@ -134,34 +174,13 @@ export const worldVerificationService = {
     }
 
     requireMatchingSignal(user, payload);
-
-    const fetcher = input.fetch ?? fetch;
-    const response = await fetcher(`${WORLD_VERIFY_API_BASE_URL}/${requireRpId()}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": WORLD_VERIFY_USER_AGENT,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const verification = (await response.json().catch(() => null)) as WorldVerifyApiResponse;
-    if (!response.ok) {
-      throw new ApiError(response.status >= 500 ? 502 : 400, verification?.message ?? "World verification failed.", verification);
-    }
-
-    if (!verification?.success) {
-      throw new ApiError(400, verification?.message ?? "World verification failed.", verification);
-    }
-
-    const replayKey = extractVerifiedReplayKey(payload, verification);
+    const { verification, replayKey } = await verifyWorldPayload(payload, input);
     const updatedUser = await worldVerificationNullifierRepository.reserveAndMarkVerified({
       userId: user.id,
       action: replayKey.action,
       nullifier: replayKey.nullifier,
     });
-    await worldOnboardingContractService.ensureWorldVerifiedContract(updatedUser);
+    // TODO(world-chain): persist this World verification event on World Chain once the hackathon DB-first flow is stable.
 
     return {
       user: updatedUser,

@@ -18,10 +18,13 @@
     "hardhat:compile": "hardhat compile",
     "hardhat:deploy:coston2": "hardhat run scripts/deploy.ts --network coston2",
     "hardhat:deploy:meshing:coston2": "hardhat run scripts/deploy-meshing.ts --network coston2",
+    "hardhat:deploy:worldchain-sepolia": "hardhat run scripts/deploy-verified-interaction-registry.js --network worldchainSepolia",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f db",
     "db:reset": "docker compose down -v && docker compose up -d",
+    "onboarding:reset": "node scripts/reset-onboarding-progress.mjs",
+    "world:reset-replay": "node scripts/reset-world-replay-mappings.mjs",
     "prisma:generate": "node scripts/run-prisma-with-db-url.cjs generate",
     "prisma:migrate": "node scripts/run-prisma-with-db-url.cjs migrate dev",
     "prisma:seed": "node scripts/run-prisma-with-db-url.cjs db seed",
@@ -45,11 +48,12 @@
     "jose": "^5.9.6",
     "lucide-react": "^0.468.0",
     "next": "^15.0.0",
+    "openai": "^6.34.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.6.0",
     "vis-network": "^10.0.2",
-    "zod": "^3.24.1"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@next/swc-wasm-nodejs": "15.5.14",

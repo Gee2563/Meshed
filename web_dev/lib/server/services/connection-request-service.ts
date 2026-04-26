@@ -4,9 +4,13 @@ import { ApiError } from "@/lib/server/http";
 import { connectionRepository } from "@/lib/server/repositories/connection-repository";
 import { connectionRequestRepository } from "@/lib/server/repositories/connection-request-repository";
 import { userRepository } from "@/lib/server/repositories/user-repository";
-import { connectionContractService } from "@/lib/server/services/connection-contract-service";
-import { managedWalletService } from "@/lib/server/services/managed-wallet-service";
-import type { ConnectionRequestSummary, ConnectionSummary, UserSummary } from "@/lib/types";
+import { verifiedInteractionService } from "@/lib/server/services/verified-interaction-service";
+import type {
+  ConnectionRequestSummary,
+  ConnectionSummary,
+  UserSummary,
+  VerifiedInteractionSummary,
+} from "@/lib/types";
 
 export type ConnectionDashboardState = {
   pendingIncomingRequests: ConnectionRequestSummary[];
@@ -14,15 +18,25 @@ export type ConnectionDashboardState = {
   outgoingPendingContactIds: string[];
 };
 
-export type AcceptConnectionRequestResult = {
-  request: ConnectionRequestSummary;
-  connection: ConnectionSummary;
-};
-
 export type CreateConnectionRequestInput = {
   recipientUserId: string;
   type: ConnectionSummary["type"];
   message?: string | null;
+  companyId?: string | null;
+  painPointTag?: string | null;
+  matchScore?: number | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+export type CreateConnectionRequestResult = {
+  request: ConnectionRequestSummary;
+  interaction: VerifiedInteractionSummary;
+};
+
+export type AcceptConnectionRequestResult = {
+  request: ConnectionRequestSummary;
+  connection: ConnectionSummary;
+  interaction: VerifiedInteractionSummary | null;
 };
 
 type ConnectionRequestServiceDependencies = {
@@ -37,14 +51,15 @@ type ConnectionRequestServiceDependencies = {
       recipientUserId: string;
       type: ConnectionSummary["type"];
       message?: string | null;
+      metadata?: Record<string, unknown> | null;
     }): Promise<ConnectionRequestSummary>;
     acceptPendingRequest(input: {
       requestId: string;
       recipientUserId: string;
       connectionId: string;
-      contractAddress: string;
-      contractNetwork: string;
-      generationMode: "MOCK" | "REAL";
+      contractAddress?: string | null;
+      contractNetwork?: string | null;
+      generationMode?: "MOCK" | "REAL" | null;
       contractTxHash?: string | null;
       metadata?: Record<string, unknown> | null;
     }): Promise<ConnectionRequestSummary | null>;
@@ -64,21 +79,17 @@ type ConnectionRequestServiceDependencies = {
     findById(userId: string): Promise<UserSummary | null>;
     listDemoUsers(): Promise<UserSummary[]>;
   };
-  managedWalletService: {
-    ensureWalletForUser(userId: string): Promise<UserSummary>;
-  };
-  connectionContractService: {
-    deployConnectionAgreement(input: {
-      requester: UserSummary;
-      recipient: UserSummary;
-      request: ConnectionRequestSummary;
-    }): Promise<{
-      contractAddress: string;
-      network: string;
-      generationMode: "MOCK" | "REAL";
-      transactionHash?: string | null;
+  verifiedInteractionService: {
+    recordInteraction(input: {
+      interactionType: VerifiedInteractionSummary["interactionType"];
+      actorUserId: string;
+      targetUserId?: string | null;
+      companyId?: string | null;
+      painPointTag?: string | null;
+      matchScore?: number | null;
+      rewardStatus?: VerifiedInteractionSummary["rewardStatus"];
       metadata?: Record<string, unknown> | null;
-    }>;
+    }): Promise<VerifiedInteractionSummary>;
   };
   idGenerator: {
     connectionId(): string;
@@ -88,18 +99,18 @@ type ConnectionRequestServiceDependencies = {
 
 function seedRequestMessage(role: UserSummary["role"], currentUserName: string) {
   if (role === "mentor") {
-    return `I'd like to formalize a Meshed mentorship line with ${currentUserName} so the support path can move onto Flare.`;
+    return `I'd like to open a World-backed mentorship thread with ${currentUserName} on Meshed.`;
   }
   if (role === "investor") {
-    return `Let's open a contract-backed Meshed relationship with ${currentUserName} for the next portfolio support workflow.`;
+    return `Let's open a verified intro with ${currentUserName} for the next portfolio support workflow.`;
   }
   if (role === "consultant") {
-    return `Would love to connect directly with ${currentUserName} on Meshed and turn this into a verified consulting thread.`;
+    return `Would love to connect directly with ${currentUserName} on Meshed and continue this as a verified consulting thread.`;
   }
   if (role === "operator") {
     return `I'm available to connect with ${currentUserName} on Meshed for the next redeployment and onboarding sprint.`;
   }
-  return `Let's connect directly on Meshed so this relationship can be recorded on Flare.`;
+  return `Let's connect directly on Meshed through the World-backed trust layer.`;
 }
 
 function connectionTypeForRole(role: UserSummary["role"]): ConnectionSummary["type"] {
@@ -134,7 +145,7 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
       };
     },
 
-    async createRequest(requesterUserId: string, input: CreateConnectionRequestInput) {
+    async createRequest(requesterUserId: string, input: CreateConnectionRequestInput): Promise<CreateConnectionRequestResult> {
       if (requesterUserId === input.recipientUserId) {
         throw new ApiError(400, "You cannot send a Meshed connection request to yourself.");
       }
@@ -161,13 +172,41 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
         throw new ApiError(409, "This member already sent you a connection request. Accept it instead.");
       }
 
-      return deps.connectionRequestRepository.createPendingRequest({
+      const request = await deps.connectionRequestRepository.createPendingRequest({
         id: deps.idGenerator.requestId(),
         requesterUserId,
         recipientUserId: input.recipientUserId,
         type: input.type,
         message: input.message,
+        metadata: {
+          source: "connection_request",
+          companyId: input.companyId ?? null,
+          painPointTag: input.painPointTag ?? null,
+          matchScore: input.matchScore ?? null,
+          ...(input.metadata ?? {}),
+        },
       });
+
+      const interaction = await deps.verifiedInteractionService.recordInteraction({
+        interactionType: "INTRO_REQUESTED",
+        actorUserId: requester.id,
+        targetUserId: recipient.id,
+        companyId: input.companyId ?? null,
+        painPointTag: input.painPointTag ?? null,
+        matchScore: input.matchScore ?? null,
+        metadata: {
+          source: "connection_request",
+          requestId: request.id,
+          connectionType: request.type,
+          message: request.message ?? null,
+          ...(request.metadata ?? {}),
+        },
+      });
+
+      return {
+        request,
+        interaction,
+      };
     },
 
     async ensureDemoState(userId: string): Promise<ConnectionDashboardState> {
@@ -231,6 +270,9 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
             recipientUserId: userId,
             type: connectionTypeForRole(candidate.role),
             message: seedRequestMessage(candidate.role, currentUser.name),
+            metadata: {
+              source: "seeded_demo_request",
+            },
           });
           existingIncomingIds.add(candidate.id);
         }
@@ -256,7 +298,10 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
               requesterUserId: userId,
               recipientUserId: outgoingCandidate.id,
               type: connectionTypeForRole(outgoingCandidate.role),
-              message: `I'd like to open a direct Meshed connection with ${outgoingCandidate.name} for the next portfolio workflow.`,
+              message: `I'd like to open a verified Meshed connection with ${outgoingCandidate.name} for the next portfolio workflow.`,
+              metadata: {
+                source: "seeded_demo_request",
+              },
             });
             existingOutgoingIds.add(outgoingCandidate.id);
           }
@@ -284,6 +329,7 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
         return {
           request,
           connection: existingConnection,
+          interaction: null,
         };
       }
 
@@ -291,31 +337,13 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
         throw new ApiError(409, "Connection request is no longer pending.");
       }
 
-      const [requester, recipient] = await Promise.all([
-        deps.managedWalletService.ensureWalletForUser(request.requesterUserId),
-        deps.managedWalletService.ensureWalletForUser(request.recipientUserId),
-      ]);
-
-      const deployment = await deps.connectionContractService.deployConnectionAgreement({
-        requester,
-        recipient,
-        request,
-      });
-
       const acceptedRequest = await deps.connectionRequestRepository.acceptPendingRequest({
         requestId,
         recipientUserId,
         connectionId: deps.idGenerator.connectionId(),
-        contractAddress: deployment.contractAddress,
-        contractNetwork: deployment.network,
-        generationMode: deployment.generationMode,
-        contractTxHash: deployment.transactionHash ?? null,
         metadata: {
-          source: "connection_request",
-          requesterWallet: requester.walletAddress ?? null,
-          recipientWallet: recipient.walletAddress ?? null,
-          transactionHash: deployment.transactionHash ?? null,
-          ...(deployment.metadata ?? {}),
+          source: "connection_request_acceptance",
+          acceptedWithoutFlare: true,
         },
       });
 
@@ -336,9 +364,24 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
         throw new ApiError(500, "The connection request was accepted, but the verified connection could not be loaded.");
       }
 
+      const interaction = await deps.verifiedInteractionService.recordInteraction({
+        interactionType: "INTRO_ACCEPTED",
+        actorUserId: acceptedRequest.recipientUserId,
+        targetUserId: acceptedRequest.requesterUserId,
+        rewardStatus: "REWARDABLE",
+        metadata: {
+          source: "connection_request_acceptance",
+          requestId: acceptedRequest.id,
+          acceptedConnectionId: connection.id,
+          message: acceptedRequest.message ?? null,
+          ...(acceptedRequest.metadata ?? {}),
+        },
+      });
+
       return {
         request: acceptedRequest,
         connection,
+        interaction,
       };
     },
   };
@@ -348,8 +391,7 @@ export const connectionRequestService = createConnectionRequestService({
   connectionRequestRepository,
   connectionRepository,
   userRepository,
-  managedWalletService,
-  connectionContractService,
+  verifiedInteractionService,
   idGenerator: {
     connectionId: () => `conn_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
     requestId: () => `req_${randomUUID().replace(/-/g, "").slice(0, 12)}`,

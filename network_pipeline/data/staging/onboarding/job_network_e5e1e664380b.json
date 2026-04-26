@@ -1,0 +1,24 @@
+{
+  "source_website": "https://Use https://flexpointford.com",
+  "portfolio_pages": [],
+  "lp_pages": [],
+  "portfolio_companies": [],
+  "lp_contacts": [],
+  "summary": {
+    "portfolio_company_count": 0,
+    "lp_contact_count": 0,
+    "company_scan_count": 0
+  },
+  "generated_script": {
+    "path": "/Users/teegsontech/Meshed/network_pipeline/generated/vc_scrapers/use-https_scraper.py"
+  },
+  "inspection": {
+    "website": "https://Use https://flexpointford.com",
+    "portfolio_pages": [],
+    "portfolio_card_selector": null,
+    "portfolio_note": "no portfolio pattern learned",
+    "lp_pages": [],
+    "lp_card_selector": null,
+    "lp_note": "no lp/advisor pattern learned"
+  }
+}

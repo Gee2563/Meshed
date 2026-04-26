@@ -5,12 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  clearDynamicBrowserSession: vi.fn(),
   runLogoutFlow: vi.fn(),
-}));
-
-vi.mock("@/lib/auth/dynamic-browser-logout", () => ({
-  clearDynamicBrowserSession: mocks.clearDynamicBrowserSession,
 }));
 
 vi.mock("@/lib/auth/logout-flow", () => ({
@@ -50,7 +45,6 @@ describe("LogoutButton", () => {
   let root: Root;
   let fetchMock: ReturnType<typeof vi.fn>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     container = document.createElement("div");
@@ -61,11 +55,9 @@ describe("LogoutButton", () => {
     fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    mocks.clearDynamicBrowserSession.mockReset();
     mocks.runLogoutFlow.mockReset();
 
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
   });
 
   afterEach(async () => {
@@ -74,7 +66,6 @@ describe("LogoutButton", () => {
     });
     container.remove();
     consoleErrorSpy.mockRestore();
-    consoleWarnSpy.mockRestore();
     vi.unstubAllGlobals();
   });
 
@@ -102,12 +93,9 @@ describe("LogoutButton", () => {
     expect(mocks.runLogoutFlow).toHaveBeenCalledTimes(1);
 
     const input = mocks.runLogoutFlow.mock.calls[0]?.[0] as {
-      clearDynamicSession?: () => Promise<void>;
       clearServerSession: () => Promise<Response>;
       redirect: (href: string) => void;
     };
-
-    expect(input.clearDynamicSession).toBe(mocks.clearDynamicBrowserSession);
 
     await input.clearServerSession();
 
@@ -146,7 +134,7 @@ describe("LogoutButton", () => {
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
-  it("wires redirect and warning callbacks into the shared logout flow", async () => {
+  it("wires a redirect callback into the shared logout flow", async () => {
     mocks.runLogoutFlow.mockResolvedValueOnce(undefined);
 
     const { LogoutButton } = await import("@/components/LogoutButton");
@@ -163,18 +151,9 @@ describe("LogoutButton", () => {
     });
 
     const input = mocks.runLogoutFlow.mock.calls[0]?.[0] as {
-      onDynamicLogoutError: (error: unknown) => void;
       redirect: (href: string) => void;
     };
 
     expect(input.redirect).toEqual(expect.any(Function));
-    expect(input.onDynamicLogoutError).toEqual(expect.any(Function));
-
-    input.onDynamicLogoutError(new Error("dynamic warning"));
-
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      "[meshed][logout] Dynamic wallet logout failed after server session cleared.",
-      expect.any(Error),
-    );
   });
 });

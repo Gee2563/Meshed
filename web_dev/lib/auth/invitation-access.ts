@@ -15,7 +15,7 @@ export type DynamicInviteRecord = {
   portfolioCompanyName?: string;
 };
 
-export type DynamicNextRoute = "/human-idv";
+export type DynamicNextRoute = "/agent";
 
 function parseDynamicInviteEmailsFromEnv(): DynamicInviteRecord[] {
   const configured = process.env.DYNAMIC_INVITATION_EMAILS;
@@ -31,7 +31,7 @@ function parseDynamicInviteEmailsFromEnv(): DynamicInviteRecord[] {
     .map((email) => ({
       email,
       kind: "vc_member" as const,
-      nextRoute: "/human-idv" as const,
+      nextRoute: "/agent" as const,
       role: "investor" as const,
       outsideNetworkAccessEnabled: true,
       onboardingMode: "individual" as const,
@@ -45,7 +45,7 @@ const inviteRegistry: DynamicInviteRecord[] = [
   {
     email: "georgegds92@gmail.com",
     kind: "vc_member",
-    nextRoute: "/human-idv",
+    nextRoute: "/agent",
     role: "investor",
     outsideNetworkAccessEnabled: true,
     onboardingMode: "individual",
@@ -57,7 +57,7 @@ const inviteRegistry: DynamicInviteRecord[] = [
   {
     email: "georgegds92+1@gmail.com",
     kind: "portfolio_member",
-    nextRoute: "/human-idv",
+    nextRoute: "/agent",
     role: "operator",
     outsideNetworkAccessEnabled: false,
     onboardingMode: "individual",
@@ -71,7 +71,7 @@ const inviteRegistry: DynamicInviteRecord[] = [
   {
     email: "georgegds92+3@gmail.com",
     kind: "vc_member",
-    nextRoute: "/human-idv",
+    nextRoute: "/agent",
     role: "investor",
     outsideNetworkAccessEnabled: true,
     onboardingMode: "company",
@@ -94,7 +94,7 @@ export function getDynamicInvitationAccess(email: string): DynamicInviteRecord {
   return {
     email: normalized,
     kind: "vc_member",
-    nextRoute: "/human-idv",
+    nextRoute: "/agent",
     role: "investor",
     outsideNetworkAccessEnabled: true,
     onboardingMode: "individual",

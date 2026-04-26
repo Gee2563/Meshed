@@ -83,7 +83,7 @@ export function LiveWorldVerificationWidget({
           rp_context={rpContext}
           allow_legacy_proofs
           environment={environment}
-          return_to={`${clientEnv.appUrl.replace(/\/$/, "")}/human-idv`}
+          return_to={`${clientEnv.appUrl.replace(/\/$/, "")}/agent`}
           preset={orbLegacy({ signal })}
           handleVerify={async (result: IDKitResult) => {
             try {

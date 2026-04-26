@@ -11,14 +11,11 @@ type SimulateResponseBody = {
     direction: "incoming" | "outgoing";
     counterpartName: string;
     ingestion: {
-      status: "ignored" | "attested";
+      status: "ignored" | "recorded";
       eventId: string;
       notificationsCreated: number;
-      contractCall?: {
-        txHash: string | null;
-        contractAddress: string;
-        method: string;
-      };
+      verified?: boolean;
+      interactionId?: string | null;
     };
   };
 };
@@ -48,12 +45,11 @@ export function SimulateLinkedInAlertButton() {
 
       const directionLabel = body.data.direction === "incoming" ? "from" : "to";
       const actionLabel = humanActionLabel(body.data.action);
-      const statusLabel = body.data.ingestion.status === "attested" ? "attested" : "ignored";
-      const txHash = body.data.ingestion.contractCall?.txHash;
-      const txLabel = txHash ? ` tx ${txHash.slice(0, 12)}...` : "";
+      const statusLabel = body.data.ingestion.status === "recorded" ? "verified interaction recorded" : "ignored";
+      const verificationLabel = body.data.ingestion.verified ? "Verified Human" : "verification pending";
 
       setFeedback(
-        `Simulated ${actionLabel} ${directionLabel} ${body.data.counterpartName} (${statusLabel}, event ${body.data.ingestion.eventId}${txLabel}).`,
+        `Simulated ${actionLabel} ${directionLabel} ${body.data.counterpartName} (${statusLabel}, ${verificationLabel}, event ${body.data.ingestion.eventId}).`,
       );
       startTransition(() => {
         router.refresh();
@@ -71,7 +67,7 @@ export function SimulateLinkedInAlertButton() {
         disabled={isPending}
         className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isPending ? "Simulating..." : "Simulate LinkedIn Alert"}
+        {isPending ? "Simulating..." : "Simulate Human-backed Agent"}
       </button>
       {feedback ? <div className="max-w-[34rem] text-right text-[11px] text-emerald-700">{feedback}</div> : null}
       {error ? <div className="max-w-[34rem] text-right text-[11px] text-rose-700">{error}</div> : null}

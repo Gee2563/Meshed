@@ -54,7 +54,7 @@ describe("world onboarding contract service", () => {
             contractAddress: data.contractAddress,
             network: data.network,
             generationMode: (data.generationMode ?? "MOCK").toLowerCase() as OnboardingContractArtifactSummary["generationMode"],
-            metadata: data.metadata ?? null,
+            metadata: (data.metadata as Record<string, unknown> | null | undefined) ?? null,
             createdAt: "2026-04-01T09:00:00.000Z",
           };
           artifacts.push(artifact);

@@ -4,7 +4,6 @@ import { ApiError } from "@/lib/server/http";
 
 const mocks = vi.hoisted(() => ({
   reserveAndMarkVerified: vi.fn(),
-  ensureWorldVerifiedContract: vi.fn(),
   signRequest: vi.fn(),
   hashSignal: vi.fn(),
 }));
@@ -22,12 +21,6 @@ vi.mock("@/lib/server/repositories/world-verification-nullifier-repository", () 
   },
 }));
 
-vi.mock("@/lib/server/services/world-onboarding-contract-service", () => ({
-  worldOnboardingContractService: {
-    ensureWorldVerifiedContract: mocks.ensureWorldVerifiedContract,
-  },
-}));
-
 vi.mock("@worldcoin/idkit-core", () => ({
   signRequest: mocks.signRequest,
   hashSignal: mocks.hashSignal,
@@ -35,8 +28,8 @@ vi.mock("@worldcoin/idkit-core", () => ({
 
 describe("worldVerificationService", () => {
   beforeEach(() => {
+    vi.resetModules();
     mocks.reserveAndMarkVerified.mockReset();
-    mocks.ensureWorldVerifiedContract.mockReset();
     mocks.signRequest.mockReset();
     mocks.hashSignal.mockReset();
     mocks.hashSignal.mockImplementation((value: string) => {
@@ -110,17 +103,12 @@ describe("worldVerificationService", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.reserveAndMarkVerified).not.toHaveBeenCalled();
-    expect(mocks.ensureWorldVerifiedContract).not.toHaveBeenCalled();
   });
 
-  it("verifies the proof remotely and reserves the World replay key before marking the user", async () => {
+  it("verifies the proof remotely and reserves the World nullifier before marking the user", async () => {
     mocks.reserveAndMarkVerified.mockResolvedValue({
       id: "usr_world",
       worldVerified: true,
-    });
-    mocks.ensureWorldVerifiedContract.mockResolvedValue({
-      id: "con_world",
-      contractStep: "world_verified",
     });
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
@@ -190,10 +178,6 @@ describe("worldVerificationService", () => {
       action: "meshed-network-access",
       nullifier: "0xverifiednullifier",
     });
-    expect(mocks.ensureWorldVerifiedContract).toHaveBeenCalledWith({
-      id: "usr_world",
-      worldVerified: true,
-    });
     expect(result).toEqual({
       user: {
         id: "usr_world",
@@ -243,13 +227,13 @@ describe("worldVerificationService", () => {
           nonce: "0xnonce",
           action: "meshed-network-access",
           environment: "staging",
-        responses: [
-          {
-            identifier: "orb",
-            signal_hash: "0xuseridhash",
-            nullifier: "0xpayloadnullifier",
-          },
-        ],
+          responses: [
+            {
+              identifier: "orb",
+              signal_hash: "0xuseridhash",
+              nullifier: "0xpayloadnullifier",
+            },
+          ],
         },
         {
           fetch: fetchMock,
@@ -258,77 +242,6 @@ describe("worldVerificationService", () => {
     ).rejects.toMatchObject({
       status: 409,
       message: "World verification for this action was already used.",
-    });
-
-    expect(mocks.ensureWorldVerifiedContract).not.toHaveBeenCalled();
-  });
-
-  it("accepts a linked wallet hash during the transition to user-id-based signals", async () => {
-    mocks.reserveAndMarkVerified.mockResolvedValue({
-      id: "usr_world",
-      worldVerified: true,
-    });
-    mocks.ensureWorldVerifiedContract.mockResolvedValue({
-      id: "con_world",
-      contractStep: "world_verified",
-    });
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          success: true,
-          environment: "staging",
-          message: "Verified",
-          nullifier: "0xverifiednullifier",
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
-
-    const { worldVerificationService } = await import("@/lib/server/services/world-verification-service");
-    const result = await worldVerificationService.verifyUser(
-      {
-        id: "usr_world",
-        walletAddress: "0x1234567890",
-        worldVerified: false,
-      },
-      {
-        protocol_version: "3.0",
-        nonce: "0xnonce",
-        action: "meshed-network-access",
-        environment: "staging",
-        responses: [
-          {
-            identifier: "orb",
-            signal_hash: "0xwallethash",
-            nullifier: "0xpayloadnullifier",
-          },
-        ],
-      },
-      {
-        fetch: fetchMock,
-      },
-    );
-
-    expect(result).toEqual({
-      user: {
-        id: "usr_world",
-        worldVerified: true,
-      },
-      verification: {
-        success: true,
-        environment: "staging",
-        message: "Verified",
-        nullifier: "0xverifiednullifier",
-      },
-    });
-    expect(mocks.ensureWorldVerifiedContract).toHaveBeenCalledWith({
-      id: "usr_world",
-      worldVerified: true,
     });
   });
 });

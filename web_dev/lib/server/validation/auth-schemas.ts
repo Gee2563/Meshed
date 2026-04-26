@@ -41,6 +41,13 @@ export const worldVerifySchema = z
   })
   .passthrough();
 
+export const worldRegisterSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email().optional().nullable().or(z.literal("")),
+  role: z.enum(["consultant", "mentor", "operator", "investor"]).default("operator"),
+  verification: worldVerifySchema,
+});
+
 export const companyRegisterSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),

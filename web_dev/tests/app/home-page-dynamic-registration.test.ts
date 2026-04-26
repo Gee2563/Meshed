@@ -10,8 +10,8 @@ vi.mock("@/lib/server/current-user", () => ({
   getCurrentUser: mocks.getCurrentUser,
 }));
 
-vi.mock("@/components/DynamicRegistrationPanel", () => ({
-  DynamicRegistrationPanel: () => "DynamicRegistrationPanel",
+vi.mock("@/components/WorldRegistrationPanel", () => ({
+  WorldRegistrationPanel: () => "WorldRegistrationPanel",
 }));
 
 vi.mock("@/components/LogoutButton", () => ({
@@ -31,8 +31,8 @@ describe("home page", () => {
     const markup = renderToStaticMarkup(await HomePage());
 
     expect(markup).toContain("/meshed-logo.png");
-    expect(markup).toContain("Sign in to Meshed.");
-    expect(markup).toContain("DynamicRegistrationPanel");
+    expect(markup).toContain("Register with World ID.");
+    expect(markup).toContain("WorldRegistrationPanel");
     expect(markup).not.toContain("LogoutButton");
   });
 
@@ -61,6 +61,6 @@ describe("home page", () => {
     expect(markup).toContain("Welcome back, Avery Collins.");
     expect(markup).toContain("Session active");
     expect(markup).toContain("LogoutButton");
-    expect(markup).toContain("Continue to human IDV");
+    expect(markup).toContain("Open Agent");
   });
 });

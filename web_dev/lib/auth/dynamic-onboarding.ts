@@ -86,10 +86,10 @@ export function buildDynamicRegistrationPayload(input: {
 }
 
 export function getHumanIdvRoute() {
-  return "/human-idv";
+  return "/agent";
 }
 
 export function normalizeDynamicNextRoute(value?: string | null): DynamicNextRoute {
   // Only allow server-provided routes that Meshed explicitly understands.
-  return value === "/human-idv" ? value : "/human-idv";
+  return value === "/agent" ? value : "/agent";
 }

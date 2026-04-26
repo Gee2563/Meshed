@@ -1,77 +1,44 @@
-import React from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
+  redirect: vi.fn((href: string) => {
+    throw new Error(`redirect:${href}`);
+  }),
 }));
 
 vi.mock("@/lib/server/current-user", () => ({
   getCurrentUser: mocks.getCurrentUser,
 }));
 
-vi.mock("@/components/LogoutButton", () => ({
-  LogoutButton: () => "LogoutButton",
-}));
-
-vi.mock("@/components/WorldVerificationButton", () => ({
-  WorldVerificationButton: (props: { signal: string; verified: boolean }) =>
-    `WorldVerificationButton:${props.signal}:${props.verified ? "verified" : "pending"}`,
-}));
-
-vi.mock("@/components/HumanIdvIdentityForm", () => ({
-  HumanIdvIdentityForm: (props: { initialFirstName: string; initialLastName: string }) =>
-    `HumanIdvIdentityForm:${props.initialFirstName}:${props.initialLastName}`,
-}));
-
-vi.mock("@/components/ui/Button", () => ({
-  Button: (props: { children: React.ReactNode }) => props.children,
+vi.mock("next/navigation", () => ({
+  redirect: mocks.redirect,
 }));
 
 describe("human IDV page", () => {
   beforeEach(() => {
-    vi.stubGlobal("React", React);
     mocks.getCurrentUser.mockReset();
+    mocks.redirect.mockClear();
   });
 
-  it("sends signed-out visitors back home", async () => {
+  it("redirects signed-out visitors home", async () => {
     mocks.getCurrentUser.mockResolvedValue(null);
 
     const { default: HumanIdvPage } = await import("@/app/human-idv/page");
-    const markup = renderToStaticMarkup(await HumanIdvPage());
 
-    expect(markup).toContain("Session required");
-    expect(markup).toContain("Return home");
-    expect(markup).not.toContain("LogoutButton");
+    await expect(HumanIdvPage()).rejects.toThrow("redirect:/");
+    expect(mocks.redirect).toHaveBeenCalledWith("/");
   });
 
-  it("shows the signed-in human verification handoff for authenticated users", async () => {
+  it("redirects signed-in members into the new onboarding flow", async () => {
     mocks.getCurrentUser.mockResolvedValue({
-      id: "usr_dynamic",
-      name: "Avery Collins",
-      email: "avery@rho.vc",
-      role: "operator",
-      bio: "Portfolio operator",
-      skills: [],
-      sectors: [],
-      walletAddress: "0x1234567890123456789012345678901234567890",
-      worldVerified: false,
-      dynamicUserId: "dyn_123",
-      engagementScore: 0,
-      reliabilityScore: 0,
-      verificationBadges: ["wallet_connected"],
-      outsideNetworkAccessEnabled: false,
-      createdAt: "2025-01-01T00:00:00.000Z",
+      id: "usr_world",
+      name: "George Morris",
     });
 
     const { default: HumanIdvPage } = await import("@/app/human-idv/page");
-    const markup = renderToStaticMarkup(await HumanIdvPage());
 
-    expect(markup).toContain("Finish the trust checkpoint for Avery Collins.");
-    expect(markup).toContain("HumanIdvIdentityForm:Avery:Collins");
-    expect(markup).toContain("Human verification is still pending.");
-    expect(markup).toContain("WorldVerificationButton:usr_dynamic:pending");
-    expect(markup).toContain("Return home");
-    expect(markup).toContain("LogoutButton");
+    await expect(HumanIdvPage()).rejects.toThrow("redirect:/agent");
+    expect(mocks.redirect).toHaveBeenCalledWith("/agent");
   });
 });

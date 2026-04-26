@@ -119,7 +119,7 @@ describe("runWorldVerification", () => {
       },
       allow_legacy_proofs: true,
       environment: "staging",
-      return_to: "http://localhost:3000/human-idv",
+      return_to: "http://localhost:3000/agent",
     });
     expect(mocks.orbLegacy).toHaveBeenCalledWith({
       signal: "0x1234567890",

@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { createConnectionRequestService } from "@/lib/server/services/connection-request-service";
-import type { ConnectionRequestSummary, ConnectionSummary, UserSummary } from "@/lib/types";
+import type {
+  ConnectionRequestSummary,
+  ConnectionSummary,
+  UserSummary,
+  VerifiedInteractionSummary,
+} from "@/lib/types";
 
 function createUser(overrides?: Partial<UserSummary>): UserSummary {
   return {
@@ -62,8 +67,34 @@ function createConnection(overrides?: Partial<ConnectionSummary>): ConnectionSum
   };
 }
 
+function createInteraction(overrides?: Partial<VerifiedInteractionSummary>): VerifiedInteractionSummary {
+  return {
+    id: "int_1",
+    interactionType: "INTRO_REQUESTED",
+    actorUserId: "usr_requester",
+    targetUserId: "usr_recipient",
+    authorizedByUserId: null,
+    companyId: null,
+    painPointTag: null,
+    matchScore: null,
+    verified: true,
+    actorWorldVerified: true,
+    actorWorldNullifier: "0xactor",
+    actorVerificationLevel: null,
+    targetWorldVerified: true,
+    targetWorldNullifier: "0xtarget",
+    targetVerificationLevel: null,
+    rewardStatus: "NOT_REWARDABLE",
+    transactionHash: null,
+    metadata: null,
+    createdAt: "2026-04-01T09:00:00.000Z",
+    updatedAt: "2026-04-01T09:00:00.000Z",
+    ...overrides,
+  };
+}
+
 describe("connection request service", () => {
-  it("creates a pending request for an available Meshed member", async () => {
+  it("creates a pending request and records an intro-requested interaction", async () => {
     const requester = createUser({
       id: "usr_requester",
       role: "investor",
@@ -81,6 +112,20 @@ describe("connection request service", () => {
         requesterRole: requester.role,
         type: "investment",
         message: "Would love to open a Meshed relationship.",
+        metadata: {
+          source: "connection_request",
+          companyId: null,
+          painPointTag: null,
+          matchScore: null,
+        },
+      }),
+    );
+    const recordInteraction = vi.fn(async () =>
+      createInteraction({
+        id: "int_request",
+        interactionType: "INTRO_REQUESTED",
+        actorUserId: requester.id,
+        targetUserId: recipient.id,
       }),
     );
 
@@ -102,15 +147,8 @@ describe("connection request service", () => {
         findById: vi.fn(async (userId: string) => (userId === requester.id ? requester : recipient)),
         listDemoUsers: vi.fn(async () => [requester, recipient]),
       },
-      managedWalletService: {
-        ensureWalletForUser: vi.fn(async () => createUser()),
-      },
-      connectionContractService: {
-        deployConnectionAgreement: vi.fn(async () => ({
-          contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          network: "flare-coston2",
-          generationMode: "REAL" as const,
-        })),
+      verifiedInteractionService: {
+        recordInteraction,
       },
       idGenerator: {
         connectionId: vi.fn(() => "conn_generated"),
@@ -130,9 +168,22 @@ describe("connection request service", () => {
       recipientUserId: recipient.id,
       type: "investment",
       message: "Would love to open a Meshed relationship.",
+      metadata: {
+        source: "connection_request",
+        companyId: null,
+        painPointTag: null,
+        matchScore: null,
+      },
     });
-    expect(created.id).toBe("req_1");
-    expect(created.recipientUserId).toBe("usr_recipient");
+    expect(recordInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        interactionType: "INTRO_REQUESTED",
+        actorUserId: requester.id,
+        targetUserId: recipient.id,
+      }),
+    );
+    expect(created.request.id).toBe("req_1");
+    expect(created.interaction.id).toBe("int_request");
   });
 
   it("backfills inbound demo requests even when the user already has some state", async () => {
@@ -222,15 +273,8 @@ describe("connection request service", () => {
         findById: vi.fn(async () => currentUser),
         listDemoUsers: vi.fn(async () => [currentUser, mentor, consultant, investor, operator]),
       },
-      managedWalletService: {
-        ensureWalletForUser: vi.fn(async () => currentUser),
-      },
-      connectionContractService: {
-        deployConnectionAgreement: vi.fn(async () => ({
-          contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          network: "flare-coston2",
-          generationMode: "REAL" as const,
-        })),
+      verifiedInteractionService: {
+        recordInteraction: vi.fn(async () => createInteraction()),
       },
       idGenerator: {
         connectionId: vi.fn(() => "conn_generated"),
@@ -245,46 +289,28 @@ describe("connection request service", () => {
     expect(result.connectedContactIds).toContain("usr_mentor");
   });
 
-  it("accepts a pending request and returns the Flare-backed connection details", async () => {
+  it("accepts a pending request and records a rewardable intro acceptance", async () => {
     const request = createRequest();
-    const requester = createUser({
-      id: "usr_requester",
-      name: "Nina Volkov",
-      email: "nina@northmesh.io",
-      role: "consultant",
-      walletAddress: "0x2222222222222222222222222222222222222222",
-    });
-    const recipient = createUser({
-      id: "usr_recipient",
-      name: "Maya Sterling",
-      email: "maya@northstar.vc",
-      role: "company",
-      walletAddress: "0x3333333333333333333333333333333333333333",
-    });
-    const deployConnectionAgreement = vi.fn(async () => ({
-      contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      network: "flare-coston2",
-      generationMode: "REAL" as const,
-      transactionHash: "0xflaretx",
+    const acceptedRequest = createRequest({
+      status: "accepted",
+      acceptedConnectionId: "conn_accepted",
       metadata: {
-        chainId: 114,
+        source: "connection_request_acceptance",
+        acceptedWithoutFlare: true,
       },
-    }));
-    const acceptPendingRequest = vi.fn(async () =>
-      createRequest({
-        status: "accepted",
-        acceptedConnectionId: "conn_accepted",
-        contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        contractNetwork: "flare-coston2",
-        generationMode: "real",
-        contractTxHash: "0xflaretx",
-        metadata: {
-          source: "connection_request",
-        },
-        respondedAt: "2026-04-01T09:05:00.000Z",
+      respondedAt: "2026-04-01T09:05:00.000Z",
+    });
+    const connection = createConnection({ id: "conn_accepted" });
+    const recordInteraction = vi.fn(async () =>
+      createInteraction({
+        id: "int_intro_accepted",
+        interactionType: "INTRO_ACCEPTED",
+        actorUserId: "usr_recipient",
+        targetUserId: "usr_requester",
+        rewardStatus: "REWARDABLE",
       }),
     );
-    const findFirstBetweenUsers = vi.fn(async () => createConnection({ id: "conn_accepted" }));
+    const acceptPendingRequest = vi.fn(async () => acceptedRequest);
 
     const service = createConnectionRequestService({
       connectionRequestRepository: {
@@ -297,18 +323,15 @@ describe("connection request service", () => {
       },
       connectionRepository: {
         listVerifiedContactIds: vi.fn(async () => ["usr_connected"]),
-        findFirstBetweenUsers,
-        createVerifiedConnection: vi.fn(async () => createConnection()),
+        findFirstBetweenUsers: vi.fn(async () => connection),
+        createVerifiedConnection: vi.fn(async () => connection),
       },
       userRepository: {
         findById: vi.fn(async () => null),
         listDemoUsers: vi.fn(async () => []),
       },
-      managedWalletService: {
-        ensureWalletForUser: vi.fn(async (userId: string) => (userId === requester.id ? requester : recipient)),
-      },
-      connectionContractService: {
-        deployConnectionAgreement,
+      verifiedInteractionService: {
+        recordInteraction,
       },
       idGenerator: {
         connectionId: vi.fn(() => "conn_generated"),
@@ -318,30 +341,37 @@ describe("connection request service", () => {
 
     const result = await service.acceptRequest("usr_recipient", request.id);
 
-    expect(deployConnectionAgreement).toHaveBeenCalledOnce();
     expect(acceptPendingRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         requestId: request.id,
         recipientUserId: "usr_recipient",
-        contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        contractTxHash: "0xflaretx",
+        metadata: {
+          source: "connection_request_acceptance",
+          acceptedWithoutFlare: true,
+        },
+      }),
+    );
+    expect(recordInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        interactionType: "INTRO_ACCEPTED",
+        actorUserId: "usr_recipient",
+        targetUserId: "usr_requester",
+        rewardStatus: "REWARDABLE",
       }),
     );
     expect(result.request.status).toBe("accepted");
-    expect(result.request.contractAddress).toBe("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     expect(result.connection.id).toBe("conn_accepted");
+    expect(result.interaction?.id).toBe("int_intro_accepted");
   });
 
-  it("reuses an already accepted request without deploying a second contract", async () => {
+  it("reuses an already accepted request without creating a second interaction", async () => {
     const acceptedRequest = createRequest({
       status: "accepted",
       acceptedConnectionId: "conn_existing",
-      contractAddress: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      contractNetwork: "flare-coston2",
-      generationMode: "real",
       respondedAt: "2026-04-01T09:05:00.000Z",
     });
-    const deployConnectionAgreement = vi.fn();
+    const recordInteraction = vi.fn();
+    const acceptPendingRequest = vi.fn();
 
     const service = createConnectionRequestService({
       connectionRequestRepository: {
@@ -350,7 +380,7 @@ describe("connection request service", () => {
         findIncomingById: vi.fn(async () => acceptedRequest),
         findPendingBetweenUsers: vi.fn(async () => null),
         createPendingRequest: vi.fn(async () => acceptedRequest),
-        acceptPendingRequest: vi.fn(async () => acceptedRequest),
+        acceptPendingRequest,
       },
       connectionRepository: {
         listVerifiedContactIds: vi.fn(async () => []),
@@ -361,11 +391,8 @@ describe("connection request service", () => {
         findById: vi.fn(async () => null),
         listDemoUsers: vi.fn(async () => []),
       },
-      managedWalletService: {
-        ensureWalletForUser: vi.fn(async () => createUser()),
-      },
-      connectionContractService: {
-        deployConnectionAgreement,
+      verifiedInteractionService: {
+        recordInteraction,
       },
       idGenerator: {
         connectionId: vi.fn(() => "conn_generated"),
@@ -375,8 +402,9 @@ describe("connection request service", () => {
 
     const result = await service.acceptRequest("usr_recipient", acceptedRequest.id);
 
-    expect(deployConnectionAgreement).not.toHaveBeenCalled();
-    expect(result.request.contractAddress).toBe("0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    expect(acceptPendingRequest).not.toHaveBeenCalled();
+    expect(recordInteraction).not.toHaveBeenCalled();
     expect(result.connection.id).toBe("conn_existing");
+    expect(result.interaction).toBeNull();
   });
 });

@@ -3,19 +3,14 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { clearDynamicBrowserSession } from "@/lib/auth/dynamic-browser-logout";
 import { runLogoutFlow } from "@/lib/auth/logout-flow";
 
-// Small client wrapper that keeps logout behavior consistent anywhere the button appears.
+// Small client wrapper that keeps Meshed session logout behavior consistent anywhere the button appears.
 export function LogoutButton() {
-  return <SharedLogoutButton clearDynamicSession={clearDynamicBrowserSession} />;
+  return <SharedLogoutButton />;
 }
 
-type SharedLogoutButtonProps = {
-  clearDynamicSession?: () => Promise<void>;
-};
-
-function SharedLogoutButton({ clearDynamicSession }: SharedLogoutButtonProps) {
+function SharedLogoutButton() {
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -24,18 +19,14 @@ function SharedLogoutButton({ clearDynamicSession }: SharedLogoutButtonProps) {
     setErrorMessage(null);
 
     try {
-      // runLogoutFlow clears the Meshed session before attempting best-effort Dynamic cleanup.
+      // runLogoutFlow clears the server-side Meshed session before redirecting home.
       await runLogoutFlow({
-        clearDynamicSession,
         clearServerSession: () =>
           fetch("/api/auth/logout", {
             method: "POST",
             cache: "no-store",
             credentials: "same-origin",
           }),
-        onDynamicLogoutError: (error) => {
-          console.warn("[meshed][logout] Dynamic wallet logout failed after server session cleared.", error);
-        },
         redirect: (href) => {
           window.location.replace(href);
         },

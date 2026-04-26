@@ -48,14 +48,11 @@ describe("SimulateLinkedInAlertButton", () => {
               direction: "incoming",
               counterpartName: "Theo Mercer",
               ingestion: {
-                status: "attested",
+                status: "recorded",
                 eventId: "li_evt_1",
                 notificationsCreated: 2,
-                contractCall: {
-                  txHash: "0x1234567890abcdef",
-                  contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                  method: "recordRelationship",
-                },
+                verified: true,
+                interactionId: "int_1",
               },
             },
           }),
@@ -87,6 +84,8 @@ describe("SimulateLinkedInAlertButton", () => {
       method: "POST",
     });
     expect(container.textContent).toContain("Simulated connection request from Theo Mercer");
+    expect(container.textContent).toContain("verified interaction recorded");
+    expect(container.textContent).toContain("Verified Human");
     expect(mocks.refresh).toHaveBeenCalledTimes(1);
   });
 });

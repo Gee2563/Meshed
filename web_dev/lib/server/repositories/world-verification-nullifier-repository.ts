@@ -39,6 +39,52 @@ async function markUserAsWorldVerified(userId: string, worldVerificationBadges: 
 }
 
 export const worldVerificationNullifierRepository = {
+  async deleteByUserId(userId: string) {
+    const result = await prisma.worldVerificationNullifier.deleteMany({
+      where: { userId },
+    });
+
+    return result.count;
+  },
+
+  async findUserIdByReplayKey(input: { action: string; nullifier: string }) {
+    const record = await prisma.worldVerificationNullifier.findUnique({
+      where: {
+        action_nullifier: {
+          action: input.action,
+          nullifier: input.nullifier,
+        },
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    return record?.userId ?? null;
+  },
+
+  async findLatestByUserId(userId: string) {
+    const record = await prisma.worldVerificationNullifier.findFirst({
+      where: { userId },
+      orderBy: [{ createdAt: "desc" }],
+      select: {
+        action: true,
+        nullifier: true,
+        createdAt: true,
+      },
+    });
+
+    if (!record) {
+      return null;
+    }
+
+    return {
+      action: record.action,
+      nullifier: record.nullifier,
+      createdAt: record.createdAt.toISOString(),
+    };
+  },
+
   async reserveAndMarkVerified(input: {
     userId: string;
     action: string;
