@@ -1,0 +1,6 @@
+.next/
+node_modules/
+cache/
+typechain-types/
+.env.local
+public/uploads/

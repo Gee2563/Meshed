@@ -1,0 +1,383 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  INVESTOR
+  FOUNDER
+  EMPLOYEE
+  // Legacy aliases retained so copied Meshed data can still be read safely.
+  COMPANY
+  CONSULTANT
+  MENTOR
+  OPERATOR
+  ADMIN
+}
+
+enum CompanyKind {
+  VC
+  PORTFOLIO
+  OPERATING
+}
+
+enum RegistrationFlowStep {
+  VC_COMPANY
+  PORTFOLIO_COMPANY
+  COMPANY_ACCESS
+  INDIVIDUAL_PROFILE
+  SOCIALS
+  NETWORK_PREPARING
+  READY
+  COMPLETE
+}
+
+enum OnboardingMode {
+  COMPANY
+  INDIVIDUAL
+}
+
+enum OnboardingContractStep {
+  VC_COMPANY_REGISTERED
+  PORTFOLIO_COMPANY_REGISTERED
+  COMPANY_ACCESS_REGISTERED
+  INDIVIDUAL_PROFILE_REGISTERED
+  WORLD_VERIFIED
+}
+
+enum ContractGenerationMode {
+  MOCK
+  REAL
+}
+
+enum ConnectionType {
+  INTRO
+  CONSULTING
+  MENTORSHIP
+  INVESTMENT
+  ENDORSEMENT
+}
+
+enum ConnectionRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum VerifiedInteractionType {
+  WORLD_ID_REGISTERED
+  MATCH_SUGGESTED
+  INTRO_REQUESTED
+  INTRO_ACCEPTED
+  COLLABORATION_STARTED
+  COLLABORATION_COMPLETED
+  REWARD_EARNED
+  REWARD_DISTRIBUTED
+}
+
+enum RewardStatus {
+  NOT_REWARDABLE
+  REWARDABLE
+  EARNED
+  DISTRIBUTED
+}
+
+enum SocialProvider {
+  LINKEDIN
+  EMAIL
+  SLACK
+  MICROSOFT_TEAMS
+  TWITTER
+  CALENDAR
+  INSTAGRAM
+}
+
+enum SocialConnectionStatus {
+  CONNECTED
+  SKIPPED
+}
+
+enum NetworkPreparationStatus {
+  QUEUED
+  RUNNING
+  READY
+  FAILED
+}
+
+enum AgentNotificationKind {
+  PAIN_POINT_MATCH
+  SOCIAL_SIGNAL
+  COORDINATION_PROMPT
+}
+
+enum AgentNotificationSource {
+  MESHED_GRAPH
+  LINKEDIN_SIGNAL
+  EXTERNAL_SOCIAL
+}
+
+enum AgentNotificationStatus {
+  UNREAD
+  READ
+  ACTED_ON
+  DISMISSED
+}
+
+model User {
+  id                          String              @id
+  name                        String
+  email                       String              @unique
+  role                        UserRole
+  bio                         String              @default("")
+  skills                      String[]
+  sectors                     String[]
+  profileImageUrl             String?
+  linkedinUrl                 String?
+  walletAddress               String?             @unique
+  worldVerified               Boolean             @default(false)
+  dynamicUserId               String?             @unique
+  engagementScore             Int                 @default(0)
+  reliabilityScore            Int                 @default(0)
+  verificationBadges          String[]
+  outsideNetworkAccessEnabled Boolean             @default(false)
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
+  lastActiveAt                DateTime?
+  companiesOwned              Company[]           @relation("CompanyOwner")
+  memberships                 CompanyMembership[]
+  outboundConnections         Connection[]        @relation("ConnectionSource")
+  inboundConnections          Connection[]        @relation("ConnectionTarget")
+  sentConnectionRequests      ConnectionRequest[] @relation("ConnectionRequester")
+  receivedConnectionRequests  ConnectionRequest[] @relation("ConnectionRecipient")
+  onboardingContractArtifacts OnboardingContractArtifact[]
+  worldVerificationNullifiers WorldVerificationNullifier[]
+  socialConnections           UserSocialConnection[]
+  networkPreparationJobs      NetworkPreparationJob[]
+  actorVerifiedInteractions   VerifiedInteraction[] @relation("VerifiedInteractionActor")
+  targetVerifiedInteractions  VerifiedInteraction[] @relation("VerifiedInteractionTarget")
+  authorizedInteractions      VerifiedInteraction[] @relation("VerifiedInteractionAuthorizedBy")
+  agentNotifications          AgentNotification[]   @relation("AgentNotificationOwner")
+  targetedAgentNotifications  AgentNotification[]   @relation("AgentNotificationTargetUser")
+}
+
+model Company {
+  id                          String              @id
+  name                        String
+  description                 String
+  sector                      String
+  stage                       String
+  website                     String
+  address                     String?
+  pointOfContactName          String?
+  pointOfContactEmail         String?
+  ownerUserId                 String
+  currentPainTags             String[]
+  resolvedPainTags            String[]
+  companyKind                 CompanyKind         @default(OPERATING)
+  parentCompanyId             String?
+  outsideNetworkAccessEnabled Boolean             @default(false)
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
+  owner                       User                @relation("CompanyOwner", fields: [ownerUserId], references: [id])
+  memberships                 CompanyMembership[]
+  onboardingContractArtifacts OnboardingContractArtifact[]
+  verifiedInteractions        VerifiedInteraction[]
+  networkPreparationJobs      NetworkPreparationJob[]
+  agentNotifications          AgentNotification[]
+}
+
+model CompanyMembership {
+  id        String   @id
+  companyId String
+  userId    String
+  relation  String
+  title     String
+  createdAt DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId, relation])
+}
+
+model OnboardingProfile {
+  id                    String               @id
+  userId                String               @unique
+  companyId             String?
+  vcCompanyId           String?
+  portfolioCompanyId    String?
+  mode                  OnboardingMode
+  title                 String
+  isExecutive           Boolean
+  executiveSignoffEmail String?
+  currentStep           RegistrationFlowStep @default(VC_COMPANY)
+  teamCsvUploadedAt     DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+}
+
+model OnboardingContractArtifact {
+  id             String                 @id
+  userId         String
+  companyId      String?
+  contractStep   OnboardingContractStep
+  contractName   String
+  contractAddress String
+  network        String
+  generationMode ContractGenerationMode @default(MOCK)
+  metadata       Json?
+  createdAt      DateTime               @default(now())
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company        Company?               @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, contractStep])
+  @@index([userId])
+  @@index([companyId])
+}
+
+model Connection {
+  id           String         @id
+  sourceUserId String
+  targetUserId String
+  type         ConnectionType
+  verified     Boolean        @default(false)
+  note         String?
+  createdAt    DateTime       @default(now())
+  sourceUser   User           @relation("ConnectionSource", fields: [sourceUserId], references: [id], onDelete: Cascade)
+  targetUser   User           @relation("ConnectionTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  acceptedRequests ConnectionRequest[] @relation("AcceptedConnection")
+
+  @@index([sourceUserId])
+  @@index([targetUserId])
+}
+
+model ConnectionRequest {
+  id                  String                  @id
+  requesterUserId     String
+  recipientUserId     String
+  type                ConnectionType
+  status              ConnectionRequestStatus @default(PENDING)
+  message             String?
+  acceptedConnectionId String?
+  contractAddress     String?
+  contractNetwork     String?
+  generationMode      ContractGenerationMode?
+  contractTxHash      String?
+  metadata            Json?
+  createdAt           DateTime                @default(now())
+  respondedAt         DateTime?
+  requester           User                    @relation("ConnectionRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  recipient           User                    @relation("ConnectionRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  acceptedConnection  Connection?             @relation("AcceptedConnection", fields: [acceptedConnectionId], references: [id], onDelete: SetNull)
+
+  @@index([requesterUserId])
+  @@index([recipientUserId])
+  @@index([acceptedConnectionId])
+}
+
+model WorldVerificationNullifier {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  nullifier  String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([action, nullifier])
+  @@index([userId])
+}
+
+model UserSocialConnection {
+  id           String                 @id
+  userId       String
+  provider     SocialProvider
+  status       SocialConnectionStatus @default(SKIPPED)
+  accountLabel String?
+  metadata     Json?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId, provider])
+}
+
+model NetworkPreparationJob {
+  id             String                   @id
+  userId         String
+  vcCompanyId    String?
+  sourceWebsite  String
+  status         NetworkPreparationStatus @default(QUEUED)
+  statusMessage  String?
+  outputPath     String?
+  result         Json?
+  errorMessage   String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  startedAt      DateTime?
+  completedAt    DateTime?
+  user           User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vcCompany      Company?                 @relation(fields: [vcCompanyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([vcCompanyId, createdAt])
+  @@index([status, createdAt])
+}
+
+model VerifiedInteraction {
+  id                       String                  @id
+  interactionType          VerifiedInteractionType
+  actorUserId              String
+  targetUserId             String?
+  authorizedByUserId       String?
+  companyId                String?
+  painPointTag             String?
+  matchScore               Float?
+  verified                 Boolean                 @default(false)
+  actorWorldVerified       Boolean                 @default(false)
+  actorWorldNullifier      String?
+  actorVerificationLevel   String?
+  targetWorldVerified      Boolean?
+  targetWorldNullifier     String?
+  targetVerificationLevel  String?
+  rewardStatus             RewardStatus            @default(NOT_REWARDABLE)
+  transactionHash          String?
+  metadata                 Json?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  actorUser                User                    @relation("VerifiedInteractionActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  targetUser               User?                   @relation("VerifiedInteractionTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  authorizedByUser         User?                   @relation("VerifiedInteractionAuthorizedBy", fields: [authorizedByUserId], references: [id], onDelete: SetNull)
+  company                  Company?                @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([companyId, createdAt])
+  @@index([interactionType, createdAt])
+}
+
+model AgentNotification {
+  id              String                  @id
+  userId          String
+  kind            AgentNotificationKind
+  source          AgentNotificationSource
+  status          AgentNotificationStatus @default(UNREAD)
+  dedupeKey       String                  @unique
+  title           String
+  body            String
+  targetUserId    String?
+  targetCompanyId String?
+  metadata        Json?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  user            User                    @relation("AgentNotificationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser      User?                   @relation("AgentNotificationTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetCompany   Company?                @relation(fields: [targetCompanyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([targetCompanyId, createdAt])
+}
