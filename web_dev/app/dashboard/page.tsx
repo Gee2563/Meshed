@@ -5,6 +5,7 @@ import { CollapsibleCard } from "@/components/dashboard/CollapsibleCard";
 import { DashboardTopPanels } from "@/components/dashboard/DashboardTopPanels";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
+import { getDemoRoleLabel } from "@/lib/demo-role-label";
 import { loadDashboardData } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
 import {
   getDashboardScopeConfig,

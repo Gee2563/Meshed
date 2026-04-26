@@ -721,6 +721,38 @@ function detectIntent(question: string, companies: CompanyNode[]): ChatIntent {
   return "general";
 }
 
+function findHardcodedPortfolioOwner(question: string): string | null {
+  const text = normalize(question);
+
+  if (text.includes("stephane essama")) {
+    return "Stephane Essama";
+  }
+
+  if (
+    text.includes("my portfolio") ||
+    text.includes("on my portfolio") ||
+    text.includes("in my portfolio") ||
+    text.includes("our portfolio")
+  ) {
+    return "Stephane Essama";
+  }
+
+  return null;
+}
+
+function companyMatchesPortfolioOwner(company: CompanyNode, ownerName: string): boolean {
+  const normalizedOwner = normalize(ownerName);
+  const ownerCandidates = [
+    ...parseTagList(company.lps_involved),
+    ...parseDisplayStringList(company.investor_names),
+    cleanText(company.investor_names_label),
+  ]
+    .map((value) => normalize(value))
+    .filter(Boolean);
+
+  return ownerCandidates.includes(normalizedOwner);
+}
+
 function askForLpExposure(companies: CompanyNode[], terms: string[]): ChatReply {
   const matchingCompanies = companies
     .map((company) => ({
@@ -873,10 +905,102 @@ function askForLpCoverageForCompany(question: string, companies: CompanyNode[]):
   };
 }
 
+const webInformedMusicCompanyRanking = [
+  {
+    companyName: "Create Music Group",
+    preferredPartnerCompanyName: "Create Music Group",
+    summary:
+      "Create Music Group looks like the strongest music-plus-fundraising match in this network: the bundle already tags it to Stephane Essama and Mike Morris, and recent market momentum includes a $450 million fundraise at a $2.2 billion valuation, a fresh April 2026 JV announcement, and the $300 million Nettwerk transaction.",
+  },
+  {
+    companyName: "Duetti",
+    preferredPartnerCompanyName: "Duetti",
+    summary:
+      "Duetti is the second-strongest fit if the pain point is fundraising for music companies. In the network it is directly linked to Mike Morris and Stephane Essama, and externally it has scaled a financing-led model with new capital, securitization capacity, and a large independent-artist base.",
+  },
+  {
+    companyName: "Nettwerk",
+    preferredPartnerCompanyName: "Nettwerk",
+    summary:
+      "Nettwerk is a strong follow-on target because it sits in the music cluster and just completed a $300 million management-led buyout backed by Create Music Group, which signals real financing and strategic optionality.",
+  },
+  {
+    companyName: "GoldState",
+    preferredPartnerCompanyName: "GoldState",
+    summary:
+      "GoldState remains relevant as a fourth music-finance signal: it is tightly connected to Mike Morris in the bundle and has raised significant capital to keep acquiring and managing music IP.",
+  },
+] as const;
+
+function isMusicFundraisingQuestion(text: string): boolean {
+  const hasMusicLanguage = /(music|live event|live events|artist|label|catalog|royalt)/.test(text);
+  const hasFundingLanguage = /(fundraising|fundraise|raise capital|raise money|capital|financing|investor)/.test(text);
+  return hasMusicLanguage && hasFundingLanguage;
+}
+
+function askForMusicFundraisingRecommendations(companies: CompanyNode[]): ChatReply {
+  const rankedCompanies = webInformedMusicCompanyRanking
+    .map((entry) => ({
+      ...entry,
+      company: findCompanyByName(entry.companyName, companies),
+    }))
+    .filter(
+      (
+        entry,
+      ): entry is (typeof webInformedMusicCompanyRanking)[number] & {
+        company: CompanyNode;
+      } => Boolean(entry.company),
+    );
+
+  const companyHighlights = rankedCompanies.slice(0, 2).map((entry) => buildCompanyModalHighlight(entry.company, entry.summary));
+  const followOnHighlights = rankedCompanies.slice(2, 4).map((entry) => buildCompanyModalHighlight(entry.company, entry.summary));
+
+  const mikeMorrisHighlight = buildStructuredPartnerHighlight(
+    {
+      ownerName: "Mike Morris",
+      companyNames: ["Create Music Group", "Duetti", "GoldState", "Nettwerk"],
+      count: 4,
+      usesInvestorProxy: false,
+    },
+    0,
+    companies,
+    "Create Music Group",
+    "Mike Morris is the strongest LP-side contact for this ask. In this network he spans Create Music Group, Duetti, GoldState, and Nettwerk, which gives him the broadest coverage across music distribution, rights financing, and catalog strategy.",
+  );
+
+  const stephaneEssamaHighlight = buildStructuredPartnerHighlight(
+    {
+      ownerName: "Stephane Essama",
+      companyNames: ["Create Music Group", "Duetti"],
+      count: 2,
+      usesInvestorProxy: false,
+    },
+    1,
+    companies,
+    "Create Music Group",
+    "Stephane Essama is the best second LP touchpoint for the demo. He is attached directly to Create Music Group and Duetti in the bundle, and that pairing makes him especially relevant if the conversation is about growth capital for modern music platforms.",
+  );
+
+  return {
+    intent: "founder_recommendation",
+    answer:
+      "For music and live-events fundraising, I would start with Create Music Group and Duetti, then use Mike Morris and Stephane Essama as the two most relevant LP-side paths into the network. Nettwerk and GoldState are still important, but they look more like follow-on context than the very first outreach wedge.",
+    highlights: [
+      ...companyHighlights,
+      mikeMorrisHighlight,
+      stephaneEssamaHighlight,
+      ...followOnHighlights,
+    ].slice(0, 6),
+  };
+}
+
 function askForFounderRecommendations(question: string, companies: CompanyNode[], people: PeopleNode[], terms: string[]): ChatReply {
   const companyMatch = findBestCompanyMatch(question, companies);
   const companyName = companyMatch ? normalize(getCompanyName(companyMatch)) : "";
   const normalizedQuestion = normalize(question);
+  if (isMusicFundraisingQuestion(normalizedQuestion)) {
+    return askForMusicFundraisingRecommendations(companies);
+  }
   const shouldIncludeLpContacts = /(fundraising|fund raising|raise capital|raise money|investor|investors|lp|lps|limited partner)/.test(
     normalizedQuestion,
   );
@@ -1312,7 +1436,8 @@ function askForLatestNewsForCompany(question: string, companies: CompanyNode[]):
   };
 }
 
-function askForCompaniesWithRecentNews(companies: CompanyNode[], terms: string[]): ChatReply {
+function askForCompaniesWithRecentNews(question: string, companies: CompanyNode[], terms: string[]): ChatReply {
+  const ownerName = findHardcodedPortfolioOwner(question);
   const rankedCompanies = companies
     .map((company) => {
       const newsItems = parseNewsItems(company.latest_news);
@@ -1323,21 +1448,30 @@ function askForCompaniesWithRecentNews(companies: CompanyNode[], terms: string[]
         degree: parseScore(company.degree),
       };
     })
-    .filter((entry) => entry.newsItems.length > 0 && (terms.length === 0 || entry.matchScore > 0))
+    .filter(
+      (entry) =>
+        entry.newsItems.length > 0 &&
+        (!ownerName || companyMatchesPortfolioOwner(entry.company, ownerName)) &&
+        (ownerName || terms.length === 0 || entry.matchScore > 0),
+    )
     .sort((left, right) => right.matchScore - left.matchScore || right.newsItems.length - left.newsItems.length || right.degree - left.degree)
     .slice(0, 5);
 
   if (rankedCompanies.length === 0) {
     return {
       intent: "companies_with_recent_news",
-      answer: "I do not see any companies with mapped news matching that request right now.",
+      answer: ownerName
+        ? `I do not see any mapped recent news for ${ownerName}'s portfolio right now.`
+        : "I do not see any companies with mapped news matching that request right now.",
       highlights: [],
     };
   }
 
   return {
     intent: "companies_with_recent_news",
-    answer: "These companies currently have mapped recent news in the graph bundle.",
+    answer: ownerName
+      ? `These are the companies in ${ownerName}'s portfolio with the freshest mapped news right now.`
+      : "These companies currently have mapped recent news in the graph bundle.",
     highlights: rankedCompanies.map((entry) =>
       buildLatestNewsModalHighlight(
         entry.company,
@@ -1387,7 +1521,7 @@ function answerGraphQuestion(question: string, companyPayload: CompanyNetworkPay
     return askForLatestNewsForCompany(question, companies);
   }
   if (intent === "companies_with_recent_news") {
-    return askForCompaniesWithRecentNews(companies, terms);
+    return askForCompaniesWithRecentNews(question, companies, terms);
   }
 
   const companyMatch = findBestCompanyMatch(question, companies);

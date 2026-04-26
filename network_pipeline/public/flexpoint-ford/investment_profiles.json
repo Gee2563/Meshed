@@ -201,7 +201,7 @@
     "flexpoint_logo_path": "/flexpoint-ford/company-logos/baker-hill.svg",
     "latest_news": [
       {
-        "title": "Cornerstone Advisors Releases 2026 Commercial Lending Outlook Baker-Hill",
+        "title": "Cornerstone Advisors Releases 2026 Commercial Lending Outlook Baker-Hill-sponsored study highlights modest growth, intensifying competition and a widening technology divide. SCOTTSDALE, Ariz., March 25, 2026 \u2014 Cornerstone Advisors, a leading provider of business and technology consulting services for banks, credit unions... By: Penny Spehar",
         "date_published": null,
         "article_url": "https://www.bakerhill.com/news/cornerstone-advisors-releases-2026-commercial-lending-outlook/"
       },
@@ -445,6 +445,11 @@
     "flexpoint_logo_path": "/flexpoint-ford/company-logos/elliott-davis.svg",
     "latest_news": [
       {
+        "title": "CISA\u2019s Microsoft 365 alert is a wake-up call: Are cloud misconfigurations exposing your organization to risk?",
+        "date_published": null,
+        "article_url": "https://www.elliottdavis.com/insights/cisas-microsoft-365-alert-is-a-wake-up-call-are-cloud-misconfigurations-exposing-your-organization-to-risk"
+      },
+      {
         "title": "Understanding CMMC: What defense contractors need to know",
         "date_published": null,
         "article_url": "https://www.elliottdavis.com/insights/understanding-cmmc-what-defense-contractors-need-to-know"
@@ -468,11 +473,6 @@
         "title": "Unlocking 1202 QSBS value across the private equity portfolio",
         "date_published": null,
         "article_url": "https://www.elliottdavis.com/insights/unlocking-1202-qsbs-value-across-the-private-equity-portfolio"
-      },
-      {
-        "title": "FSG Quarterly Financial Services Update \u2013 Q1 2026",
-        "date_published": null,
-        "article_url": "https://www.elliottdavis.com/insights/fsg-quarterly-financial-services-update---q4-2024"
       }
     ]
   },

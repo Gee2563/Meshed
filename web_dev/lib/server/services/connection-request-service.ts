@@ -129,6 +129,22 @@ function connectionTypeForRole(role: UserSummary["role"]): ConnectionSummary["ty
   return "intro";
 }
 
+function seededDashboardTargets(user: UserSummary) {
+  if (user.email.trim().toLowerCase() === "georgegds92@gmail.com") {
+    return {
+      connected: 3,
+      inbound: 3,
+      outgoing: 2,
+    };
+  }
+
+  return {
+    connected: 1,
+    inbound: 2,
+    outgoing: 1,
+  };
+}
+
 export function createConnectionRequestService(deps: ConnectionRequestServiceDependencies) {
   return {
     async getDashboardState(userId: string): Promise<ConnectionDashboardState> {
@@ -216,6 +232,7 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
         return state;
       }
 
+      const targets = seededDashboardTargets(currentUser);
       const demoUsers = await deps.userRepository.listDemoUsers();
       const candidates = demoUsers
         .filter((user) => user.id !== userId)
@@ -226,27 +243,30 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
       const existingConnectedIds = new Set(state.connectedContactIds);
       const existingOutgoingIds = new Set(state.outgoingPendingContactIds);
 
-      if (existingConnectedIds.size < 1) {
-        const connectedCandidate = candidates.find((candidate) => !existingConnectedIds.has(candidate.id));
-
-        if (connectedCandidate) {
-          const existingConnection = await deps.connectionRepository.findFirstBetweenUsers(userId, connectedCandidate.id);
-          if (!existingConnection) {
-            await deps.connectionRepository.createVerifiedConnection({
-              id: deps.idGenerator.connectionId(),
-              sourceUserId: connectedCandidate.id,
-              targetUserId: userId,
-              type: connectionTypeForRole(connectedCandidate.role),
-              note: "Seeded Meshed demo connection",
-            });
-          }
-          existingConnectedIds.add(connectedCandidate.id);
+      for (const connectedCandidate of candidates) {
+        if (existingConnectedIds.size >= targets.connected) {
+          break;
         }
+
+        if (existingConnectedIds.has(connectedCandidate.id) || existingIncomingIds.has(connectedCandidate.id)) {
+          continue;
+        }
+
+        const existingConnection = await deps.connectionRepository.findFirstBetweenUsers(userId, connectedCandidate.id);
+        if (!existingConnection) {
+          await deps.connectionRepository.createVerifiedConnection({
+            id: deps.idGenerator.connectionId(),
+            sourceUserId: connectedCandidate.id,
+            targetUserId: userId,
+            type: connectionTypeForRole(connectedCandidate.role),
+            note: "Seeded Meshed demo connection",
+          });
+        }
+        existingConnectedIds.add(connectedCandidate.id);
       }
 
-      const inboundTargetCount = 2;
       for (const candidate of candidates) {
-        if (existingIncomingIds.size >= inboundTargetCount) {
+        if (existingIncomingIds.size >= targets.inbound) {
           break;
         }
 
@@ -278,13 +298,18 @@ export function createConnectionRequestService(deps: ConnectionRequestServiceDep
         }
       }
 
-      if (existingOutgoingIds.size < 1) {
-        const outgoingCandidate = candidates.find(
-          (candidate) =>
-            !existingIncomingIds.has(candidate.id) &&
-            !existingConnectedIds.has(candidate.id) &&
-            !existingOutgoingIds.has(candidate.id),
-        );
+      for (const outgoingCandidate of candidates) {
+        if (existingOutgoingIds.size >= targets.outgoing) {
+          break;
+        }
+
+        if (
+          existingIncomingIds.has(outgoingCandidate.id) ||
+          existingConnectedIds.has(outgoingCandidate.id) ||
+          existingOutgoingIds.has(outgoingCandidate.id)
+        ) {
+          continue;
+        }
 
         if (outgoingCandidate) {
           const [existingConnection, existingPending] = await Promise.all([

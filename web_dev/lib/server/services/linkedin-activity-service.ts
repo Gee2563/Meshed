@@ -160,7 +160,8 @@ function buildEventId(input: LinkedInWebhookEventInput) {
 
 function pushNotification(notification: LinkedInMeshedNotification) {
   const existing = notificationByUserId.get(notification.userId) ?? [];
-  notificationByUserId.set(notification.userId, [notification, ...existing].slice(0, 50));
+  const deduped = existing.filter((item) => item.id !== notification.id);
+  notificationByUserId.set(notification.userId, [notification, ...deduped].slice(0, 50));
 }
 
 function defaultMessageForAction(action: LinkedInAction) {
@@ -175,6 +176,98 @@ function interactionTypeForAction(action: LinkedInAction): VerifiedInteractionSu
 
 function isSimulationCandidate(user: UserSummary, currentUserId: string) {
   return user.id !== currentUserId && user.role !== "company" && user.role !== "admin";
+}
+
+function shouldSeedDashboardSignals(user: UserSummary) {
+  return user.email.trim().toLowerCase() === "georgegds92@gmail.com";
+}
+
+async function ensureDashboardDemoNotifications(userId: string) {
+  const currentUserRecord = await userRepository.findById(userId);
+  if (!currentUserRecord || !shouldSeedDashboardSignals(currentUserRecord)) {
+    return notificationByUserId.get(userId) ?? [];
+  }
+
+  const currentUser = (await ensureLinkedInIdentity(userId)) ?? currentUserRecord;
+  const users = await userRepository.listDemoUsers();
+  const candidates = users
+    .filter((user: UserSummary) => isSimulationCandidate(user, currentUser.id))
+    .sort((left, right) => right.engagementScore - left.engagementScore)
+    .slice(0, 3);
+
+  const hydratedCandidates: UserSummary[] = [];
+  for (const candidate of candidates) {
+    if (candidate.linkedinUrl) {
+      hydratedCandidates.push(candidate);
+      continue;
+    }
+
+    const updated = await userRepository.updateProfile(candidate.id, {
+      linkedinUrl: syntheticLinkedInUrl(candidate.name, candidate.id),
+    });
+    hydratedCandidates.push(updated);
+  }
+
+  const demoTemplates: Array<{
+    action: LinkedInAction;
+    direction: "incoming" | "outgoing";
+    messagePreview: (candidateName: string, currentUserName: string) => string;
+    title: (candidateName: string) => string;
+    body: (candidateName: string) => string;
+  }> = [
+    {
+      action: "connect_request",
+      direction: "incoming",
+      messagePreview: (candidateName, currentUserName) =>
+        `${candidateName} sent ${currentUserName} a LinkedIn connect request after reviewing the Flexpoint Ford portfolio support map.`,
+      title: (candidateName) => `${candidateName} contacted you on LinkedIn`,
+      body: (candidateName) =>
+        `${candidateName} is already on Meshed, so you can move this relationship into a verified portfolio support workflow.`,
+    },
+    {
+      action: "message",
+      direction: "incoming",
+      messagePreview: (candidateName) =>
+        `${candidateName} followed up on LinkedIn about operator onboarding benchmarks and a warm intro through Meshed.`,
+      title: (candidateName) => `${candidateName} contacted you on LinkedIn`,
+      body: (candidateName) =>
+        `${candidateName} already has a Meshed profile. Continue the conversation with a direct verified connection.`,
+    },
+    {
+      action: "message",
+      direction: "outgoing",
+      messagePreview: (candidateName, currentUserName) =>
+        `${currentUserName} previously messaged ${candidateName} on LinkedIn about a portfolio collaboration thread.`,
+      title: (candidateName) => `${candidateName} is on Meshed`,
+      body: (candidateName) =>
+        `Your LinkedIn outreach to ${candidateName} can be continued inside Meshed with an attested relationship record.`,
+    },
+  ];
+
+  const now = Date.now();
+  hydratedCandidates.forEach((candidate, index) => {
+    const template = demoTemplates[index % demoTemplates.length];
+    const timestamp = new Date(now - index * 1000 * 60 * 47).toISOString();
+    const eventKey = `dashboard_seed_${currentUser.id}_${candidate.id}_${template.direction}_${template.action}`;
+
+    pushNotification({
+      id: `${eventKey}_notification`,
+      eventId: eventKey,
+      userId: currentUser.id,
+      counterpartUserId: candidate.id,
+      counterpartName: candidate.name,
+      counterpartLinkedInUrl: candidate.linkedinUrl ?? null,
+      action: template.action,
+      direction: template.direction,
+      messagePreview: template.messagePreview(candidate.name, currentUser.name),
+      receivedAt: timestamp,
+      attestationRef: `flare:demo:linkedin:${eventKey}`,
+      title: template.title(candidate.name),
+      body: template.body(candidate.name),
+    });
+  });
+
+  return notificationByUserId.get(userId) ?? [];
 }
 
 async function ensureSimulationCounterpart(currentUser: UserSummary) {
@@ -339,6 +432,7 @@ export const linkedinActivityService = {
   },
 
   async listNotificationsForUser(userId: string) {
+    await ensureDashboardDemoNotifications(userId);
     return notificationByUserId.get(userId) ?? [];
   },
 

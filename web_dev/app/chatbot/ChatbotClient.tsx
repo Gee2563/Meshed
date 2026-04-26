@@ -809,6 +809,12 @@ export default function ChatbotClient({
                 onChange={(event) => {
                   setInput(event.target.value);
                 }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    void ask(input);
+                  }
+                }}
                 disabled={loading}
                 className="mt-4 h-28 w-full resize-y rounded-2xl border border-slate-200 bg-white p-4 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
                 placeholder="Type your question..."
