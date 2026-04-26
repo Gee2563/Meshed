@@ -261,7 +261,7 @@ async function ensureDashboardDemoNotifications(userId: string) {
       direction: template.direction,
       messagePreview: template.messagePreview(candidate.name, currentUser.name),
       receivedAt: timestamp,
-      attestationRef: `flare:demo:linkedin:${eventKey}`,
+      interactionId: null,
       title: template.title(candidate.name),
       body: template.body(candidate.name),
     });

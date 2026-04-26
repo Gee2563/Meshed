@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   CompanyDetailModal,
@@ -80,6 +80,8 @@ type ChatbotClientProps = {
   currentUserName?: string | null;
   currentUserVerified?: boolean;
   introMessage?: string | null;
+  draftPrompt?: string | null;
+  samplePrompts?: string[];
 };
 
 type ResolvedHighlightModal =
@@ -102,7 +104,7 @@ type ResolvedHighlightModal =
       partner: A16zCompanyGraphPartner;
     };
 
-const samplePrompts = [
+const defaultSamplePrompts = [
   "I'm heading to ETHDenver. Who should my Meshed agent recommend I meet?",
   "What opportunities should my doppelganger surface for fundraising and hiring this month?",
   "Which founders, LPs, and advisors should I coordinate with this week?",
@@ -178,8 +180,10 @@ export default function ChatbotClient({
   currentUserName,
   currentUserVerified = false,
   introMessage = null,
+  draftPrompt = null,
+  samplePrompts,
 }: ChatbotClientProps) {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(draftPrompt ?? "");
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
     introMessage
       ? [
@@ -202,6 +206,13 @@ export default function ChatbotClient({
   const [activeNews, setActiveNews] = useState<{ companyName: string; items: A16zCompanyGraphNode["latestNews"] } | null>(null);
   const [executingActionKeys, setExecutingActionKeys] = useState<Record<string, boolean>>({});
   const [acceptedActionMessages, setAcceptedActionMessages] = useState<Record<string, string>>({});
+  const prompts = samplePrompts?.length ? samplePrompts : defaultSamplePrompts;
+
+  useEffect(() => {
+    if (draftPrompt?.trim()) {
+      setInput(draftPrompt);
+    }
+  }, [draftPrompt]);
 
   const companyLookup = useMemo(() => {
     const map = new Map<string, A16zCompanyGraphNode>();
@@ -822,7 +833,7 @@ export default function ChatbotClient({
               <div className="mt-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Suggested prompts</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {samplePrompts.map((prompt) => (
+                  {prompts.map((prompt) => (
                     <button
                       key={prompt}
                       type="button"

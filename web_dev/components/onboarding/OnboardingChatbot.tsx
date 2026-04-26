@@ -470,7 +470,7 @@ export function OnboardingChatbot({
           {
             id: makeId("msg"),
             from: "assistant",
-            text: "Your network is ready. I'm switching from setup into your live Meshed agent now.",
+            text: "Your network is ready. I'm opening your Meshed agent now.",
           },
         ]);
         window.clearInterval(interval);
@@ -673,7 +673,7 @@ export function OnboardingChatbot({
         {
           id: makeId("msg"),
           from: "assistant",
-          text: "Beautiful. Your network is ready, so I'm opening your live Meshed agent.",
+          text: "Beautiful. Your network is ready, so I'm opening your Meshed agent.",
         },
       ]);
       if (onReady) {
