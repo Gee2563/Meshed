@@ -10,6 +10,7 @@
     "dev": "next dev",
     "postinstall": "npm run prisma:generate",
     "build": "npm run prisma:generate && next build",
+    "vercel-build": "npm run build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
