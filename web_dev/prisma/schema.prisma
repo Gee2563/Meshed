@@ -27,6 +27,9 @@ enum RegistrationFlowStep {
   PORTFOLIO_COMPANY
   COMPANY_ACCESS
   INDIVIDUAL_PROFILE
+  SOCIALS
+  NETWORK_PREPARING
+  READY
   COMPLETE
 }
 
@@ -62,6 +65,64 @@ enum ConnectionRequestStatus {
   DECLINED
 }
 
+enum VerifiedInteractionType {
+  MATCH_SUGGESTED
+  INTRO_REQUESTED
+  INTRO_ACCEPTED
+  COLLABORATION_STARTED
+  COLLABORATION_COMPLETED
+  REWARD_EARNED
+  REWARD_DISTRIBUTED
+}
+
+enum RewardStatus {
+  NOT_REWARDABLE
+  REWARDABLE
+  EARNED
+  DISTRIBUTED
+}
+
+enum SocialProvider {
+  LINKEDIN
+  EMAIL
+  SLACK
+  MICROSOFT_TEAMS
+  TWITTER
+  CALENDAR
+  INSTAGRAM
+}
+
+enum SocialConnectionStatus {
+  CONNECTED
+  SKIPPED
+}
+
+enum NetworkPreparationStatus {
+  QUEUED
+  RUNNING
+  READY
+  FAILED
+}
+
+enum AgentNotificationKind {
+  PAIN_POINT_MATCH
+  SOCIAL_SIGNAL
+  COORDINATION_PROMPT
+}
+
+enum AgentNotificationSource {
+  MESHED_GRAPH
+  LINKEDIN_SIGNAL
+  EXTERNAL_SOCIAL
+}
+
+enum AgentNotificationStatus {
+  UNREAD
+  READ
+  ACTED_ON
+  DISMISSED
+}
+
 model User {
   id                          String              @id
   name                        String
@@ -89,6 +150,13 @@ model User {
   receivedConnectionRequests  ConnectionRequest[] @relation("ConnectionRecipient")
   onboardingContractArtifacts OnboardingContractArtifact[]
   worldVerificationNullifiers WorldVerificationNullifier[]
+  socialConnections           UserSocialConnection[]
+  networkPreparationJobs      NetworkPreparationJob[]
+  actorVerifiedInteractions   VerifiedInteraction[] @relation("VerifiedInteractionActor")
+  targetVerifiedInteractions  VerifiedInteraction[] @relation("VerifiedInteractionTarget")
+  authorizedInteractions      VerifiedInteraction[] @relation("VerifiedInteractionAuthorizedBy")
+  agentNotifications          AgentNotification[]   @relation("AgentNotificationOwner")
+  targetedAgentNotifications  AgentNotification[]   @relation("AgentNotificationTargetUser")
 }
 
 model Company {
@@ -98,6 +166,9 @@ model Company {
   sector                      String
   stage                       String
   website                     String
+  address                     String?
+  pointOfContactName          String?
+  pointOfContactEmail         String?
   ownerUserId                 String
   currentPainTags             String[]
   resolvedPainTags            String[]
@@ -109,6 +180,9 @@ model Company {
   owner                       User                @relation("CompanyOwner", fields: [ownerUserId], references: [id])
   memberships                 CompanyMembership[]
   onboardingContractArtifacts OnboardingContractArtifact[]
+  verifiedInteractions        VerifiedInteraction[]
+  networkPreparationJobs      NetworkPreparationJob[]
+  agentNotifications          AgentNotification[]
 }
 
 model CompanyMembership {
@@ -209,4 +283,96 @@ model WorldVerificationNullifier {
 
   @@unique([action, nullifier])
   @@index([userId])
+}
+
+model UserSocialConnection {
+  id           String                 @id
+  userId       String
+  provider     SocialProvider
+  status       SocialConnectionStatus @default(SKIPPED)
+  accountLabel String?
+  metadata     Json?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId, provider])
+}
+
+model NetworkPreparationJob {
+  id             String                   @id
+  userId         String
+  vcCompanyId    String?
+  sourceWebsite  String
+  status         NetworkPreparationStatus @default(QUEUED)
+  statusMessage  String?
+  outputPath     String?
+  result         Json?
+  errorMessage   String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  startedAt      DateTime?
+  completedAt    DateTime?
+  user           User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vcCompany      Company?                 @relation(fields: [vcCompanyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([vcCompanyId, createdAt])
+  @@index([status, createdAt])
+}
+
+model VerifiedInteraction {
+  id                       String                  @id
+  interactionType          VerifiedInteractionType
+  actorUserId              String
+  targetUserId             String?
+  authorizedByUserId       String?
+  companyId                String?
+  painPointTag             String?
+  matchScore               Float?
+  verified                 Boolean                 @default(false)
+  actorWorldVerified       Boolean                 @default(false)
+  actorWorldNullifier      String?
+  actorVerificationLevel   String?
+  targetWorldVerified      Boolean?
+  targetWorldNullifier     String?
+  targetVerificationLevel  String?
+  rewardStatus             RewardStatus            @default(NOT_REWARDABLE)
+  transactionHash          String?
+  metadata                 Json?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  actorUser                User                    @relation("VerifiedInteractionActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  targetUser               User?                   @relation("VerifiedInteractionTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  authorizedByUser         User?                   @relation("VerifiedInteractionAuthorizedBy", fields: [authorizedByUserId], references: [id], onDelete: SetNull)
+  company                  Company?                @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([companyId, createdAt])
+  @@index([interactionType, createdAt])
+}
+
+model AgentNotification {
+  id              String                  @id
+  userId          String
+  kind            AgentNotificationKind
+  source          AgentNotificationSource
+  status          AgentNotificationStatus @default(UNREAD)
+  dedupeKey       String                  @unique
+  title           String
+  body            String
+  targetUserId    String?
+  targetCompanyId String?
+  metadata        Json?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  user            User                    @relation("AgentNotificationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser      User?                   @relation("AgentNotificationTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetCompany   Company?                @relation(fields: [targetCompanyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([targetCompanyId, createdAt])
 }

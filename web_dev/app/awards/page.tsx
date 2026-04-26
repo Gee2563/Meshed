@@ -17,7 +17,7 @@ export default function AuthenticatedAwards() {
       gradient: "from-emerald-500 to-teal-600",
       bgGradient: "from-emerald-50 to-teal-50",
       description: "Exceeded sales targets by 150% and closed 12 enterprise deals",
-      attestationId: "0x7a8b4c2e9f3d1a6c2e8b5f4a...",
+      recordId: "0x7a8b4c2e9f3d1a6c2e8b5f4a...",
       verified: true,
       color: "emerald",
     },
@@ -31,7 +31,7 @@ export default function AuthenticatedAwards() {
       gradient: "from-yellow-500 to-orange-600",
       bgGradient: "from-yellow-50 to-orange-50",
       description: "Built AI-powered smart contract auditing tool in 48 hours",
-      attestationId: "0x9f3d1a6c2e8b5f4a7a8b4c2e...",
+      recordId: "0x9f3d1a6c2e8b5f4a7a8b4c2e...",
       verified: true,
       color: "yellow",
     },
@@ -45,7 +45,7 @@ export default function AuthenticatedAwards() {
       gradient: "from-blue-500 to-purple-600",
       bgGradient: "from-blue-50 to-purple-50",
       description: "Led architecture redesign reducing system latency by 80%",
-      attestationId: "0x2e8b5f4a7a8b4c2e9f3d1a6c...",
+      recordId: "0x2e8b5f4a7a8b4c2e9f3d1a6c...",
       verified: true,
       color: "blue",
     },
@@ -59,7 +59,7 @@ export default function AuthenticatedAwards() {
       gradient: "from-pink-500 to-rose-600",
       bgGradient: "from-pink-50 to-rose-50",
       description: "Pioneered machine learning pipeline increasing accuracy by 35%",
-      attestationId: "0x4a7a8b4c2e9f3d1a6c2e8b5f...",
+      recordId: "0x4a7a8b4c2e9f3d1a6c2e8b5f...",
       verified: true,
       color: "pink",
     },
@@ -73,7 +73,7 @@ export default function AuthenticatedAwards() {
       gradient: "from-indigo-500 to-violet-600",
       bgGradient: "from-indigo-50 to-violet-50",
       description: "Led cross-functional team delivering product 2 months ahead of schedule",
-      attestationId: "0x6c2e8b5f4a7a8b4c2e9f3d1a...",
+      recordId: "0x6c2e8b5f4a7a8b4c2e9f3d1a...",
       verified: true,
       color: "indigo",
     },
@@ -87,7 +87,7 @@ export default function AuthenticatedAwards() {
       gradient: "from-cyan-500 to-blue-600",
       bgGradient: "from-cyan-50 to-blue-50",
       description: "Achieved 98% customer satisfaction rating across 500+ interactions",
-      attestationId: "0x8b5f4a7a8b4c2e9f3d1a6c2e...",
+      recordId: "0x8b5f4a7a8b4c2e9f3d1a6c2e...",
       verified: true,
       color: "cyan",
     },
@@ -145,7 +145,7 @@ export default function AuthenticatedAwards() {
             </div>
             <h1 className="text-5xl lg:text-6xl font-bold mb-6">Authenticated Awards & Credentials</h1>
             <p className="text-2xl text-blue-200 max-w-4xl mx-auto leading-relaxed">
-              Blockchain-verified professional accomplishments that can never be faked
+              World-backed accomplishments and rewards tied to verified humans
             </p>
           </div>
 
@@ -155,8 +155,8 @@ export default function AuthenticatedAwards() {
               <div className="bg-blue-500 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Lock className="size-7" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Flare-Backed</h3>
-              <p className="text-blue-200 text-sm">Immutable blockchain attestations ensure authenticity</p>
+              <h3 className="text-xl font-bold mb-2">Human-Backed</h3>
+              <p className="text-blue-200 text-sm">Verified humans create portable trust records</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm border-2 border-purple-400 rounded-2xl p-6 text-center">
@@ -164,7 +164,7 @@ export default function AuthenticatedAwards() {
                 <Shield className="size-7" />
               </div>
               <h3 className="text-xl font-bold mb-2">Verifiable</h3>
-              <p className="text-purple-200 text-sm">Anyone can verify credentials on-chain instantly</p>
+              <p className="text-purple-200 text-sm">Meshed records verified interactions and reward states</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm border-2 border-emerald-400 rounded-2xl p-6 text-center">
@@ -184,7 +184,7 @@ export default function AuthenticatedAwards() {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">How Authenticated Awards Work</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Meshed uses Flare Network to create tamper-proof, verifiable records of professional achievements
+              Meshed records human-backed achievements and rewards using World ID plus privacy-preserving interaction logs
             </p>
           </div>
 
@@ -199,16 +199,16 @@ export default function AuthenticatedAwards() {
               <div className="bg-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mb-4">
                 2
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Blockchain Attestation</h3>
-              <p className="text-sm text-gray-600">Award details are recorded on Flare Network with cryptographic proof</p>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Verified Interaction Recorded</h3>
+              <p className="text-sm text-gray-600">Award details are stored as World-backed interaction records tied to verified humans</p>
             </div>
 
             <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-2xl p-6">
               <div className="bg-emerald-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mb-4">
                 3
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Credential Minted</h3>
-              <p className="text-sm text-gray-600">Digital credential is minted and linked to recipient&apos;s Meshed profile</p>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Reward State Updated</h3>
+              <p className="text-sm text-gray-600">Meshed marks the accomplishment as rewardable or earned on the recipient&apos;s profile</p>
             </div>
 
             <div className="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-2xl p-6">
@@ -227,7 +227,7 @@ export default function AuthenticatedAwards() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Example Authenticated Awards</h2>
-            <p className="text-xl text-gray-600">Every achievement backed by blockchain verification</p>
+            <p className="text-xl text-gray-600">Every achievement backed by verified humans</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -273,9 +273,9 @@ export default function AuthenticatedAwards() {
                   <div className={`${colors.bg} border ${colors.border} rounded-lg p-3`}>
                     <div className="flex items-center gap-2 text-xs text-gray-600 mb-1">
                       <Lock className={`size-3 ${colors.text}`} />
-                      <span className="font-bold">Flare Attestation:</span>
+                      <span className="font-bold">Interaction Record:</span>
                     </div>
-                    <p className="text-xs font-mono text-gray-500 truncate">{award.attestationId}</p>
+                    <p className="text-xs font-mono text-gray-500 truncate">{award.recordId}</p>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between">
@@ -339,18 +339,18 @@ export default function AuthenticatedAwards() {
                       </div>
                     </div>
 
-                    {/* Blockchain Verification */}
+                    {/* World-backed verification */}
                     <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-6">
                       <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <Lock className="size-5 text-blue-600" />
-                        Blockchain Verification
+                        World-backed verification
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">Attestation ID</p>
+                          <p className="text-sm text-gray-600 mb-1">Record ID</p>
                           <div className="flex items-center gap-2">
                             <p className="font-mono text-sm text-gray-900 bg-white border border-gray-300 rounded px-3 py-2 flex-1 truncate">
-                              {award.attestationId}
+                              {award.recordId}
                             </p>
                             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold flex items-center gap-2">
                               <ExternalLink className="size-4" />
@@ -361,7 +361,7 @@ export default function AuthenticatedAwards() {
                         <div className="grid grid-cols-3 gap-4 mt-4">
                           <div>
                             <p className="text-xs text-gray-600 mb-1">Network</p>
-                            <p className="font-bold text-sm text-gray-900">Flare</p>
+                            <p className="font-bold text-sm text-gray-900">World + Meshed DB</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-600 mb-1">Status</p>
@@ -371,8 +371,8 @@ export default function AuthenticatedAwards() {
                             </div>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600 mb-1">Confirmations</p>
-                            <p className="font-bold text-sm text-gray-900">10,245</p>
+                            <p className="text-xs text-gray-600 mb-1">Privacy mode</p>
+                            <p className="font-bold text-sm text-gray-900">Nullifier-backed</p>
                           </div>
                         </div>
                       </div>
@@ -428,7 +428,7 @@ export default function AuthenticatedAwards() {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Why Blockchain-Verified Credentials Matter</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Why Human-Verified Credentials Matter</h2>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -549,7 +549,7 @@ export default function AuthenticatedAwards() {
           </div>
           <h2 className="text-4xl font-bold mb-4">Ready to Build Your Verified Credential Profile?</h2>
           <p className="text-xl text-blue-200 mb-8">
-            Join Meshed and start earning blockchain-verified achievements that prove your professional excellence
+            Join Meshed and start earning human-verified achievements that prove your professional excellence
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="px-10 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 transition-colors text-lg font-bold">

@@ -250,17 +250,16 @@ export default function Home() {
 
                   <div className="bg-green-50 border-l-4 border-green-600 p-4 rounded">
                     <p className="text-sm text-gray-700">
-                      <span className="font-semibold text-green-900">Why it matters:</span> By storing verifiable professional
-                      credentials on-chain, Mesh creates a trusted, immutable record of experience and achievements that powers
-                      intelligent matching&mdash;ensuring connections are based on verified expertise, not just self-reported
-                      profiles.
+                      <span className="font-semibold text-green-900">Why it matters:</span> By storing wallet-linked access
+                      and profile context, Meshed creates a durable coordination layer for verified humans, trusted
+                      agents, and portable professional history.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Flare Card */}
+            {/* Verified Interactions Card */}
             <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-12 shadow-lg">
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div className="flex-shrink-0">
@@ -270,24 +269,24 @@ export default function Home() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <h3 className="text-2xl font-bold text-gray-900">Flare</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">Verified Interactions</h3>
                     <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">
-                      Data Intelligence
+                      World Build Trust Layer
                     </span>
                   </div>
                   <p className="text-lg text-gray-600 mb-4">
-                    Flare provides native data feeds that can ingest Web2 APIs, cross-chain data, and real-world data&mdash;enabling
-                    Mesh to analyze funding, hiring, and industry signals.
+                    For the World Build version, Meshed replaces data attestations with human-backed interaction records
+                    so intros, collaborations, and rewards can be tied directly to verified humans.
                   </p>
 
                   <div className="bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-600 p-6 rounded-lg mb-4">
                     <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                       <Zap className="size-5 text-orange-600" />
-                      AI-Powered Similarity Scoring
+                      Human-Backed Coordination
                     </h4>
                     <p className="text-sm text-gray-700 mb-3">
-                      Mesh uses Flare to compute <span className="font-semibold text-gray-900">graph weights and similarity scores</span>
-                      based on real-world data signals:
+                      Meshed now records <span className="font-semibold text-gray-900">verified interactions and reward states</span>
+                      around the moments that matter most:
                     </p>
 
                     <div className="bg-white p-5 rounded-lg border border-orange-200 mb-4">
@@ -296,46 +295,46 @@ export default function Home() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                         <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
-                          <p className="text-sm font-bold text-gray-900 mb-1">Company A</p>
-                          <p className="text-xs text-gray-600">• Fintech vertical</p>
-                          <p className="text-xs text-gray-600">• Hiring compliance engineers</p>
-                          <p className="text-xs text-gray-600">• Series B stage</p>
+                          <p className="text-sm font-bold text-gray-900 mb-1">Verified founder</p>
+                          <p className="text-xs text-gray-600">• Requests an intro</p>
+                          <p className="text-xs text-gray-600">• Includes company pain point</p>
+                          <p className="text-xs text-gray-600">• Carries World verification status</p>
                         </div>
                         <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
-                          <p className="text-sm font-bold text-gray-900 mb-1">Company B</p>
-                          <p className="text-xs text-gray-600">• Fintech vertical</p>
-                          <p className="text-xs text-gray-600">• Hiring compliance engineers</p>
-                          <p className="text-xs text-gray-600">• Series B stage</p>
+                          <p className="text-sm font-bold text-gray-900 mb-1">Verified operator</p>
+                          <p className="text-xs text-gray-600">• Accepts the intro</p>
+                          <p className="text-xs text-gray-600">• Starts collaboration</p>
+                          <p className="text-xs text-gray-600">• Earns a rewardable action</p>
                         </div>
                       </div>
                       <div className="bg-gradient-to-r from-orange-100 to-red-100 p-3 rounded-lg">
                         <p className="text-sm font-bold text-gray-900 text-center">
-                          → High Similarity Score = Strategic Partnership Opportunity
+                          → Verified interaction recorded, trust preserved, reward state updated
                         </p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div className="bg-white p-3 rounded-lg border border-orange-200 text-center">
-                        <p className="text-xs font-semibold text-gray-900">Vertical Overlap</p>
+                        <p className="text-xs font-semibold text-gray-900">World ID Status</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-red-200 text-center">
-                        <p className="text-xs font-semibold text-gray-900">Stage Similarity</p>
+                        <p className="text-xs font-semibold text-gray-900">Authorized Agent</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-orange-200 text-center">
-                        <p className="text-xs font-semibold text-gray-900">Hiring Patterns</p>
+                        <p className="text-xs font-semibold text-gray-900">Company Context</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-red-200 text-center">
-                        <p className="text-xs font-semibold text-gray-900">Revenue Signals</p>
+                        <p className="text-xs font-semibold text-gray-900">Reward Status</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="bg-orange-50 border-l-4 border-orange-600 p-4 rounded">
                     <p className="text-sm text-gray-700">
-                      <span className="font-semibold text-orange-900">Why it matters:</span> Flare&apos;s data feeds enable Mesh to compute
-                      similarity scores off-chain using market signals, APIs, and analytics pipelines, then verify the results on-chain&mdash;creating
-                      an AI graph that is both intelligent and verifiable.
+                      <span className="font-semibold text-orange-900">Why it matters:</span> Meshed can stay DB-first for
+                      the hackathon while still proving that each valuable intro, collaboration, and reward event is
+                      backed by verified humans through World ID.
                     </p>
                   </div>
                 </div>

@@ -23,26 +23,33 @@ describe("POST /api/connections/requests/[id]/accept", () => {
     mocks.acceptRequest.mockReset();
   });
 
-  it("accepts the request for the signed-in user and returns the contract-backed connection", async () => {
+  it("accepts the request for the signed-in user and returns the verified interaction details", async () => {
     mocks.requireCurrentUser.mockResolvedValue({ id: "usr_recipient" });
     mocks.acceptRequest.mockResolvedValue({
       request: {
         id: "req_1",
         status: "accepted",
-        contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       },
       connection: {
         id: "conn_1",
         verified: true,
       },
+      interaction: {
+        id: "int_1",
+        interactionType: "INTRO_ACCEPTED",
+        rewardStatus: "REWARDABLE",
+      },
     });
 
     const { POST } = await import("@/app/api/connections/requests/[id]/accept/route");
-    const response = await POST(new Request("http://localhost/api/connections/requests/req_1/accept", {
-      method: "POST",
-    }), {
-      params: Promise.resolve({ id: "req_1" }),
-    });
+    const response = await POST(
+      new Request("http://localhost/api/connections/requests/req_1/accept", {
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ id: "req_1" }),
+      },
+    );
 
     expect(mocks.acceptRequest).toHaveBeenCalledWith("usr_recipient", "req_1");
     expect(response.status).toBe(200);
@@ -52,11 +59,15 @@ describe("POST /api/connections/requests/[id]/accept", () => {
         request: {
           id: "req_1",
           status: "accepted",
-          contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         },
         connection: {
           id: "conn_1",
           verified: true,
+        },
+        interaction: {
+          id: "int_1",
+          interactionType: "INTRO_ACCEPTED",
+          rewardStatus: "REWARDABLE",
         },
       },
     });
@@ -67,11 +78,14 @@ describe("POST /api/connections/requests/[id]/accept", () => {
     mocks.acceptRequest.mockRejectedValue(new ApiError(409, "Connection request is no longer pending."));
 
     const { POST } = await import("@/app/api/connections/requests/[id]/accept/route");
-    const response = await POST(new Request("http://localhost/api/connections/requests/req_1/accept", {
-      method: "POST",
-    }), {
-      params: Promise.resolve({ id: "req_1" }),
-    });
+    const response = await POST(
+      new Request("http://localhost/api/connections/requests/req_1/accept", {
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ id: "req_1" }),
+      },
+    );
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({

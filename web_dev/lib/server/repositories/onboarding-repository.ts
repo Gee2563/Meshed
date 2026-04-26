@@ -32,7 +32,15 @@ export const onboardingRepository = {
       title: string;
       isExecutive: boolean;
       executiveSignoffEmail?: string | null;
-      currentStep?: "VC_COMPANY" | "PORTFOLIO_COMPANY" | "COMPANY_ACCESS" | "INDIVIDUAL_PROFILE" | "COMPLETE";
+      currentStep?:
+        | "VC_COMPANY"
+        | "PORTFOLIO_COMPANY"
+        | "COMPANY_ACCESS"
+        | "INDIVIDUAL_PROFILE"
+        | "SOCIALS"
+        | "NETWORK_PREPARING"
+        | "READY"
+        | "COMPLETE";
       teamCsvUploadedAt?: Date | null;
     },
   ) {

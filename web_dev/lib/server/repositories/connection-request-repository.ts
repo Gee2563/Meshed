@@ -163,6 +163,7 @@ export const connectionRequestRepository = {
     recipientUserId: string;
     type: ConnectionRequestSummary["type"];
     message?: string | null;
+    metadata?: Record<string, unknown> | null;
   }): Promise<ConnectionRequestSummary> {
     const request = await prisma.connectionRequest.create({
       data: {
@@ -172,6 +173,7 @@ export const connectionRequestRepository = {
         type: connectionType[input.type],
         status: connectionRequestStatus.PENDING,
         message: input.message?.trim() ? input.message.trim() : null,
+        metadata: input.metadata === null ? Prisma.JsonNull : ((input.metadata ?? undefined) as Prisma.InputJsonValue | undefined),
       },
       include: {
         requester: {
@@ -195,9 +197,9 @@ export const connectionRequestRepository = {
     requestId: string;
     recipientUserId: string;
     connectionId: string;
-    contractAddress: string;
-    contractNetwork: string;
-    generationMode: "MOCK" | "REAL";
+    contractAddress?: string | null;
+    contractNetwork?: string | null;
+    generationMode?: "MOCK" | "REAL" | null;
     contractTxHash?: string | null;
     metadata?: Record<string, unknown> | null;
   }): Promise<ConnectionRequestSummary | null> {
@@ -280,11 +282,14 @@ export const connectionRequestRepository = {
       data: {
         status: connectionRequestStatus.ACCEPTED,
         acceptedConnectionId: connectionId,
-        contractAddress: input.contractAddress,
-        contractNetwork: input.contractNetwork,
-        generationMode: input.generationMode,
+        contractAddress: input.contractAddress ?? null,
+        contractNetwork: input.contractNetwork ?? null,
+        generationMode: input.generationMode ?? null,
         contractTxHash: input.contractTxHash ?? null,
-        metadata: (input.metadata ?? {}) as Prisma.InputJsonValue,
+        metadata: ({
+          ...((existingRequest.metadata as Record<string, unknown> | null | undefined) ?? {}),
+          ...((input.metadata ?? {}) as Record<string, unknown>),
+        }) as Prisma.InputJsonValue,
         respondedAt: new Date(),
       },
     });

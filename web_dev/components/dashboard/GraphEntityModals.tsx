@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -151,6 +153,46 @@ export function partnerInitials(name: string) {
     .toUpperCase();
 }
 
+function GraphModalShell({
+  ariaLabel,
+  dataTestId,
+  maxWidthClass,
+  onClose,
+  children,
+}: {
+  ariaLabel: string;
+  dataTestId?: string;
+  maxWidthClass: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[80] overflow-y-auto bg-[rgba(148,163,184,0.34)] backdrop-blur-[1.5px]"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div className="flex min-h-full items-center justify-center px-4 py-8">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={ariaLabel}
+          data-testid={dataTestId}
+          className={`w-full ${maxWidthClass} rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-7`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function PersonDetailModal({
   person,
   onClose,
@@ -161,19 +203,7 @@ export function PersonDetailModal({
   onConnect: (person: A16zCompanyGraphPerson) => void;
 }) {
   return (
-    <div
-      className={modalOverlayClassName}
-      role="presentation"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${person.name} details`}
-        data-testid="company-person-modal"
-        className={`${modalPanelBaseClassName} max-w-2xl`}
-        onClick={(event) => event.stopPropagation()}
-      >
+    <GraphModalShell ariaLabel={`${person.name} details`} dataTestId="company-person-modal" maxWidthClass="max-w-2xl" onClose={onClose}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <img
@@ -291,8 +321,7 @@ export function PersonDetailModal({
             Close
           </Button>
         </div>
-      </div>
-    </div>
+    </GraphModalShell>
   );
 }
 
@@ -312,18 +341,7 @@ export function PartnerDetailModal({
   const partnerImageUrl = partner.picturePath ?? partner.pictureUrl ?? null;
 
   return (
-    <div
-      className={modalOverlayClassName}
-      role="presentation"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${partner.name} details`}
-        className={`${modalPanelBaseClassName} max-w-2xl`}
-        onClick={(event) => event.stopPropagation()}
-      >
+    <GraphModalShell ariaLabel={`${partner.name} details`} maxWidthClass="max-w-2xl" onClose={onClose}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             {partnerImageUrl ? (
@@ -453,8 +471,7 @@ export function PartnerDetailModal({
             Close
           </Button>
         </div>
-      </div>
-    </div>
+    </GraphModalShell>
   );
 }
 
@@ -468,18 +485,7 @@ export function LatestNewsModal({
   onClose: () => void;
 }) {
   return (
-    <div
-      className={modalOverlayClassName}
-      role="presentation"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${companyName} latest news`}
-        className={`${modalPanelBaseClassName} max-w-2xl`}
-        onClick={(event) => event.stopPropagation()}
-      >
+    <GraphModalShell ariaLabel={`${companyName} latest news`} maxWidthClass="max-w-2xl" onClose={onClose}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Latest news</p>
@@ -526,8 +532,7 @@ export function LatestNewsModal({
             Close
           </Button>
         </div>
-      </div>
-    </div>
+    </GraphModalShell>
   );
 }
 
@@ -542,18 +547,7 @@ export function CompanyDetailModal({
   const latestNewsPreview = company.latestNews.slice(0, 3);
 
   return (
-    <div
-      className={modalOverlayClassName}
-      role="presentation"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${company.companyName} details`}
-        className={`${modalPanelBaseClassName} max-w-4xl`}
-        onClick={(event) => event.stopPropagation()}
-      >
+    <GraphModalShell ariaLabel={`${company.companyName} details`} maxWidthClass="max-w-4xl" onClose={onClose}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             {logoUrl ? (
@@ -711,7 +705,6 @@ export function CompanyDetailModal({
             Close
           </Button>
         </div>
-      </div>
-    </div>
+    </GraphModalShell>
   );
 }

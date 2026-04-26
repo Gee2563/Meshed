@@ -12,20 +12,19 @@ type TopNavProps = {
 export function TopNav({ currentUser }: TopNavProps) {
   const links: Array<{ href: Route; label: string }> = [
     { href: "/", label: "Home" },
+    { href: "/agent", label: "Agent" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/upcycle", label: "Meshed Upcycle" },
     { href: "/awards", label: "Awards" },
     { href: "/ai-summary", label: "AI Summary" },
-    { href: "/chatbot", label: "Chatbot" },
-    { href: "/eth-global", label: "EthGlobal" },
     ...(currentUser ? [{ href: "/profile", label: "Profile" }] : []),
   ];
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-white/85 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-1 py-1">
         <Link href="/" className="min-w-fit">
-          <img src="/meshed-logo.png" alt="Meshed" className="h-14 w-auto sm:h-16" />
+          <img src="/meshed-logo.png" alt="Meshed" className="h-20 w-auto sm:h-24" />
         </Link>
         <nav className="flex flex-1 flex-wrap items-center gap-3 sm:justify-center sm:gap-5">
           {links.map((link) => (

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { SimulateLinkedInAlertButton } from "@/components/dashboard/SimulateLinkedInAlertButton";
 import { Button } from "@/components/ui/Button";
-import type { ConnectionRequestSummary, ConnectionSummary } from "@/lib/types";
+import type { ConnectionRequestSummary, ConnectionSummary, VerifiedInteractionSummary } from "@/lib/types";
 import { cn, formatRelativeCount, titleCase } from "@/lib/utils";
 
 export type DashboardConnectionContact = {
@@ -16,6 +16,10 @@ export type DashboardConnectionContact = {
   contact: string | null;
   linkedinUrl: string | null;
   suggestedConnectionType: ConnectionSummary["type"];
+  worldVerified?: boolean;
+  companyId?: string | null;
+  painPointTag?: string | null;
+  matchScore?: number | null;
   demoOnly?: boolean;
 };
 
@@ -37,6 +41,7 @@ type ConnectionsPanelProps = {
   pendingIncomingRequests: ConnectionRequestSummary[];
   connectedContactIds: string[];
   outgoingPendingContactIds: string[];
+  recentInteractions: VerifiedInteractionSummary[];
 };
 
 type CreateRequestResponse = {
@@ -44,6 +49,7 @@ type CreateRequestResponse = {
   error?: string;
   data?: {
     request: ConnectionRequestSummary;
+    interaction: VerifiedInteractionSummary;
   };
 };
 
@@ -52,6 +58,16 @@ type AcceptRequestResponse = {
   error?: string;
   data?: {
     request: ConnectionRequestSummary;
+    connection: ConnectionSummary;
+    interaction: VerifiedInteractionSummary | null;
+  };
+};
+
+type RecordInteractionResponse = {
+  ok?: boolean;
+  error?: string;
+  data?: {
+    interaction: VerifiedInteractionSummary;
   };
 };
 
@@ -63,6 +79,8 @@ type GraphConnectPayload = {
   linkedinUrl?: string;
   contact?: string;
   why?: string;
+  painPointTag?: string;
+  matchScore?: number;
 };
 
 function initials(name: string) {
@@ -76,15 +94,15 @@ function initials(name: string) {
 
 function statusLabel(input: "available" | "incoming" | "outgoing" | "connected") {
   if (input === "incoming") {
-    return "Incoming request";
+    return "Intro pending";
   }
   if (input === "outgoing") {
-    return "Request sent";
+    return "Intro requested";
   }
   if (input === "connected") {
     return "Connected";
   }
-  return "Available";
+  return "Match ready";
 }
 
 function timeLabel(value: string) {
@@ -111,12 +129,55 @@ function normalizeLinkedIn(value?: string | null) {
   return safeText(value).toLowerCase();
 }
 
+function interactionLabel(interaction: VerifiedInteractionSummary) {
+  return interaction.interactionType.replaceAll("_", " ");
+}
+
+function buildInteractionLookup(
+  interactions: VerifiedInteractionSummary[],
+  contactIds: Set<string>,
+) {
+  const byContact: Record<string, VerifiedInteractionSummary> = {};
+
+  for (const interaction of interactions) {
+    const candidateContactId =
+      (interaction.targetUserId && contactIds.has(interaction.targetUserId) ? interaction.targetUserId : null) ??
+      (contactIds.has(interaction.actorUserId) ? interaction.actorUserId : null);
+    const contactId = candidateContactId ?? null;
+    if (!contactId || byContact[contactId]) {
+      continue;
+    }
+    byContact[contactId] = interaction;
+  }
+
+  return byContact;
+}
+
+function rewardLabel(rewardStatus: VerifiedInteractionSummary["rewardStatus"]) {
+  if (rewardStatus === "EARNED") {
+    return "Reward Earned";
+  }
+  if (rewardStatus === "DISTRIBUTED") {
+    return "Reward Distributed";
+  }
+  if (rewardStatus === "REWARDABLE") {
+    return "Rewardable";
+  }
+  return "Not rewardable yet";
+}
+
+function getWorldChainExplorerUrl(interaction: VerifiedInteractionSummary) {
+  const metadata = interaction.metadata as { worldChain?: { explorerUrl?: unknown } } | null | undefined;
+  return typeof metadata?.worldChain?.explorerUrl === "string" ? metadata.worldChain.explorerUrl : null;
+}
+
 export function ConnectionsPanel({
   contacts,
   notifications,
   pendingIncomingRequests,
   connectedContactIds,
   outgoingPendingContactIds,
+  recentInteractions,
 }: ConnectionsPanelProps) {
   const [graphContacts, setGraphContacts] = useState<DashboardConnectionContact[]>([]);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(
@@ -128,16 +189,22 @@ export function ConnectionsPanel({
     Object.fromEntries(pendingIncomingRequests.map((request) => [request.requesterUserId, request])),
   );
   const [acceptedByContact, setAcceptedByContact] = useState<Record<string, ConnectionRequestSummary>>({});
+  const [interactionByContact, setInteractionByContact] = useState<Record<string, VerifiedInteractionSummary>>(() =>
+    buildInteractionLookup(recentInteractions, new Set(contacts.map((contact) => contact.id))),
+  );
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [sendingContactId, setSendingContactId] = useState<string | null>(null);
   const [acceptingRequestId, setAcceptingRequestId] = useState<string | null>(null);
+  const [recordingMatchId, setRecordingMatchId] = useState<string | null>(null);
+  const [recordingInteractionId, setRecordingInteractionId] = useState<string | null>(null);
 
   const mergedContacts = useMemo(() => [...contacts, ...graphContacts], [contacts, graphContacts]);
   const contactById = useMemo(() => new Map(mergedContacts.map((contact) => [contact.id, contact])), [mergedContacts]);
   const selectedContact = selectedContactId ? contactById.get(selectedContactId) ?? null : null;
   const selectedIncomingRequest = selectedContact ? incomingByContact[selectedContact.id] ?? null : null;
   const selectedAcceptedRequest = selectedContact ? acceptedByContact[selectedContact.id] ?? null : null;
+  const selectedInteraction = selectedContact ? interactionByContact[selectedContact.id] ?? null : null;
 
   function getStatus(contactId: string): "available" | "incoming" | "outgoing" | "connected" {
     if (incomingByContact[contactId]) {
@@ -150,6 +217,17 @@ export function ConnectionsPanel({
       return "outgoing";
     }
     return "available";
+  }
+
+  function updateInteraction(contactId: string, interaction: VerifiedInteractionSummary | null) {
+    if (!interaction) {
+      return;
+    }
+
+    setInteractionByContact((previous) => ({
+      ...previous,
+      [contactId]: interaction,
+    }));
   }
 
   useEffect(() => {
@@ -168,7 +246,7 @@ export function ConnectionsPanel({
       const contact = safeText(data.payload.contact);
       const role = safeText(data.payload.role) || "operator";
       const company = safeText(data.payload.company) || "Meshed Network";
-      const why = safeText(data.payload.why) || `${name} was surfaced from the a16z people graph.`;
+      const why = safeText(data.payload.why) || `${name} was surfaced from the portfolio graph.`;
 
       const matchedExisting = mergedContacts.find((candidate) => {
         if (linkedinUrl && normalizeLinkedIn(candidate.linkedinUrl) === normalizeLinkedIn(linkedinUrl)) {
@@ -180,7 +258,7 @@ export function ConnectionsPanel({
       if (matchedExisting) {
         setSelectedContactId(matchedExisting.id);
         setActionError(null);
-        setActionFeedback(`${matchedExisting.name} opened from the network graph in the Meshed connections panel.`);
+        setActionFeedback(`${matchedExisting.name} opened from the network graph in the Meshed people panel.`);
         document.getElementById("meshed-connections-panel")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
         return;
       }
@@ -195,6 +273,9 @@ export function ConnectionsPanel({
         contact: contact || null,
         linkedinUrl: linkedinUrl || null,
         suggestedConnectionType: "intro",
+        worldVerified: false,
+        painPointTag: safeText(data.payload.painPointTag) || null,
+        matchScore: typeof data.payload.matchScore === "number" ? data.payload.matchScore : null,
         demoOnly: true,
       };
 
@@ -206,9 +287,7 @@ export function ConnectionsPanel({
       });
       setSelectedContactId(graphId);
       setActionError(null);
-      setActionFeedback(
-        `${name} came from the network graph. This profile is available for review here; use the seeded Meshed contacts below to test live Flare contracts.`,
-      );
+      setActionFeedback(`${name} came from the synthesized graph. Review the context here, then use a seeded Meshed member to demo a verified intro flow.`);
       document.getElementById("meshed-connections-panel")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
     }
 
@@ -217,6 +296,43 @@ export function ConnectionsPanel({
       window.removeEventListener("message", onMessage);
     };
   }, [mergedContacts]);
+
+  async function recordMatch(contact: DashboardConnectionContact) {
+    setActionError(null);
+    setActionFeedback(null);
+    setRecordingMatchId(contact.id);
+
+    try {
+      const response = await fetch("/api/matches/suggest", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          targetUserId: contact.id,
+          companyId: contact.companyId ?? null,
+          painPointTag: contact.painPointTag ?? null,
+          matchScore: contact.matchScore ?? null,
+          metadata: {
+            counterpartName: contact.name,
+            companyName: contact.company,
+            reason: contact.why,
+          },
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as RecordInteractionResponse | null;
+      if (!response.ok || !body?.ok || !body.data) {
+        throw new Error(body?.error ?? "Unable to record this recommended match.");
+      }
+
+      updateInteraction(contact.id, body.data.interaction);
+      setActionFeedback(`Verified match recorded for ${contact.name}.`);
+    } catch (caughtError) {
+      setActionError(caughtError instanceof Error ? caughtError.message : "Unable to record this recommended match.");
+    } finally {
+      setRecordingMatchId(null);
+    }
+  }
 
   async function sendRequest(contact: DashboardConnectionContact) {
     setActionError(null);
@@ -232,12 +348,21 @@ export function ConnectionsPanel({
         body: JSON.stringify({
           recipientUserId: contact.id,
           type: contact.suggestedConnectionType,
-          message: `Would love to open a Meshed ${contact.suggestedConnectionType} connection with ${contact.name}.`,
+          message: `Would love to open a human-backed Meshed ${contact.suggestedConnectionType} with ${contact.name}.`,
+          companyId: contact.companyId ?? null,
+          painPointTag: contact.painPointTag ?? null,
+          matchScore: contact.matchScore ?? null,
+          metadata: {
+            counterpartName: contact.name,
+            companyName: contact.company,
+            reason: contact.why,
+            actorMode: "AGENT",
+          },
         }),
       });
       const body = (await response.json().catch(() => null)) as CreateRequestResponse | null;
       if (!response.ok || !body?.ok || !body.data) {
-        throw new Error(body?.error ?? "Unable to send this Meshed connection request.");
+        throw new Error(body?.error ?? "Unable to send this Meshed intro request.");
       }
 
       setOutgoingIds((previous) => {
@@ -245,9 +370,10 @@ export function ConnectionsPanel({
         next.add(contact.id);
         return next;
       });
-      setActionFeedback(`Sent a Meshed connection request to ${contact.name}.`);
+      updateInteraction(contact.id, body.data.interaction);
+      setActionFeedback(`Intro requested for ${contact.name}. Verified interaction recorded.`);
     } catch (caughtError) {
-      setActionError(caughtError instanceof Error ? caughtError.message : "Unable to send this Meshed connection request.");
+      setActionError(caughtError instanceof Error ? caughtError.message : "Unable to send this Meshed intro request.");
     } finally {
       setSendingContactId(null);
     }
@@ -264,7 +390,7 @@ export function ConnectionsPanel({
       });
       const body = (await response.json().catch(() => null)) as AcceptRequestResponse | null;
       if (!response.ok || !body?.ok || !body.data) {
-        throw new Error(body?.error ?? "Unable to accept this connection request.");
+        throw new Error(body?.error ?? "Unable to accept this intro request.");
       }
 
       setIncomingByContact((previous) => {
@@ -286,11 +412,57 @@ export function ConnectionsPanel({
         next.delete(request.requesterUserId);
         return next;
       });
-      setActionFeedback(`Accepted ${request.requesterName}'s connection request on Flare.`);
+      updateInteraction(request.requesterUserId, body.data.interaction);
+      setActionFeedback(`Accepted ${request.requesterName}'s intro. Verified interaction recorded.`);
     } catch (caughtError) {
-      setActionError(caughtError instanceof Error ? caughtError.message : "Unable to accept this connection request.");
+      setActionError(caughtError instanceof Error ? caughtError.message : "Unable to accept this intro request.");
     } finally {
       setAcceptingRequestId(null);
+    }
+  }
+
+  async function recordFollowUp(contact: DashboardConnectionContact, interactionType: VerifiedInteractionSummary["interactionType"]) {
+    setActionError(null);
+    setActionFeedback(null);
+    setRecordingInteractionId(contact.id);
+
+    try {
+      const response = await fetch("/api/verified-interactions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          interactionType,
+          targetUserId: contact.id,
+          companyId: contact.companyId ?? null,
+          painPointTag: contact.painPointTag ?? null,
+          matchScore: contact.matchScore ?? null,
+          metadata: {
+            counterpartName: contact.name,
+            companyName: contact.company,
+            reason: contact.why,
+            actorMode: "AGENT",
+          },
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as RecordInteractionResponse | null;
+      if (!response.ok || !body?.ok || !body.data) {
+        throw new Error(body?.error ?? "Unable to record this verified interaction.");
+      }
+
+      updateInteraction(contact.id, body.data.interaction);
+      setActionFeedback(
+        interactionType === "REWARD_EARNED"
+          ? `Reward earned for ${contact.name}.`
+          : `${interactionLabel(body.data.interaction)} recorded for ${contact.name}.`,
+      );
+    } catch (caughtError) {
+      setActionError(
+        caughtError instanceof Error ? caughtError.message : "Unable to record this verified interaction.",
+      );
+    } finally {
+      setRecordingInteractionId(null);
     }
   }
 
@@ -300,11 +472,10 @@ export function ConnectionsPanel({
         <div className="rounded-[1.6rem] border border-slate-200 bg-white px-5 py-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">LinkedIn signals</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">LinkedIn to Meshed handoff</h3>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">World-backed trust layer</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">Human-backed agent handoff</h3>
               <p className="mt-2 text-sm leading-6 text-slate">
-                Use the existing simulation flow to trigger attested LinkedIn activity, then continue the relationship on
-                Meshed without chat.
+                Simulate outreach, see the human-backed signal appear in Meshed, then continue into a verified intro flow.
               </p>
             </div>
             <SimulateLinkedInAlertButton />
@@ -316,21 +487,21 @@ export function ConnectionsPanel({
               <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">{contacts.length}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-mist/60 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Pending requests</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Pending intros</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">
                 {Object.keys(incomingByContact).length}
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-mist/60 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Connected contacts</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">{connectedIds.size}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Verified interactions</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">{Object.keys(interactionByContact).length}</p>
             </div>
           </div>
 
           <div className="mt-4 space-y-3">
             {notifications.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate">
-                No LinkedIn activity has been simulated yet for this user.
+                No agent-backed outreach has been simulated yet for this user.
               </div>
             ) : (
               notifications.slice(0, 5).map((notification) => (
@@ -354,10 +525,10 @@ export function ConnectionsPanel({
         <div className="rounded-[1.6rem] border border-slate-200 bg-white px-5 py-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">People worth contacting</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Recommended matches</p>
               <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">Seeded Meshed connections</h3>
             </div>
-              <p className="text-xs text-slate">{formatRelativeCount(mergedContacts.length, "contact")}</p>
+            <p className="text-xs text-slate">{formatRelativeCount(mergedContacts.length, "contact")}</p>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -426,24 +597,35 @@ export function ConnectionsPanel({
                 <p className="mt-2 text-sm text-slate">
                   {titleCase(selectedContact.role)} at {selectedContact.company}
                 </p>
-                <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate">
-                  {statusLabel(getStatus(selectedContact.id))}
-                </div>
-                {selectedContact.demoOnly ? (
-                  <div className="mt-3 inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">
-                    Graph profile only
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate">
+                    {statusLabel(getStatus(selectedContact.id))}
                   </div>
-                ) : null}
+                  <div
+                    className={cn(
+                      "inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em]",
+                      selectedContact.worldVerified
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        : "border-amber-200 bg-amber-50 text-amber-800",
+                    )}
+                  >
+                    {selectedContact.worldVerified ? "Verified Human" : "Verification Pending"}
+                  </div>
+                  {selectedContact.demoOnly ? (
+                    <div className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">
+                      Graph profile only
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
 
             <div className="rounded-[1.4rem] border border-slate-200 bg-mist/60 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Why this person</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Why this match</p>
               <p className="mt-3 text-sm leading-7 text-slate">{selectedContact.why}</p>
               {selectedContact.demoOnly ? (
                 <p className="mt-3 text-sm leading-7 text-amber-800">
-                  This profile came from the synthesized network graph. It can be reviewed here, but on-chain Meshed
-                  connection testing should use the seeded real contacts and pending requests.
+                  This profile came from the synthesized network graph. It can be reviewed here, but the live demo intro flow should use the seeded Meshed members.
                 </p>
               ) : null}
             </div>
@@ -472,25 +654,71 @@ export function ConnectionsPanel({
 
             {selectedIncomingRequest ? (
               <div className="rounded-[1.4rem] border border-emerald-200 bg-emerald-50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-800">Pending inbound request</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-800">Pending inbound intro</p>
                 <p className="mt-3 text-sm leading-7 text-emerald-950">
                   {selectedIncomingRequest.message ?? `${selectedIncomingRequest.requesterName} wants to connect on Meshed.`}
                 </p>
               </div>
             ) : null}
 
-            {selectedAcceptedRequest?.contractAddress ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-[1.3rem] border border-slate-200 bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Flare contract</p>
-                  <p className="mt-2 break-all text-sm text-ink">{selectedAcceptedRequest.contractAddress}</p>
+            {selectedInteraction ? (
+              <div className="rounded-[1.4rem] border border-sky-200 bg-sky-50 px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-800">Verified interaction recorded</p>
+                    <p className="mt-2 text-sm font-semibold text-sky-950">{interactionLabel(selectedInteraction)}</p>
+                  </div>
+                  <div
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em]",
+                      selectedInteraction.verified
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-amber-100 text-amber-800",
+                    )}
+                  >
+                    {selectedInteraction.verified ? "World-backed trust layer" : "Awaiting full verification"}
+                  </div>
                 </div>
-                <div className="rounded-[1.3rem] border border-slate-200 bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Transaction</p>
-                  <p className="mt-2 break-all text-sm text-ink">
-                    {selectedAcceptedRequest.contractTxHash ?? "Contract deployed without local tx hash capture"}
-                  </p>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-[1rem] border border-white/80 bg-white/80 px-3 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Reward status</p>
+                    <p className="mt-2 text-sm font-medium text-ink">{rewardLabel(selectedInteraction.rewardStatus)}</p>
+                  </div>
+                  <div className="rounded-[1rem] border border-white/80 bg-white/80 px-3 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Actor proof</p>
+                    <p className="mt-2 text-sm font-medium text-ink">
+                      {selectedInteraction.actorWorldVerified ? "Verified Human" : "Pending"}
+                    </p>
+                  </div>
+                  <div className="rounded-[1rem] border border-white/80 bg-white/80 px-3 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Future World Chain log</p>
+                    {selectedInteraction.transactionHash && getWorldChainExplorerUrl(selectedInteraction) ? (
+                      <a
+                        href={getWorldChainExplorerUrl(selectedInteraction) ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 block break-all text-sm font-medium text-sky-700 underline-offset-4 hover:underline"
+                      >
+                        {selectedInteraction.transactionHash}
+                      </a>
+                    ) : selectedInteraction.transactionHash ? (
+                      <p className="mt-2 break-all text-sm font-medium text-ink">{selectedInteraction.transactionHash}</p>
+                    ) : (
+                      <p className="mt-2 break-all text-sm font-medium text-ink">
+                        TODO when on-chain writes are enabled
+                      </p>
+                    )}
+                  </div>
                 </div>
+              </div>
+            ) : null}
+
+            {selectedAcceptedRequest ? (
+              <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Accepted intro</p>
+                <p className="mt-3 text-sm leading-7 text-slate">
+                  This relationship is now connected inside Meshed and ready for collaboration tracking.
+                </p>
               </div>
             ) : null}
 
@@ -512,7 +740,7 @@ export function ConnectionsPanel({
                   onClick={() => acceptRequest(selectedIncomingRequest)}
                   disabled={acceptingRequestId === selectedIncomingRequest.id}
                 >
-                  {acceptingRequestId === selectedIncomingRequest.id ? "Accepting..." : "Accept on Flare"}
+                  {acceptingRequestId === selectedIncomingRequest.id ? "Accepting..." : "Accept Verified Intro"}
                 </Button>
               ) : null}
 
@@ -523,24 +751,45 @@ export function ConnectionsPanel({
               ) : null}
 
               {!selectedContact.demoOnly && getStatus(selectedContact.id) === "available" ? (
-                <Button
-                  onClick={() => sendRequest(selectedContact)}
-                  disabled={sendingContactId === selectedContact.id}
-                >
-                  {sendingContactId === selectedContact.id ? "Sending..." : "Send Meshed Request"}
-                </Button>
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => recordMatch(selectedContact)}
+                    disabled={recordingMatchId === selectedContact.id}
+                  >
+                    {recordingMatchId === selectedContact.id ? "Recording..." : "Record Match"}
+                  </Button>
+                  <Button
+                    onClick={() => sendRequest(selectedContact)}
+                    disabled={sendingContactId === selectedContact.id}
+                  >
+                    {sendingContactId === selectedContact.id ? "Sending..." : "Request Intro"}
+                  </Button>
+                </>
               ) : null}
 
               {!selectedContact.demoOnly && getStatus(selectedContact.id) === "outgoing" ? (
                 <Button variant="secondary" disabled>
-                  Request sent
+                  Intro requested
                 </Button>
               ) : null}
 
               {!selectedContact.demoOnly && getStatus(selectedContact.id) === "connected" ? (
-                <Button variant="secondary" disabled>
-                  Connected on Meshed
-                </Button>
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => recordFollowUp(selectedContact, "COLLABORATION_STARTED")}
+                    disabled={recordingInteractionId === selectedContact.id}
+                  >
+                    {recordingInteractionId === selectedContact.id ? "Recording..." : "Record Collaboration"}
+                  </Button>
+                  <Button
+                    onClick={() => recordFollowUp(selectedContact, "REWARD_EARNED")}
+                    disabled={recordingInteractionId === selectedContact.id}
+                  >
+                    {recordingInteractionId === selectedContact.id ? "Recording..." : "Mark Reward Earned"}
+                  </Button>
+                </>
               ) : null}
             </div>
           </div>

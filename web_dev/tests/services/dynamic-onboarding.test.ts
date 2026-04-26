@@ -41,14 +41,15 @@ describe("dynamic onboarding helpers", () => {
     expect(payload.dynamicUserId).toBe("cred_987");
   });
 
-  it("returns the human IDV route after Meshed account registration", () => {
-    expect(getHumanIdvRoute()).toBe("/human-idv");
+  it("returns the Agent route after Meshed account registration", () => {
+    expect(getHumanIdvRoute()).toBe("/agent");
   });
 
   it("normalizes invite-aware next routes coming back from the server", () => {
-    expect(normalizeDynamicNextRoute("/onboarding")).toBe("/human-idv");
-    expect(normalizeDynamicNextRoute("/human-idv")).toBe("/human-idv");
-    expect(normalizeDynamicNextRoute("/unexpected")).toBe("/human-idv");
+    expect(normalizeDynamicNextRoute("/onboarding")).toBe("/agent");
+    expect(normalizeDynamicNextRoute("/human-idv")).toBe("/agent");
+    expect(normalizeDynamicNextRoute("/agent")).toBe("/agent");
+    expect(normalizeDynamicNextRoute("/unexpected")).toBe("/agent");
   });
 
   it("throws when the Dynamic auth result is missing a stable identity or wallet address", () => {

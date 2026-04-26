@@ -25,7 +25,7 @@ describe("buildSessionResponse", () => {
       userId: "usr_dynamic",
       data: {
         user: { id: "usr_dynamic" },
-        nextRoute: "/human-idv",
+        nextRoute: "/agent",
       },
     });
 
@@ -35,7 +35,7 @@ describe("buildSessionResponse", () => {
       ok: true,
       data: {
         user: { id: "usr_dynamic" },
-        nextRoute: "/human-idv",
+        nextRoute: "/agent",
       },
     });
     expect(response.headers.get("set-cookie")).toContain("meshed_session=signed-token");

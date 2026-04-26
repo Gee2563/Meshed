@@ -47,7 +47,7 @@ describe("ConnectionsPanel", () => {
     vi.unstubAllGlobals();
   });
 
-  it("sends a Meshed request for an available contact", async () => {
+  it("requests an intro for an available contact and stores the interaction", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -60,6 +60,13 @@ describe("ConnectionsPanel", () => {
                 requesterUserId: "usr_current",
                 recipientUserId: "usr_mentor",
                 status: "pending",
+              },
+              interaction: {
+                id: "int_1",
+                interactionType: "INTRO_REQUESTED",
+                verified: true,
+                rewardStatus: "NOT_REWARDABLE",
+                actorWorldVerified: true,
               },
             },
           }),
@@ -88,18 +95,20 @@ describe("ConnectionsPanel", () => {
               contact: "theo@signalstack.io",
               linkedinUrl: "https://linkedin.com/in/theo",
               suggestedConnectionType: "mentorship",
+              worldVerified: true,
             },
           ],
           notifications: [],
           pendingIncomingRequests: [],
           connectedContactIds: [],
           outgoingPendingContactIds: [],
+          recentInteractions: [],
         }),
       );
     });
 
     const sendButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent === "Send Meshed Request",
+      (button) => button.textContent === "Request Intro",
     );
 
     await act(async () => {
@@ -109,7 +118,7 @@ describe("ConnectionsPanel", () => {
     });
 
     expect(global.fetch).toHaveBeenCalledWith("/api/connections/requests", expect.objectContaining({ method: "POST" }));
-    expect(container.textContent).toContain("Sent a Meshed connection request to Theo Mercer.");
+    expect(container.textContent).toContain("Intro requested for Theo Mercer. Verified interaction recorded.");
   });
 
   it("accepts an incoming request and marks the contact connected", async () => {
@@ -125,8 +134,17 @@ describe("ConnectionsPanel", () => {
                 requesterUserId: "usr_consultant",
                 recipientUserId: "usr_current",
                 status: "accepted",
-                contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                contractTxHash: "0xflaretx",
+              },
+              connection: {
+                id: "conn_1",
+                verified: true,
+              },
+              interaction: {
+                id: "int_accepted",
+                interactionType: "INTRO_ACCEPTED",
+                verified: true,
+                rewardStatus: "REWARDABLE",
+                actorWorldVerified: true,
               },
             },
           }),
@@ -155,6 +173,7 @@ describe("ConnectionsPanel", () => {
               contact: "nina@meshpay.io",
               linkedinUrl: "https://linkedin.com/in/nina",
               suggestedConnectionType: "consulting",
+              worldVerified: true,
             },
           ],
           notifications: [],
@@ -183,12 +202,13 @@ describe("ConnectionsPanel", () => {
           ],
           connectedContactIds: [],
           outgoingPendingContactIds: [],
+          recentInteractions: [],
         }),
       );
     });
 
     const acceptButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent === "Accept on Flare",
+      (button) => button.textContent === "Accept Verified Intro",
     );
 
     await act(async () => {
@@ -200,8 +220,8 @@ describe("ConnectionsPanel", () => {
     expect(global.fetch).toHaveBeenCalledWith("/api/connections/requests/req_2/accept", {
       method: "POST",
     });
-    expect(container.textContent).toContain("Accepted Nina Volkov's connection request on Flare.");
-    expect(container.textContent).toContain("Connected on Meshed");
+    expect(container.textContent).toContain("Accepted Nina Volkov's intro. Verified interaction recorded.");
+    expect(container.textContent).toContain("Connected");
   });
 
   it("opens a graph profile handoff in the connections panel", async () => {
@@ -217,6 +237,7 @@ describe("ConnectionsPanel", () => {
           pendingIncomingRequests: [],
           connectedContactIds: [],
           outgoingPendingContactIds: [],
+          recentInteractions: [],
         }),
       );
     });
@@ -243,5 +264,70 @@ describe("ConnectionsPanel", () => {
 
     expect(container.textContent).toContain("Alex Wilson");
     expect(container.textContent).toContain("Graph profile only");
+  });
+
+  it("renders a World Chain explorer link when an interaction has an on-chain transaction", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+
+    const { ConnectionsPanel } = await import("@/components/dashboard/ConnectionsPanel");
+
+    await act(async () => {
+      root.render(
+        React.createElement(ConnectionsPanel, {
+          contacts: [
+            {
+              id: "usr_founder",
+              name: "Jordan Lee",
+              company: "RelayOS",
+              role: "operator",
+              why: "Already aligned on enterprise rollout work.",
+              contact: "jordan@relayos.com",
+              linkedinUrl: "https://linkedin.com/in/jordan",
+              suggestedConnectionType: "consulting",
+              worldVerified: true,
+            },
+          ],
+          notifications: [],
+          pendingIncomingRequests: [],
+          connectedContactIds: [],
+          outgoingPendingContactIds: [],
+          recentInteractions: [
+            {
+              id: "int_chain",
+              interactionType: "INTRO_ACCEPTED",
+              actorUserId: "usr_current",
+              targetUserId: "usr_founder",
+              authorizedByUserId: null,
+              companyId: null,
+              painPointTag: null,
+              matchScore: 95,
+              verified: true,
+              actorWorldVerified: true,
+              actorWorldNullifier: "0xactor",
+              actorVerificationLevel: null,
+              targetWorldVerified: true,
+              targetWorldNullifier: "0xtarget",
+              targetVerificationLevel: null,
+              rewardStatus: "REWARDABLE",
+              transactionHash: "0xworldtx",
+              metadata: {
+                worldChain: {
+                  explorerUrl: "https://worldchain-sepolia.explorer.alchemy.com/tx/0xworldtx",
+                },
+              },
+              createdAt: "2026-04-01T09:00:00.000Z",
+              updatedAt: "2026-04-01T09:00:00.000Z",
+            },
+          ],
+        }),
+      );
+    });
+
+    const txLink = Array.from(container.querySelectorAll("a")).find(
+      (link) => link.textContent === "0xworldtx",
+    );
+
+    expect(container.textContent).toContain("Verified interaction recorded");
+    expect(txLink?.getAttribute("href")).toBe("https://worldchain-sepolia.explorer.alchemy.com/tx/0xworldtx");
   });
 });

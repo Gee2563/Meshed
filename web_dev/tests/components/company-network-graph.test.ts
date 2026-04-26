@@ -85,6 +85,8 @@ function createGraphProps() {
         location: "Los Angeles, California, USA",
         locationRegion: "United States",
         website: "https://battlebound.example",
+        flexpointLogoUrl: null,
+        flexpointLogoPath: null,
         degree: 8,
         peopleCount: 2,
         colorHex: "#0f766e",
@@ -94,6 +96,8 @@ function createGraphProps() {
         peoplePainPointOverview: "Current: Hiring Bottlenecks (2)",
         peopleConnectionSummary: "Shared GTM support routes.",
         peopleTrustSignalOverview: "Trusted Mentor (1), Rising Contributor (1)",
+        partners: [],
+        latestNews: [],
         people: [
           {
             id: "p_1",
@@ -144,6 +148,8 @@ function createGraphProps() {
         location: "San Francisco, California, USA",
         locationRegion: "United States",
         website: "https://alchemy.com",
+        flexpointLogoUrl: null,
+        flexpointLogoPath: null,
         degree: 10,
         peopleCount: 1,
         colorHex: "#ca8a04",
@@ -153,6 +159,8 @@ function createGraphProps() {
         peoplePainPointOverview: "Current: Security Incidents (2)",
         peopleConnectionSummary: "Shared infrastructure routes.",
         peopleTrustSignalOverview: "Trusted Mentor (1)",
+        partners: [],
+        latestNews: [],
         people: [
           {
             id: "p_3",
@@ -233,7 +241,7 @@ describe("CompanyNetworkGraph", () => {
     });
 
     expect(container.textContent).toContain("Browse the company network");
-    expect(container.textContent).toContain("Select a company or bridge");
+    expect(container.textContent).toContain("Select a company");
     expect(container.querySelector('[data-testid="company-network-graph"]')).not.toBeNull();
     const graphStage = container.querySelector('[data-testid="company-network-stage"]');
     const detailPanel = container.querySelector('[data-testid="company-network-details"]');
@@ -303,7 +311,7 @@ describe("CompanyNetworkGraph", () => {
     );
   });
 
-  it("renders bridge details only when the click targets an edge without a node", async () => {
+  it("keeps the empty state when the click targets only an edge", async () => {
     const { CompanyNetworkGraph } = await import("@/components/dashboard/CompanyNetworkGraph");
     const graphProps = createGraphProps();
 
@@ -318,8 +326,8 @@ describe("CompanyNetworkGraph", () => {
       network.handlers.click?.({ nodes: [], edges: ["edge_1"] });
     });
 
-    expect(container.textContent).toContain("Selected bridge");
-    expect(container.textContent).toContain("Battlebound to Alchemy");
+    expect(container.textContent).toContain("Select a company");
+    expect(container.textContent).not.toContain("Battlebound to Alchemy");
     expect(container.textContent).not.toContain("People in this node");
   });
 

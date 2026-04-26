@@ -35,7 +35,7 @@ describe("POST /api/auth/dynamic/register", () => {
       onboardingProfile: {
         id: "onb_dynamic",
       },
-      nextRoute: "/human-idv",
+      nextRoute: "/agent",
       contractArtifact: null,
     });
     mocks.createSessionToken.mockResolvedValue("signed-token");
@@ -73,7 +73,7 @@ describe("POST /api/auth/dynamic/register", () => {
         onboardingProfile: {
           id: "onb_dynamic",
         },
-        nextRoute: "/human-idv",
+        nextRoute: "/agent",
         contractArtifact: null,
       },
     });

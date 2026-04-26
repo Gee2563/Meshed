@@ -4,10 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
-  loadA16zCryptoDashboardData: vi.fn(),
+  loadDashboardData: vi.fn(),
   ensureDemoState: vi.fn(),
   listDemoUsers: vi.fn(),
   listNotificationsForUser: vi.fn(),
+  syncForUser: vi.fn(),
+  listRecentForUser: vi.fn(),
+  findLatestByUserId: vi.fn(),
+  findUnique: vi.fn(),
   findMany: vi.fn(),
 }));
 
@@ -16,7 +20,7 @@ vi.mock("@/lib/server/current-user", () => ({
 }));
 
 vi.mock("@/lib/server/meshed-network/a16z-crypto-dashboard", () => ({
-  loadA16zCryptoDashboardData: mocks.loadA16zCryptoDashboardData,
+  loadDashboardData: mocks.loadDashboardData,
 }));
 
 vi.mock("@/lib/server/services/connection-request-service", () => ({
@@ -37,8 +41,32 @@ vi.mock("@/lib/server/services/linkedin-activity-service", () => ({
   },
 }));
 
+vi.mock("@/lib/server/services/agent-notification-service", () => ({
+  agentNotificationService: {
+    syncForUser: mocks.syncForUser,
+  },
+}));
+
+vi.mock("@/lib/server/services/verified-interaction-service", () => ({
+  verifiedInteractionService: {
+    listRecentForUser: mocks.listRecentForUser,
+  },
+}));
+
+vi.mock("@/lib/server/repositories/network-preparation-job-repository", () => ({
+  networkPreparationJobRepository: {
+    findLatestByUserId: mocks.findLatestByUserId,
+  },
+}));
+
 vi.mock("@/lib/server/prisma", () => ({
   prisma: {
+    onboardingProfile: {
+      findUnique: mocks.findUnique,
+    },
+    company: {
+      findUnique: mocks.findUnique,
+    },
     companyMembership: {
       findMany: mocks.findMany,
     },
@@ -57,6 +85,10 @@ vi.mock("@/components/dashboard/ConnectionsPanel", () => ({
   ConnectionsPanel: () => "ConnectionsPanel",
 }));
 
+vi.mock("@/components/dashboard/AgentNotificationsPanel", () => ({
+  AgentNotificationsPanel: () => "AgentNotificationsPanel",
+}));
+
 vi.mock("@/components/ui/Button", () => ({
   Button: (props: { children: React.ReactNode }) => props.children,
 }));
@@ -65,16 +97,20 @@ describe("dashboard page", () => {
   beforeEach(() => {
     vi.stubGlobal("React", React);
     mocks.getCurrentUser.mockReset();
-    mocks.loadA16zCryptoDashboardData.mockReset();
+    mocks.loadDashboardData.mockReset();
     mocks.ensureDemoState.mockReset();
     mocks.listDemoUsers.mockReset();
     mocks.listNotificationsForUser.mockReset();
+    mocks.syncForUser.mockReset();
+    mocks.listRecentForUser.mockReset();
+    mocks.findLatestByUserId.mockReset();
+    mocks.findUnique.mockReset();
     mocks.findMany.mockReset();
   });
 
   it("sends signed-out visitors back to the trust entrypoint", async () => {
     mocks.getCurrentUser.mockResolvedValue(null);
-    mocks.loadA16zCryptoDashboardData.mockResolvedValue(null);
+    mocks.loadDashboardData.mockResolvedValue(null);
 
     const { default: DashboardPage } = await import("@/app/dashboard/page");
     const markup = renderToStaticMarkup(await DashboardPage());
@@ -84,11 +120,11 @@ describe("dashboard page", () => {
     expect(markup).not.toContain("LogoutButton");
   });
 
-  it("renders the a16z crypto dashboard for an authenticated user", async () => {
+  it("renders the dashboard for an authenticated user", async () => {
     mocks.getCurrentUser.mockResolvedValue({
       id: "usr_dynamic",
       name: "Avery Collins",
-      email: "avery@rho.vc",
+      email: "avery@a16z.com",
       role: "operator",
       bio: "Portfolio operator",
       skills: [],
@@ -102,7 +138,7 @@ describe("dashboard page", () => {
       outsideNetworkAccessEnabled: false,
       createdAt: "2025-01-01T00:00:00.000Z",
     });
-    mocks.loadA16zCryptoDashboardData.mockResolvedValue({
+    mocks.loadDashboardData.mockResolvedValue({
       snapshot: {
         scope: "a16z-crypto",
         scope_label: "a16z crypto",
@@ -164,6 +200,8 @@ describe("dashboard page", () => {
             location: "Los Angeles, California, USA",
             locationRegion: "United States",
             website: "https://battlebound.example",
+            flexpointLogoUrl: null,
+            flexpointLogoPath: null,
             degree: 8,
             peopleCount: 6,
             colorHex: "#0f766e",
@@ -173,6 +211,8 @@ describe("dashboard page", () => {
             peoplePainPointOverview: "Current: Hiring Bottlenecks (2)",
             peopleConnectionSummary: "Shared GTM support routes.",
             peopleTrustSignalOverview: "Trusted Mentor (1)",
+            partners: [],
+            latestNews: [],
             people: [
               {
                 id: "p_1",
@@ -256,35 +296,49 @@ describe("dashboard page", () => {
       },
     ]);
     mocks.listNotificationsForUser.mockResolvedValue([]);
-    mocks.findMany.mockResolvedValue([
-      {
-        id: "mem_1",
-        userId: "usr_mentor_theo",
-        company: {
-          name: "SignalStack",
+    mocks.syncForUser.mockResolvedValue([]);
+    mocks.listRecentForUser.mockResolvedValue([]);
+    mocks.findLatestByUserId.mockResolvedValue(null);
+    mocks.findUnique.mockResolvedValue(null);
+    mocks.findMany
+      .mockResolvedValueOnce([
+        {
+          id: "mem_current",
+          userId: "usr_dynamic",
+          company: {
+            id: "co_current",
+            name: "Rho Ventures",
+          },
         },
-      },
-      {
-        id: "mem_2",
-        userId: "usr_operator_iris",
-        company: {
-          name: "OrbitFlow",
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "mem_1",
+          userId: "usr_mentor_theo",
+          company: {
+            id: "co_signalstack",
+            name: "SignalStack",
+          },
         },
-      },
-    ]);
+        {
+          id: "mem_2",
+          userId: "usr_operator_iris",
+          company: {
+            id: "co_orbitflow",
+            name: "OrbitFlow",
+          },
+        },
+      ]);
 
     const { default: DashboardPage } = await import("@/app/dashboard/page");
     const markup = renderToStaticMarkup(await DashboardPage());
 
-    expect(markup).toContain("A16z crypto network dashboard");
-    expect(markup).toContain("Signed in as Avery Collins");
-    expect(markup).toContain("Battlebound");
-    expect(markup).toContain("Strongest company bridges");
-    expect(markup).toContain("Interactive company graph");
+    expect(markup).toContain("Welcome to your a16z meshed network");
+    expect(markup).toContain("a16z&#x27;s Meshed Network Interactive Graph");
     expect(markup).toContain("CompanyNetworkGraph");
     expect(markup).toContain("Meshed people connections");
+    expect(markup).toContain("AgentNotificationsPanel");
     expect(markup).toContain("ConnectionsPanel");
-    expect(markup).toContain("Jordan Patel");
-    expect(markup).toContain("LogoutButton");
+    expect(markup).toContain("Verified Humans and Managed Access");
   });
 });

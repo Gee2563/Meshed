@@ -1,8 +1,20 @@
 import { readFile } from "node:fs/promises";
 
-import { getDashboardScopeConfig, resolveDashboardScopeForEmail } from "@/lib/server/meshed-network/dashboard-scope";
+import {
+  getDashboardScopeConfig,
+  resolveDashboardScopeForEmail,
+  resolveDashboardScopeForOrganization,
+} from "@/lib/server/meshed-network/dashboard-scope";
 import { requireCurrentUser } from "@/lib/server/current-user";
 import { ApiError, fail, ok } from "@/lib/server/http";
+import { prisma } from "@/lib/server/prisma";
+import {
+  buildDeterministicMeshedFounderReply,
+  meshedFounderAgentService,
+  type FounderMembershipContext,
+} from "@/lib/server/services/meshed-founder-agent-service";
+import { onboardingService } from "@/lib/server/services/onboarding-service";
+import { verifiedInteractionService } from "@/lib/server/services/verified-interaction-service";
 
 type CompanyNewsItem = {
   title?: string | null;
@@ -192,7 +204,7 @@ function parseNewsItems(
     .filter((item): item is { title: string; datePublished: string | null; articleUrl: string | null } => item !== null);
 }
 
-function parseRequestText(payload: unknown): string {
+function parseRequestPayload(payload: unknown): { question: string; previousResponseId: string | null } {
   if (!payload || typeof payload !== "object") {
     throw new ApiError(400, "Invalid request payload.");
   }
@@ -200,7 +212,12 @@ function parseRequestText(payload: unknown): string {
   if (typeof query !== "string" || !query.trim()) {
     throw new ApiError(400, "The query field is required.");
   }
-  return query.trim();
+  const previousResponseId = (payload as { previousResponseId?: unknown }).previousResponseId;
+  return {
+    question: query.trim(),
+    previousResponseId:
+      typeof previousResponseId === "string" && previousResponseId.trim() ? previousResponseId.trim() : null,
+  };
 }
 
 async function readJson<T>(bundleRoot: string, fileName: string): Promise<T> {
@@ -1570,12 +1587,51 @@ function answerGraphQuestion(question: string, companyPayload: CompanyNetworkPay
   };
 }
 
+async function loadFounderMembershipContext(userId: string): Promise<FounderMembershipContext[]> {
+  const memberships = await prisma.companyMembership.findMany({
+    where: {
+      userId,
+    },
+    include: {
+      company: {
+        select: {
+          id: true,
+          name: true,
+          sector: true,
+          stage: true,
+          currentPainTags: true,
+          resolvedPainTags: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  return memberships.map((membership) => ({
+    companyId: membership.company.id,
+    companyName: membership.company.name,
+    sector: membership.company.sector,
+    stage: membership.company.stage,
+    title: membership.title,
+    relation: membership.relation,
+    currentPainTags: membership.company.currentPainTags,
+    resolvedPainTags: membership.company.resolvedPainTags,
+  }));
+}
+
 export async function POST(request: Request) {
   try {
     const currentUser = await requireCurrentUser();
     const body = await request.json();
-    const question = parseRequestText(body);
-    const scope = resolveDashboardScopeForEmail(currentUser.email);
+    const { question, previousResponseId } = parseRequestPayload(body);
+    const onboardingState = await onboardingService.getState(currentUser.id);
+    const scope =
+      resolveDashboardScopeForOrganization({
+        website: onboardingState.vcCompany?.website,
+        name: onboardingState.vcCompany?.name,
+      }) ?? resolveDashboardScopeForEmail(currentUser.email);
     const scopeConfig = getDashboardScopeConfig(scope);
 
     const [companyNetwork, peopleNetwork] = await Promise.all([
@@ -1583,7 +1639,45 @@ export async function POST(request: Request) {
       readJson<PeopleNetworkPayload>(scopeConfig.bundleRoot, "people_network_data.json"),
     ]);
 
-    const response = answerGraphQuestion(question, companyNetwork, peopleNetwork);
+    const deterministicResponse = answerGraphQuestion(question, companyNetwork, peopleNetwork);
+    const founderContext = {
+      founder: {
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+        role: currentUser.role,
+        bio: currentUser.bio,
+        skills: currentUser.skills,
+        sectors: currentUser.sectors,
+        worldVerified: currentUser.worldVerified,
+        verificationBadges: currentUser.verificationBadges,
+        outsideNetworkAccessEnabled: currentUser.outsideNetworkAccessEnabled,
+      },
+      scope,
+      scopeLabel: scopeConfig.scopeLabel,
+      memberships: await loadFounderMembershipContext(currentUser.id),
+      recentInteractions: (await verifiedInteractionService.listRecentForUser(currentUser.id, 5)).map((interaction) => ({
+        interactionType: interaction.interactionType,
+        rewardStatus: interaction.rewardStatus,
+        verified: interaction.verified,
+        transactionHash: interaction.transactionHash ?? null,
+        createdAt: interaction.createdAt,
+      })),
+    };
+
+    const response = meshedFounderAgentService.isAvailable()
+      ? await meshedFounderAgentService
+          .answer({
+            question,
+            previousResponseId,
+            founderContext,
+            queryGraph: (toolQuestion) => answerGraphQuestion(toolQuestion, companyNetwork, peopleNetwork),
+          })
+          .catch((error) => {
+            console.error("Meshed Agent fallback", error);
+            return buildDeterministicMeshedFounderReply(deterministicResponse, founderContext);
+          })
+      : buildDeterministicMeshedFounderReply(deterministicResponse, founderContext);
     return ok({
       question,
       scope,

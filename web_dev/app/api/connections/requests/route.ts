@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const user = await requireCurrentUser();
     const body = await parseJson(request, createConnectionRequestSchema);
     const created = await connectionRequestService.createRequest(user.id, body);
-    return ok({ request: created });
+    return ok(created);
   } catch (error) {
     return fail(error);
   }
