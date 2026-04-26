@@ -1,4 +1,6 @@
 # Ignore virtual environments and node modules
+.DS_Store
+*/.DS_Store
 */venv/
 */node_modules/
 
