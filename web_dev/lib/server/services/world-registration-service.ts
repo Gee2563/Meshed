@@ -11,7 +11,7 @@ import type { OnboardingProfileSummary, UserSummary } from "@/lib/types";
 type WorldRegisterInput = {
   name: string;
   email?: string | null;
-  role: "consultant" | "mentor" | "operator" | "investor";
+  role: "founder" | "investor" | "employee";
   verification: {
     protocol_version: "3.0" | "4.0";
     nonce: string;
@@ -36,7 +36,7 @@ type WorldRegistrationServiceDependencies = {
       id: string;
       name: string;
       email: string;
-      role: "CONSULTANT" | "MENTOR" | "OPERATOR" | "INVESTOR";
+      role: "FOUNDER" | "INVESTOR" | "EMPLOYEE";
       bio: string;
       skills: string[];
       sectors: string[];
@@ -45,6 +45,7 @@ type WorldRegistrationServiceDependencies = {
     }): Promise<UserSummary>;
   };
   onboardingRepository: {
+    findByUserId?(userId: string): Promise<OnboardingProfileSummary | null>;
     upsertByUserId(
       userId: string,
         data: {
@@ -112,21 +113,24 @@ function placeholderEmailFromNullifier(nullifier: string) {
   return `world-${safeSuffix || "member"}@meshed.local`;
 }
 
-function titleForRole(role: WorldRegisterInput["role"]) {
+function titleForRole(role: WorldRegisterInput["role"] | UserSummary["role"]) {
   switch (role) {
+    case "founder":
+    case "operator":
+      return "Founder";
     case "investor":
       return "Investor";
+    case "employee":
     case "mentor":
-      return "Mentor";
     case "consultant":
-      return "Consultant";
+      return "Employee";
     default:
-      return "Operator";
+      return "Member";
   }
 }
 
-function roleForPersistence(role: WorldRegisterInput["role"]): "CONSULTANT" | "MENTOR" | "OPERATOR" | "INVESTOR" {
-  return role.toUpperCase() as "CONSULTANT" | "MENTOR" | "OPERATOR" | "INVESTOR";
+function roleForPersistence(role: WorldRegisterInput["role"]): "FOUNDER" | "INVESTOR" | "EMPLOYEE" {
+  return role.toUpperCase() as "FOUNDER" | "INVESTOR" | "EMPLOYEE";
 }
 
 const genericWorldBio = "New Meshed member authenticated and registered with World ID.";
@@ -163,10 +167,13 @@ export function createWorldRegistrationService(deps: WorldRegistrationServiceDep
               nullifier: replayKey.nullifier,
             });
 
+        const existingOnboardingProfile = deps.onboardingRepository.findByUserId
+          ? await deps.onboardingRepository.findByUserId(existingUser.id)
+          : null;
         const onboardingProfile = await deps.onboardingRepository.upsertByUserId(existingUser.id, {
           id: deps.idGenerator.onboardingId(),
           mode: "INDIVIDUAL",
-          title: titleForRole((existingUser.role as WorldRegisterInput["role"]) ?? input.role),
+          title: existingOnboardingProfile?.title || titleForRole(existingUser.role),
           isExecutive: existingUser.role === "investor",
           currentStep: "VC_COMPANY",
         });

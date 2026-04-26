@@ -50,7 +50,7 @@ describe("POST /api/auth/world/register", () => {
         body: JSON.stringify({
           name: "George Morris",
           email: "george@example.com",
-          role: "operator",
+          role: "founder",
           verification: {
             protocol_version: "3.0",
             nonce: "0xnonce",
@@ -65,7 +65,7 @@ describe("POST /api/auth/world/register", () => {
     expect(mocks.register).toHaveBeenCalledWith({
       name: "George Morris",
       email: "george@example.com",
-      role: "operator",
+      role: "founder",
       verification: {
         protocol_version: "3.0",
         nonce: "0xnonce",
@@ -126,7 +126,7 @@ describe("POST /api/auth/world/register", () => {
         body: JSON.stringify({
           name: "George Morris",
           email: "george@example.com",
-          role: "operator",
+          role: "founder",
           verification: {
             protocol_version: "3.0",
             nonce: "0xnonce",

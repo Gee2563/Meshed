@@ -25,6 +25,7 @@ type VcOption = {
 type OnboardingChatbotProps = {
   currentStep: RegistrationFlowStep;
   currentUserName: string;
+  currentUserTitle?: string | null;
   currentUserProfileImageUrl?: string | null;
   currentUserRole: UserRole;
   vcCompany: CompanySummary | null;
@@ -46,6 +47,7 @@ type QuestionId =
   | "vc_website"
   | "vc_contact_name"
   | "vc_contact_email"
+  | "job_title"
   | "member_company_name"
   | "member_company_address"
   | "profile_image"
@@ -72,6 +74,7 @@ type DraftState = {
   website: string;
   pointOfContactName: string;
   pointOfContactEmail: string;
+  jobTitle: string;
   memberCompanyName: string;
   memberCompanyAddress: string;
   profileImageUrl: string;
@@ -146,6 +149,19 @@ function getAccountLabel(
   return connections.find((connection) => connection.provider === provider)?.accountLabel ?? "";
 }
 
+function shouldAskJobTitle(role: UserRole) {
+  return role === "investor" || role === "employee";
+}
+
+function getInitialJobTitle(role: UserRole, title?: string | null) {
+  const trimmed = title?.trim() ?? "";
+  if (!shouldAskJobTitle(role)) {
+    return "";
+  }
+
+  return /^(investor|employee)$/i.test(trimmed) ? "" : trimmed;
+}
+
 function getStartingQuestion(step: RegistrationFlowStep) {
   switch (step) {
     case "socials":
@@ -158,13 +174,17 @@ function getStartingQuestion(step: RegistrationFlowStep) {
   }
 }
 
-function getVcQuestionOrder(isVcUser: boolean): QuestionId[] {
+function getVcQuestionOrder(isVcUser: boolean, asksJobTitle: boolean): QuestionId[] {
   return [
     "vc_selection",
     "vc_website",
     "vc_contact_name",
     "vc_contact_email",
-    ...(isVcUser ? [] : (["member_company_name", "member_company_address"] as QuestionId[])),
+    ...(isVcUser
+      ? asksJobTitle
+        ? (["job_title"] as QuestionId[])
+        : []
+      : (["member_company_name", ...(asksJobTitle ? (["job_title"] as QuestionId[]) : []), "member_company_address"] as QuestionId[])),
   ];
 }
 
@@ -187,22 +207,26 @@ function isListedVcSelection(draft: DraftState, vcOptions: VcOption[]) {
   return Boolean(draft.selectedCompanyId && draft.selectedCompanyId !== "manual" && vcOptions.some((option) => option.id === draft.selectedCompanyId));
 }
 
-function getNextQuestion(currentQuestionId: QuestionId, isVcUser: boolean, draft: DraftState, vcOptions: VcOption[]) {
+function getNextQuestion(currentQuestionId: QuestionId, isVcUser: boolean, asksJobTitle: boolean, draft: DraftState, vcOptions: VcOption[]) {
   if (currentQuestionId === "vc_selection" && isListedVcSelection(draft, vcOptions)) {
+    if (isVcUser && asksJobTitle) {
+      return "job_title";
+    }
+
     return isVcUser ? "linkedin_url" : "member_company_name";
   }
 
-  const allQuestions = [...getVcQuestionOrder(isVcUser), ...getSocialQuestionOrder()];
+  const allQuestions = [...getVcQuestionOrder(isVcUser, asksJobTitle), ...getSocialQuestionOrder()];
   const currentIndex = allQuestions.indexOf(currentQuestionId);
   return currentIndex >= 0 ? allQuestions[currentIndex + 1] ?? null : null;
 }
 
-function getFinalVcQuestionId(isVcUser: boolean, draft: DraftState, vcOptions: VcOption[]) {
+function getFinalVcQuestionId(isVcUser: boolean, asksJobTitle: boolean, draft: DraftState, vcOptions: VcOption[]) {
   if (isListedVcSelection(draft, vcOptions)) {
-    return isVcUser ? "vc_selection" : "member_company_address";
+    return isVcUser ? (asksJobTitle ? "job_title" : "vc_selection") : "member_company_address";
   }
 
-  return isVcUser ? "vc_contact_email" : "member_company_address";
+  return isVcUser ? (asksJobTitle ? "job_title" : "vc_contact_email") : "member_company_address";
 }
 
 function describeSelection(draft: DraftState, vcOptions: VcOption[]) {
@@ -242,6 +266,12 @@ function getPromptForQuestion(questionId: QuestionId, draft: DraftState, vcOptio
         prompt: "And what is the best point-of-contact email?",
         placeholder: "partner@yourvc.com",
         type: "email",
+      };
+    case "job_title":
+      return {
+        prompt: "What job title should I save on your Meshed profile?",
+        helper: "Examples: CEO, Managing Director, Principal, Product Manager.",
+        placeholder: "Managing Director",
       };
     case "member_company_name":
       return {
@@ -323,12 +353,13 @@ function getPromptForQuestion(questionId: QuestionId, draft: DraftState, vcOptio
   }
 }
 
-function getSummaryRows(draft: DraftState, isVcUser: boolean) {
+function getSummaryRows(draft: DraftState, isVcUser: boolean, asksJobTitle: boolean) {
   return [
     { label: "VC", value: draft.companyName || "Not answered yet" },
     { label: "VC site", value: draft.website || "Not answered yet" },
     { label: "POC", value: draft.pointOfContactName || "Not answered yet" },
     { label: "POC email", value: draft.pointOfContactEmail || "Not answered yet" },
+    ...(asksJobTitle ? [{ label: "Job title", value: draft.jobTitle || "Not answered yet" }] : []),
     ...(isVcUser
       ? []
       : [
@@ -351,6 +382,7 @@ function getSummaryRows(draft: DraftState, isVcUser: boolean) {
 export function OnboardingChatbot({
   currentStep,
   currentUserName,
+  currentUserTitle = null,
   currentUserProfileImageUrl = null,
   currentUserRole,
   vcCompany,
@@ -362,6 +394,7 @@ export function OnboardingChatbot({
 }: OnboardingChatbotProps) {
   const router = useRouter();
   const isVcUser = currentUserRole === "investor";
+  const asksJobTitle = shouldAskJobTitle(currentUserRole);
   const painPointCompany = memberCompany ?? vcCompany;
   const [step, setStep] = useState<RegistrationFlowStep>(currentStep);
   const [job, setJob] = useState<NetworkPreparationJobSummary | null>(latestNetworkJob);
@@ -371,6 +404,7 @@ export function OnboardingChatbot({
     website: vcCompany?.website ?? "",
     pointOfContactName: vcCompany?.pointOfContactName ?? "",
     pointOfContactEmail: vcCompany?.pointOfContactEmail ?? "",
+    jobTitle: getInitialJobTitle(currentUserRole, currentUserTitle),
     memberCompanyName: memberCompany?.name ?? "",
     memberCompanyAddress: memberCompany?.address ?? "",
     profileImageUrl: currentUserProfileImageUrl ?? "",
@@ -401,7 +435,7 @@ export function OnboardingChatbot({
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const summaryRows = useMemo(() => getSummaryRows(draft, isVcUser), [draft, isVcUser]);
+  const summaryRows = useMemo(() => getSummaryRows(draft, isVcUser, asksJobTitle), [draft, isVcUser, asksJobTitle]);
   const portfolioCount = Number((job?.result?.summary as { portfolio_company_count?: number } | undefined)?.portfolio_company_count ?? 0);
   const lpCount = Number((job?.result?.summary as { lp_contact_count?: number } | undefined)?.lp_contact_count ?? 0);
   const scannedCompanyCount = Number((job?.result?.summary as { company_scan_count?: number } | undefined)?.company_scan_count ?? 0);
@@ -438,6 +472,7 @@ export function OnboardingChatbot({
       const fieldValueMap: Partial<Record<QuestionId, string>> = {
         vc_contact_name: draft.pointOfContactName,
         vc_contact_email: draft.pointOfContactEmail,
+        job_title: draft.jobTitle,
         member_company_name: draft.memberCompanyName,
         member_company_address: draft.memberCompanyAddress,
         profile_image: draft.profileImageUrl,
@@ -586,6 +621,11 @@ export function OnboardingChatbot({
           return { error: "Give me a valid point-of-contact email so Meshed can keep the right human in the loop." };
         }
         return { nextDraft: { ...currentDraft, pointOfContactEmail: answer.toLowerCase() }, userEcho: answer.toLowerCase() };
+      case "job_title":
+        if (!answer) {
+          return { error: "Tell me the job title Meshed should save for your profile." };
+        }
+        return { nextDraft: { ...currentDraft, jobTitle: answer }, userEcho: answer };
       case "member_company_name":
         if (!answer) {
           return { error: "Tell me the company you represent so Meshed can route value back to the right team." };
@@ -640,6 +680,7 @@ export function OnboardingChatbot({
         website: nextDraft.website,
         pointOfContactName: nextDraft.pointOfContactName,
         pointOfContactEmail: nextDraft.pointOfContactEmail,
+        jobTitle: asksJobTitle ? nextDraft.jobTitle : null,
         memberCompanyName: isVcUser ? null : nextDraft.memberCompanyName,
         memberCompanyAddress: isVcUser ? null : nextDraft.memberCompanyAddress,
       }),
@@ -745,8 +786,8 @@ export function OnboardingChatbot({
     setDraft(nextDraft);
 
     try {
-      const nextQuestionId = getNextQuestion(questionId, isVcUser, nextDraft, vcOptions);
-      const lastVcQuestion = getFinalVcQuestionId(isVcUser, nextDraft, vcOptions);
+      const nextQuestionId = getNextQuestion(questionId, isVcUser, asksJobTitle, nextDraft, vcOptions);
+      const lastVcQuestion = getFinalVcQuestionId(isVcUser, asksJobTitle, nextDraft, vcOptions);
       const lastSocialQuestion = getSocialQuestionOrder().slice(-1)[0];
 
       if (questionId === lastVcQuestion) {

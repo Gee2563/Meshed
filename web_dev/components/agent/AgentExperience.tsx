@@ -26,6 +26,7 @@ type VcOption = {
 
 type AgentExperienceProps = {
   currentUserName: string;
+  currentUserTitle?: string | null;
   currentUserProfileImageUrl?: string | null;
   currentUserVerified: boolean;
   currentUserRole: UserRole;
@@ -95,12 +96,16 @@ function describeRole(role: UserRole) {
   switch (role) {
     case "investor":
       return "investor";
+    case "employee":
+      return "employee";
+    case "founder":
+      return "founder";
     case "mentor":
-      return "advisor";
+      return "employee";
     case "consultant":
-      return "operator-side consultant";
+      return "employee";
     case "operator":
-      return "founder or operator";
+      return "founder";
     default:
       return "network member";
   }
@@ -184,7 +189,7 @@ function buildAgentIntroContext(input: {
                 : "As you add channels, I can keep that context in mind alongside the Meshed graph and verified interactions.",
           },
         ]
-      : input.role === "mentor" || input.role === "consultant"
+      : input.role === "employee" || input.role === "mentor" || input.role === "consultant"
         ? [
             {
               title: "Find teams that match your edge",
@@ -243,7 +248,7 @@ function buildAgentIntroContext(input: {
       ];
     }
 
-    if (input.role === "mentor" || input.role === "consultant") {
+    if (input.role === "employee" || input.role === "mentor" || input.role === "consultant") {
       return [
         primaryPainTag
           ? `Which teams in ${vcCompanyName ?? "the network"} are feeling ${primaryPainTag.toLowerCase()} and look like a strong fit for my help?`
@@ -278,6 +283,7 @@ function buildAgentIntroContext(input: {
 
 export function AgentExperience({
   currentUserName,
+  currentUserTitle,
   currentUserProfileImageUrl,
   currentUserVerified,
   currentUserRole,
@@ -393,6 +399,7 @@ export function AgentExperience({
             key={`${setupMode ? "setup" : "default"}-${phase}`}
             currentStep={setupCurrentStep}
             currentUserName={currentUserName}
+            currentUserTitle={currentUserTitle}
             currentUserProfileImageUrl={currentUserProfileImageUrl}
             currentUserRole={currentUserRole}
             vcCompany={vcCompany}

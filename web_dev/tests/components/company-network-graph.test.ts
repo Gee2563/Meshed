@@ -285,12 +285,12 @@ describe("CompanyNetworkGraph", () => {
       personButton?.click();
     });
 
-    expect(container.querySelector('[data-testid="company-person-modal"]')).not.toBeNull();
-    expect(container.textContent).toContain("People details");
-    expect(container.textContent).toContain("alex.wilson19@battlebound.example");
-    expect(container.textContent).toContain("Trusted Mentor");
+    expect(document.body.querySelector('[data-testid="company-person-modal"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("People details");
+    expect(document.body.textContent).toContain("alex.wilson19@battlebound.example");
+    expect(document.body.textContent).toContain("Trusted Mentor");
 
-    const connectButton = [...container.querySelectorAll("button")].find((button) =>
+    const connectButton = [...document.body.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("Connect on Meshed"),
     );
     expect(connectButton).toBeDefined();

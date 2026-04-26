@@ -339,6 +339,6 @@ describe("dashboard page", () => {
     expect(markup).toContain("Meshed people connections");
     expect(markup).toContain("AgentNotificationsPanel");
     expect(markup).toContain("ConnectionsPanel");
-    expect(markup).toContain("Verified Humans and Managed Access");
+    expect(markup).toContain("Trusted coordination starts with a verified human");
   });
 });

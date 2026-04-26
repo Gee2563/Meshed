@@ -10,6 +10,8 @@ datasource db {
 enum UserRole {
   COMPANY
   CONSULTANT
+  EMPLOYEE
+  FOUNDER
   MENTOR
   OPERATOR
   INVESTOR

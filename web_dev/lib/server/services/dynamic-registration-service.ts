@@ -35,7 +35,7 @@ type DynamicRegistrationDependencies = {
       id: string;
       name: string;
       email: string;
-      role: "OPERATOR" | "INVESTOR";
+      role: "FOUNDER" | "INVESTOR" | "EMPLOYEE";
       bio: string;
       skills: string[];
       sectors: string[];
@@ -46,7 +46,7 @@ type DynamicRegistrationDependencies = {
       userId: string,
       data: {
         name?: string;
-        role?: "OPERATOR" | "INVESTOR";
+        role?: "FOUNDER" | "INVESTOR" | "EMPLOYEE";
         bio?: string;
         skills?: string[];
         sectors?: string[];
@@ -219,7 +219,7 @@ async function ensurePortfolioInviteScaffold(
 async function ensureUserForInvite(
   deps: DynamicRegistrationDependencies,
   input: DynamicRegistrationInput,
-  role: "OPERATOR" | "INVESTOR",
+  role: "FOUNDER" | "INVESTOR" | "EMPLOYEE",
   outsideNetworkAccessEnabled: boolean,
 ) {
   const existingUser =
@@ -268,7 +268,7 @@ export function createDynamicRegistrationService(deps: DynamicRegistrationDepend
       const user = await ensureUserForInvite(
         deps,
         { ...input, email },
-        invite.role === "operator" ? "OPERATOR" : "INVESTOR",
+        invite.role.toUpperCase() as "FOUNDER" | "INVESTOR" | "EMPLOYEE",
         invite.outsideNetworkAccessEnabled,
       );
 

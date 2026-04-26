@@ -9,10 +9,14 @@ import {
 } from "@/lib/server/services/onboarding-service";
 
 describe("resolveCurrentStep", () => {
-  it("uses portfolio-aware membership labels for operator onboarding", () => {
+  it("uses portfolio-aware membership labels for founder onboarding", () => {
     expect(vcMembershipRelationForRole("operator")).toBe("portfolio_network_member");
-    expect(vcMembershipTitleForRole("operator")).toBe("Portfolio Company Founder / Operator");
+    expect(vcMembershipTitleForRole("operator")).toBe("Portfolio Company Founder");
     expect(memberCompanyRelationForRole("operator")).toBe("portfolio_member");
+  });
+
+  it("uses the supplied job title for investor VC membership labels", () => {
+    expect(vcMembershipTitleForRole("investor", "Managing Director")).toBe("Managing Director");
   });
 
   it("dedupes listed VCs against manual DB entries for the same firm", () => {

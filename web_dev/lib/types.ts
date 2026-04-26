@@ -2,6 +2,8 @@
 export type UserRole =
   | "company"
   | "consultant"
+  | "employee"
+  | "founder"
   | "mentor"
   | "operator"
   | "investor"
