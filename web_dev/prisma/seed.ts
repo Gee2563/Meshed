@@ -26,7 +26,7 @@ function buildUserMetrics(user: SeedUser) {
   if (user.worldVerified) engagementScore += 10;
   if (user.walletAddress) engagementScore += 10;
   if (user.outsideNetworkAccessEnabled) engagementScore += 6;
-  if (user.role === UserRole.MENTOR || user.role === UserRole.CONSULTANT || user.role === UserRole.INVESTOR) {
+  if (user.role === UserRole.EMPLOYEE || user.role === UserRole.INVESTOR) {
     engagementScore += 8;
   }
 
@@ -54,7 +54,7 @@ const users: SeedUser[] = [
     name: "George Daniels",
     email: "georgegds92@gmail.com",
     role: UserRole.INVESTOR,
-    bio: "Flexpoint Ford operator focused on portfolio support, founder intros, and verified relationship workflows.",
+    bio: "Flexpoint Ford Principal focused on portfolio support, founder intros, and verified relationship workflows.",
     skills: ["portfolio-ops", "partnerships", "introductions"],
     sectors: ["fintech", "enterprise", "ai"],
     linkedinUrl: "https://www.linkedin.com/in/george-daniels-meshed",
@@ -68,7 +68,7 @@ const users: SeedUser[] = [
     id: "usr_consultant_nina",
     name: "Nina Volkov",
     email: "nina@northmesh.io",
-    role: UserRole.CONSULTANT,
+    role: UserRole.EMPLOYEE,
     bio: "Pricing and monetization consultant for Series A and B fintech teams.",
     skills: ["pricing", "ops", "revenue"],
     sectors: ["fintech", "payments"],
@@ -83,7 +83,7 @@ const users: SeedUser[] = [
     id: "usr_mentor_theo",
     name: "Theo Mercer",
     email: "theo@orbitpartners.io",
-    role: UserRole.MENTOR,
+    role: UserRole.EMPLOYEE,
     bio: "Operator-mentor for go-to-market and portfolio growth systems.",
     skills: ["go-to-market", "pricing", "ops"],
     sectors: ["fintech", "saas"],
@@ -98,7 +98,7 @@ const users: SeedUser[] = [
     id: "usr_operator_iris",
     name: "Iris Shaw",
     email: "iris@opsmesh.io",
-    role: UserRole.OPERATOR,
+    role: UserRole.FOUNDER,
     bio: "Fractional operator for onboarding, retention, and milestone delivery.",
     skills: ["ops", "onboarding", "retention"],
     sectors: ["saas", "healthtech"],
@@ -128,7 +128,7 @@ const users: SeedUser[] = [
     id: "usr_consultant_lena",
     name: "Lena Brooks",
     email: "lena@signaladvisory.io",
-    role: UserRole.CONSULTANT,
+    role: UserRole.EMPLOYEE,
     bio: "Growth consultant helping portfolio companies tighten onboarding and pricing systems.",
     skills: ["growth", "pricing", "onboarding"],
     sectors: ["saas", "fintech"],
@@ -143,7 +143,7 @@ const users: SeedUser[] = [
     id: "usr_mentor_priya",
     name: "Priya Desai",
     email: "priya@founderloops.io",
-    role: UserRole.MENTOR,
+    role: UserRole.EMPLOYEE,
     bio: "Founder coach and network mentor for enterprise pilots and commercial strategy.",
     skills: ["enterprise-sales", "mentoring", "strategy"],
     sectors: ["enterprise", "ai"],
@@ -158,7 +158,7 @@ const users: SeedUser[] = [
     id: "usr_operator_marcus",
     name: "Marcus Hale",
     email: "marcus@stackoperators.io",
-    role: UserRole.OPERATOR,
+    role: UserRole.FOUNDER,
     bio: "Embedded operator for portfolio onboarding, lifecycle reporting, and execution rhythms.",
     skills: ["operations", "analytics", "reporting"],
     sectors: ["enterprise", "fintech"],

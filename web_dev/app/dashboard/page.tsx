@@ -457,7 +457,7 @@ export default async function DashboardPage() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Role</p>
-                  <p className="mt-2 text-base font-semibold text-ink">{titleCase(currentUser.role)}</p>
+                  <p className="mt-2 text-base font-semibold text-ink">{onboardingProfile?.title || titleCase(currentUser.role)}</p>
                   <p className="mt-1 text-sm text-slate">Operating with a World-backed Meshed session.</p>
                 </div>
                 <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">

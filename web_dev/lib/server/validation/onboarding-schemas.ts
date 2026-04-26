@@ -9,6 +9,7 @@ export const vcSelectionSchema = z
     pointOfContactEmail: z.string().trim().email().optional().nullable().or(z.literal("")),
     memberCompanyName: z.string().trim().optional().nullable(),
     memberCompanyAddress: z.string().trim().optional().nullable(),
+    jobTitle: z.string().trim().optional().nullable().or(z.literal("")),
   })
   .superRefine((value, context) => {
     if (!value.selectedCompanyId && !value.companyName?.trim()) {

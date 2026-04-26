@@ -4,7 +4,7 @@ export type DynamicInviteRecord = {
   email: string;
   kind: DynamicInviteKind;
   nextRoute: DynamicNextRoute;
-  role: "operator" | "investor";
+  role: "founder" | "investor" | "employee";
   outsideNetworkAccessEnabled: boolean;
   onboardingMode: "individual" | "company";
   onboardingStep: "complete" | "vc_company";
@@ -50,7 +50,7 @@ const inviteRegistry: DynamicInviteRecord[] = [
     outsideNetworkAccessEnabled: true,
     onboardingMode: "individual",
     onboardingStep: "complete",
-    title: "Investor",
+    title: "Principal",
     vcCompanyId: "co_invite_flexpoint_ford",
     vcCompanyName: "Flexpoint Ford",
   },
@@ -58,7 +58,7 @@ const inviteRegistry: DynamicInviteRecord[] = [
     email: "georgegds92+1@gmail.com",
     kind: "portfolio_member",
     nextRoute: "/agent",
-    role: "operator",
+    role: "employee",
     outsideNetworkAccessEnabled: false,
     onboardingMode: "individual",
     onboardingStep: "complete",

@@ -44,7 +44,7 @@ export const worldVerifySchema = z
 export const worldRegisterSchema = z.object({
   name: z.string().min(1),
   email: z.string().email().optional().nullable().or(z.literal("")),
-  role: z.enum(["consultant", "mentor", "operator", "investor"]).default("operator"),
+  role: z.enum(["founder", "investor", "employee"]).default("founder"),
   verification: worldVerifySchema,
 });
 
@@ -95,7 +95,7 @@ export const companyAccessSchema = z.object({
 export const individualRegisterSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  role: z.enum(["consultant", "mentor", "operator", "investor"]),
+  role: z.enum(["founder", "investor", "employee"]),
   bio: z.string().min(10),
   skills: z.array(z.string().min(1)).min(1),
   sectors: z.array(z.string().min(1)).min(1),
@@ -103,7 +103,7 @@ export const individualRegisterSchema = z.object({
 });
 
 export const individualProfileSchema = z.object({
-  role: z.enum(["consultant", "mentor", "operator", "investor"]),
+  role: z.enum(["founder", "investor", "employee"]),
   bio: z.string().min(10),
   skills: z.array(z.string().min(1)).min(1),
   sectors: z.array(z.string().min(1)).min(1),

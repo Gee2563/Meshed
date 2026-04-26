@@ -9,7 +9,7 @@ function createUserSummary(overrides?: Partial<UserSummary>): UserSummary {
     id: "usr_world",
     name: "George Morris",
     email: "george@meshed.local",
-    role: "operator",
+    role: "founder",
     bio: "New Meshed member authenticated and registered with World ID.",
     skills: [],
     sectors: [],
@@ -37,7 +37,7 @@ function createOnboardingProfileSummary(
     vcCompanyId: null,
     portfolioCompanyId: null,
     mode: "individual",
-    title: "Operator",
+    title: "Founder",
     isExecutive: false,
     executiveSignoffEmail: null,
     currentStep: "vc_company",
@@ -133,7 +133,7 @@ describe("world registration service", () => {
     const result = await service.register({
       name: "George Morris",
       email: "george@example.com",
-      role: "operator",
+      role: "founder",
       verification: {
         protocol_version: "3.0",
         nonce: "0xnonce",
@@ -170,7 +170,7 @@ describe("world registration service", () => {
       id: "usr_generated",
       email: "world-0xfeedface@meshed.local",
       name: "George Morris",
-      role: "operator",
+      role: "founder",
       worldVerified: false,
     });
     const verifiedUser = {
@@ -181,7 +181,7 @@ describe("world registration service", () => {
     const onboardingProfile = createOnboardingProfileSummary({
       id: "onb_generated",
       userId: createdUser.id,
-      title: "Operator",
+      title: "Founder",
     });
 
     mocks.verifyPayload.mockResolvedValue({
@@ -200,7 +200,7 @@ describe("world registration service", () => {
     const result = await service.register({
       name: "  George   Morris  ",
       email: "",
-      role: "operator",
+      role: "founder",
       verification: {
         protocol_version: "3.0",
         nonce: "0xnonce",
@@ -214,7 +214,7 @@ describe("world registration service", () => {
       id: "usr_generated",
       name: "George Morris",
       email: "world-0xfeedface@meshed.local",
-      role: "OPERATOR",
+      role: "FOUNDER",
       bio: "New Meshed member authenticated and registered with World ID.",
       skills: [],
       sectors: [],
@@ -257,7 +257,7 @@ describe("world registration service", () => {
       service.register({
         name: "Alicia Rivers",
         email: "alicia@example.com",
-        role: "operator",
+        role: "founder",
         verification: {
           protocol_version: "3.0",
           nonce: "0xnonce",
@@ -293,7 +293,7 @@ describe("world registration service", () => {
       service.register({
         name: "George Morris",
         email: "taken@example.com",
-        role: "operator",
+        role: "founder",
         verification: {
           protocol_version: "3.0",
           nonce: "0xnonce",

@@ -42,6 +42,7 @@ describe("POST /api/onboarding/vc", () => {
           website: "https://a16z.com",
           pointOfContactName: "Dana Partner",
           pointOfContactEmail: "dana@a16z.com",
+          jobTitle: "Managing Director",
           memberCompanyName: "Acme AI",
           memberCompanyAddress: "123 Market St, San Francisco, CA",
         }),
@@ -53,6 +54,7 @@ describe("POST /api/onboarding/vc", () => {
       expect.objectContaining({
         selectedCompanyId: "known-a16z-crypto",
         website: "https://a16z.com",
+        jobTitle: "Managing Director",
         memberCompanyName: "Acme AI",
       }),
     );
@@ -75,6 +77,7 @@ describe("POST /api/onboarding/vc", () => {
           website: "https://flexpointford.com",
           pointOfContactName: "",
           pointOfContactEmail: "",
+          jobTitle: "",
           memberCompanyName: "Acme AI",
           memberCompanyAddress: "123 Market St, San Francisco, CA",
         }),

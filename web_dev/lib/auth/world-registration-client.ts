@@ -14,7 +14,7 @@ export async function registerWorldMeshedAccount(
   payload: {
     name: string;
     email?: string | null;
-    role: "consultant" | "mentor" | "operator" | "investor";
+    role: "founder" | "investor" | "employee";
     verification: unknown;
   },
   input: {

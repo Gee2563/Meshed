@@ -9,7 +9,7 @@ import { requestWorldRpSignature } from "@/lib/auth/world-verification-client";
 import { registerWorldMeshedAccount } from "@/lib/auth/world-registration-client";
 import { clientEnv } from "@/lib/config/env";
 
-type RegistrationRole = "consultant" | "mentor" | "operator" | "investor";
+type RegistrationRole = "founder" | "investor" | "employee";
 
 const registrationSignal = "meshed-world-registration";
 
@@ -22,7 +22,7 @@ export function WorldRegistrationPanel() {
   const worldReady = Boolean(clientEnv.worldAppId && clientEnv.worldRpId) && !clientEnv.useMockWorld;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<RegistrationRole>("operator");
+  const [role, setRole] = useState<RegistrationRole>("founder");
   const [open, setOpen] = useState(false);
   const [loadingRequest, setLoadingRequest] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -110,10 +110,9 @@ export function WorldRegistrationPanel() {
             onChange={(event) => setRole(event.target.value as RegistrationRole)}
             className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
           >
-            <option value="operator">Founder / operator</option>
+            <option value="founder">Founder</option>
             <option value="investor">Investor</option>
-            <option value="mentor">Mentor</option>
-            <option value="consultant">Consultant</option>
+            <option value="employee">Employee</option>
           </select>
         </label>
 

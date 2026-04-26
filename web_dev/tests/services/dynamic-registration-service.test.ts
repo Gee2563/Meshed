@@ -273,7 +273,7 @@ describe("dynamic registration service", () => {
     });
 
     expect(result.nextRoute).toBe("/agent");
-    expect(result.user.role).toBe("operator");
+    expect(result.user.role).toBe("employee");
     expect(result.user.outsideNetworkAccessEnabled).toBe(false);
     expect(result.onboardingProfile.mode).toBe("individual");
     expect(result.onboardingProfile.currentStep).toBe("complete");

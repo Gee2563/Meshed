@@ -51,7 +51,7 @@ export const userRepository = {
     id: string;
     name: string;
     email: string;
-    role: "COMPANY" | "CONSULTANT" | "MENTOR" | "OPERATOR" | "INVESTOR" | "ADMIN";
+    role: "COMPANY" | "CONSULTANT" | "EMPLOYEE" | "FOUNDER" | "MENTOR" | "OPERATOR" | "INVESTOR" | "ADMIN";
     bio: string;
     skills: string[];
     sectors: string[];
@@ -75,7 +75,7 @@ export const userRepository = {
     userId: string,
     data: {
       name?: string;
-      role?: "COMPANY" | "CONSULTANT" | "MENTOR" | "OPERATOR" | "INVESTOR" | "ADMIN";
+      role?: "COMPANY" | "CONSULTANT" | "EMPLOYEE" | "FOUNDER" | "MENTOR" | "OPERATOR" | "INVESTOR" | "ADMIN";
       bio?: string;
       skills?: string[];
       sectors?: string[];

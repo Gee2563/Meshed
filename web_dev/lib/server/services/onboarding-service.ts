@@ -27,6 +27,7 @@ type VcSelectionInput = {
   pointOfContactEmail?: string | null;
   memberCompanyName?: string | null;
   memberCompanyAddress?: string | null;
+  jobTitle?: string | null;
 };
 
 type SocialsInput = {
@@ -70,40 +71,69 @@ function normalizeWebsite(input: string) {
   return /^https?:\/\//i.test(trimmed) ? trimmed.replace(/\/+$/, "") : `https://${trimmed.replace(/^\/+/, "").replace(/\/+$/, "")}`;
 }
 
-function titleForRole(role: UserSummary["role"]) {
+function normalizeJobTitle(value?: string | null) {
+  return value?.trim().replace(/\s+/g, " ") ?? "";
+}
+
+function isInvestorRole(role: UserSummary["role"]) {
+  return role === "investor";
+}
+
+function isFounderRole(role: UserSummary["role"]) {
+  return role === "founder" || role === "operator";
+}
+
+function roleUsesJobTitle(role: UserSummary["role"]) {
+  return role === "investor" || role === "employee";
+}
+
+function titleForRole(role: UserSummary["role"], jobTitle?: string | null) {
+  const normalizedJobTitle = normalizeJobTitle(jobTitle);
+  if (roleUsesJobTitle(role) && normalizedJobTitle) {
+    return normalizedJobTitle;
+  }
+
   switch (role) {
     case "investor":
       return "Investor";
+    case "employee":
+      return "Employee";
+    case "founder":
+      return "Founder";
     case "mentor":
-      return "Mentor";
+      return "Employee";
     case "consultant":
-      return "Consultant";
+      return "Employee";
     case "operator":
-      return "Founder / Operator";
+      return "Founder";
     default:
       return "Member";
   }
 }
 
 export function vcMembershipRelationForRole(role: UserSummary["role"]) {
-  if (role === "investor") {
+  if (isInvestorRole(role)) {
     return "vc_member";
   }
 
-  if (role === "operator") {
+  if (isFounderRole(role)) {
     return "portfolio_network_member";
   }
 
   return "network_member";
 }
 
-export function vcMembershipTitleForRole(role: UserSummary["role"]) {
-  if (role === "investor") {
-    return titleForRole(role);
+export function vcMembershipTitleForRole(role: UserSummary["role"], jobTitle?: string | null) {
+  if (isInvestorRole(role)) {
+    return titleForRole(role, jobTitle);
   }
 
-  if (role === "operator") {
-    return "Portfolio Company Founder / Operator";
+  if (isFounderRole(role)) {
+    return "Portfolio Company Founder";
+  }
+
+  if (role === "employee") {
+    return "Employee";
   }
 
   if (role === "mentor") {
@@ -118,7 +148,7 @@ export function vcMembershipTitleForRole(role: UserSummary["role"]) {
 }
 
 export function memberCompanyRelationForRole(role: UserSummary["role"]) {
-  if (role === "operator") {
+  if (isFounderRole(role)) {
     return "portfolio_member";
   }
 
@@ -126,7 +156,7 @@ export function memberCompanyRelationForRole(role: UserSummary["role"]) {
 }
 
 function requiresMemberCompany(role: UserSummary["role"]) {
-  return role !== "investor";
+  return !isInvestorRole(role);
 }
 
 function parsePainPointTags(value: string | null | undefined) {
@@ -450,6 +480,8 @@ export const onboardingService = {
     const normalizedPointOfContactEmail = pointOfContactEmail || null;
     const memberCompanyName = input.memberCompanyName?.trim() ?? "";
     const memberCompanyAddress = input.memberCompanyAddress?.trim() ?? "";
+    const jobTitle = normalizeJobTitle(input.jobTitle);
+    const profileTitle = titleForRole(user.role, jobTitle);
     let vcCompany: CompanySummary | null = null;
     let memberCompany: CompanySummary | null = null;
     let selectedKnownOrganization: ReturnType<typeof listKnownVcOrganizations>[number] | null = null;
@@ -536,8 +568,8 @@ export const onboardingService = {
           stage: knownCompanyContext?.stage ?? existingMemberCompany.stage,
           address: memberCompanyAddress,
           website: knownCompanyContext?.website || existingMemberCompany.website || "",
-          companyKind: user.role === "operator" ? "PORTFOLIO" : "OPERATING",
-          parentCompanyId: user.role === "operator" ? vcCompany.id : null,
+          companyKind: isFounderRole(user.role) ? "PORTFOLIO" : "OPERATING",
+          parentCompanyId: isFounderRole(user.role) ? vcCompany.id : null,
         });
       } else {
         const matchedCompany = await companyRepository.findByName(memberCompanyName);
@@ -549,23 +581,23 @@ export const onboardingService = {
             stage: knownCompanyContext?.stage ?? matchedCompany.stage,
             address: memberCompanyAddress,
             website: knownCompanyContext?.website || matchedCompany.website || "",
-            companyKind: user.role === "operator" ? "PORTFOLIO" : "OPERATING",
-            parentCompanyId: user.role === "operator" ? vcCompany.id : null,
+            companyKind: isFounderRole(user.role) ? "PORTFOLIO" : "OPERATING",
+            parentCompanyId: isFounderRole(user.role) ? vcCompany.id : null,
           });
         } else {
           memberCompany = await companyRepository.create({
             id: `co_member_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
             name: memberCompanyName,
             description: `${memberCompanyName} onboarding company`,
-            sector: knownCompanyContext?.sector ?? (user.role === "operator" ? "portfolio company" : "operating company"),
+            sector: knownCompanyContext?.sector ?? (isFounderRole(user.role) ? "portfolio company" : "operating company"),
             stage: knownCompanyContext?.stage ?? "active",
             website: knownCompanyContext?.website ?? "",
             address: memberCompanyAddress,
             ownerUserId: user.id,
             currentPainTags: knownCompanyContext?.currentPainTags ?? [],
             resolvedPainTags: knownCompanyContext?.resolvedPainTags ?? [],
-            companyKind: user.role === "operator" ? "PORTFOLIO" : "OPERATING",
-            parentCompanyId: user.role === "operator" ? vcCompany.id : null,
+            companyKind: isFounderRole(user.role) ? "PORTFOLIO" : "OPERATING",
+            parentCompanyId: isFounderRole(user.role) ? vcCompany.id : null,
           });
         }
       }
@@ -587,7 +619,7 @@ export const onboardingService = {
       userId: user.id,
       companyId: vcCompany.id,
       relation: vcMembershipRelationForRole(user.role),
-      title: vcMembershipTitleForRole(user.role),
+      title: vcMembershipTitleForRole(user.role, jobTitle),
     });
 
     if (memberCompany) {
@@ -601,7 +633,7 @@ export const onboardingService = {
         userId: user.id,
         companyId: memberCompany.id,
         relation: memberRelation,
-        title: titleForRole(user.role),
+        title: profileTitle,
       });
     }
 
@@ -610,8 +642,8 @@ export const onboardingService = {
       companyId: memberCompany?.id ?? existingOnboardingProfile?.companyId ?? null,
       vcCompanyId: vcCompany.id,
       mode: "INDIVIDUAL",
-      title: titleForRole(user.role),
-      isExecutive: user.role === "investor",
+      title: profileTitle,
+      isExecutive: isInvestorRole(user.role),
       currentStep: "SOCIALS",
     });
 
@@ -718,8 +750,8 @@ export const onboardingService = {
     const onboardingProfile = await onboardingRepository.upsertByUserId(user.id, {
       id: `onb_${user.id}`,
       mode: "INDIVIDUAL",
-      title: titleForRole(user.role),
-      isExecutive: user.role === "investor",
+      title: onboardingProfileState?.title || titleForRole(user.role),
+      isExecutive: isInvestorRole(user.role),
       currentStep,
     });
 
@@ -742,8 +774,8 @@ export const onboardingService = {
       id: state.onboardingProfile?.id ?? `onb_${user.id}`,
       vcCompanyId: state.vcCompany.id,
       mode: "INDIVIDUAL",
-      title: titleForRole(user.role),
-      isExecutive: user.role === "investor",
+      title: state.onboardingProfile?.title || titleForRole(user.role),
+      isExecutive: isInvestorRole(user.role),
       currentStep: "NETWORK_PREPARING",
     });
 
