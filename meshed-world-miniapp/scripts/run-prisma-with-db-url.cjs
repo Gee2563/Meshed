@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 const { spawnSync } = require("node:child_process");
 
+try {
+  require("@next/env").loadEnvConfig(process.cwd());
+} catch {
+  // Prisma generate does not need database access, so a fallback URL is enough
+  // when this helper runs before Next's env loader is available.
+}
+
 const [, , ...prismaArgs] = process.argv;
 if (prismaArgs.length === 0) {
   console.error("Usage: node scripts/run-prisma-with-db-url.cjs <prisma-args...>");
