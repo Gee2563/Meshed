@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import { useId, useMemo, useState, type ChangeEvent } from "react";
+import { cn } from "@/lib/utils";
 
 type ProfileImageUploaderProps = {
   initialImageUrl?: string | null;
   displayName: string;
-  label?: string;
-  description?: string;
+  label?: string | null;
+  description?: string | null;
   compact?: boolean;
+  frameClassName?: string;
   onUploaded?: (imageUrl: string) => void;
 };
 
@@ -31,6 +33,7 @@ export function ProfileImageUploader({
   label = "Profile image",
   description = "Upload a headshot or brand image for your Meshed profile.",
   compact = false,
+  frameClassName,
   onUploaded,
 }: ProfileImageUploaderProps) {
   const inputId = useId();
@@ -38,6 +41,7 @@ export function ProfileImageUploader({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initials = useMemo(() => initialsForName(displayName), [displayName]);
+  const hasMetaCopy = Boolean(label?.trim() || description?.trim());
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -73,13 +77,18 @@ export function ProfileImageUploader({
     }
   }
 
-  const frameSizeClass = compact ? "h-20 w-20" : "h-28 w-28";
+  const frameSizeClass = compact ? "h-28 w-28" : "h-28 w-28";
+  const buttonLabel = pending ? "Uploading..." : imageUrl ? "Replace image" : "Upload image";
 
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>
-      <div className={compact ? "flex items-center gap-4" : "flex flex-col items-start gap-4 sm:flex-row sm:items-center"}>
+      <div className={compact ? "flex flex-col items-center gap-4" : "flex flex-col items-start gap-4 sm:flex-row sm:items-center"}>
         <div
-          className={`relative ${frameSizeClass} overflow-hidden rounded-[1.5rem] border border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#eef2ff)] shadow-sm`}
+          className={cn(
+            "relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#eef2ff)] shadow-sm",
+            frameSizeClass,
+            frameClassName,
+          )}
         >
           {imageUrl ? (
             <Image src={imageUrl} alt={`${displayName} profile image`} fill className="object-cover" unoptimized />
@@ -90,23 +99,29 @@ export function ProfileImageUploader({
           )}
         </div>
 
-        <div className="space-y-2">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-            <p className="mt-1 max-w-md text-sm leading-6 text-slate-600">{description}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
+        <div className={`space-y-2 ${compact ? "text-center" : ""}`}>
+          {hasMetaCopy ? (
+            <div>
+              {label?.trim() ? (
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+              ) : null}
+              {description?.trim() ? (
+                <p className="mt-1 max-w-md text-sm leading-6 text-slate-600">{description}</p>
+              ) : null}
+            </div>
+          ) : null}
+          <div className={`flex flex-wrap items-center gap-3 ${compact ? "justify-center" : ""}`}>
             <label
               htmlFor={inputId}
               className={`inline-flex cursor-pointer items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 transition hover:border-sky-300 hover:bg-sky-100 ${
                 pending ? "pointer-events-none opacity-60" : ""
               }`}
             >
-              {pending ? "Uploading..." : imageUrl ? "Replace image" : "Upload image"}
+              {buttonLabel}
             </label>
             {imageUrl ? <span className="text-xs font-medium text-emerald-700">Image ready</span> : null}
           </div>
-          <input id={inputId} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} className="sr-only" />
+          <input id={inputId} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} className="hidden" />
           {error ? <p className="text-sm text-rose-700">{error}</p> : null}
         </div>
       </div>

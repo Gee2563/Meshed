@@ -4,6 +4,7 @@ import { ApiError } from "@/lib/server/http";
 import { onboardingRepository } from "@/lib/server/repositories/onboarding-repository";
 import { userRepository } from "@/lib/server/repositories/user-repository";
 import { worldVerificationNullifierRepository } from "@/lib/server/repositories/world-verification-nullifier-repository";
+import { verifiedInteractionService } from "@/lib/server/services/verified-interaction-service";
 import { worldVerificationService } from "@/lib/server/services/world-verification-service";
 import type { OnboardingProfileSummary, UserSummary } from "@/lib/types";
 
@@ -83,6 +84,9 @@ type WorldRegistrationServiceDependencies = {
         nullifier: string;
       };
     }>;
+  };
+  verifiedInteractionService: {
+    ensureWorldRegistrationInteraction(userId: string): Promise<unknown>;
   };
   idGenerator: {
     userId(): string;
@@ -166,6 +170,7 @@ export function createWorldRegistrationService(deps: WorldRegistrationServiceDep
           isExecutive: existingUser.role === "investor",
           currentStep: "VC_COMPANY",
         });
+        await deps.verifiedInteractionService.ensureWorldRegistrationInteraction(existingUser.id);
 
         return {
           user: verifiedUser,
@@ -208,6 +213,7 @@ export function createWorldRegistrationService(deps: WorldRegistrationServiceDep
         isExecutive: input.role === "investor",
         currentStep: "VC_COMPANY",
       });
+      await deps.verifiedInteractionService.ensureWorldRegistrationInteraction(createdUser.id);
 
       return {
         user: verifiedUser,
@@ -224,6 +230,7 @@ export const worldRegistrationService = createWorldRegistrationService({
   onboardingRepository,
   worldVerificationNullifierRepository,
   worldVerificationService,
+  verifiedInteractionService,
   idGenerator: {
     userId: () => `usr_world_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
     onboardingId: () => `onb_world_${randomUUID().replace(/-/g, "").slice(0, 12)}`,

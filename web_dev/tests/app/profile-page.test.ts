@@ -7,7 +7,9 @@ const mocks = vi.hoisted(() => ({
   ensureDemoState: vi.fn(),
   listDemoUsers: vi.fn(),
   listRecentForUser: vi.fn(),
-  findMany: vi.fn(),
+  ensureWorldRegistrationInteraction: vi.fn(),
+  findMemberships: vi.fn(),
+  findSocialConnections: vi.fn(),
 }));
 
 vi.mock("@/lib/server/current-user", () => ({
@@ -29,19 +31,27 @@ vi.mock("@/lib/server/repositories/user-repository", () => ({
 vi.mock("@/lib/server/services/verified-interaction-service", () => ({
   verifiedInteractionService: {
     listRecentForUser: mocks.listRecentForUser,
+    ensureWorldRegistrationInteraction: mocks.ensureWorldRegistrationInteraction,
   },
 }));
 
 vi.mock("@/lib/server/prisma", () => ({
   prisma: {
     companyMembership: {
-      findMany: mocks.findMany,
+      findMany: mocks.findMemberships,
+    },
+    userSocialConnection: {
+      findMany: mocks.findSocialConnections,
     },
   },
 }));
 
 vi.mock("@/components/LogoutButton", () => ({
   LogoutButton: () => "LogoutButton",
+}));
+
+vi.mock("@/components/profile/EditableProfileOverview", () => ({
+  EditableProfileOverview: (props: { currentUser: { name: string } }) => `EditableProfileOverview:${props.currentUser.name}`,
 }));
 
 vi.mock("@/components/ui/Button", () => ({
@@ -55,7 +65,9 @@ describe("profile page", () => {
     mocks.ensureDemoState.mockReset();
     mocks.listDemoUsers.mockReset();
     mocks.listRecentForUser.mockReset();
-    mocks.findMany.mockReset();
+    mocks.ensureWorldRegistrationInteraction.mockReset();
+    mocks.findMemberships.mockReset();
+    mocks.findSocialConnections.mockReset();
   });
 
   it("shows the session-required fallback when signed out", async () => {
@@ -98,28 +110,21 @@ describe("profile page", () => {
       connectedContactIds: ["usr_consultant_nina"],
       outgoingPendingContactIds: ["usr_operator_iris"],
     });
-    mocks.findMany.mockResolvedValue([
+    mocks.findMemberships.mockResolvedValue([
       {
         id: "mem_1",
-        relation: "owner",
+        relation: "portfolio_member",
         title: "Portfolio lead",
         company: {
           name: "MeshPay",
           sector: "Fintech",
           stage: "Series A",
+          currentPainTags: [],
+          resolvedPainTags: [],
         },
       },
     ]);
-    mocks.listDemoUsers.mockResolvedValue([
-      {
-        id: "usr_consultant_nina",
-        name: "Nina Volkov",
-      },
-      {
-        id: "usr_operator_iris",
-        name: "Iris Hale",
-      },
-    ]);
+    mocks.findSocialConnections.mockResolvedValue([]);
     mocks.listRecentForUser.mockResolvedValue([
       {
         id: "int_1",
@@ -144,15 +149,67 @@ describe("profile page", () => {
         updatedAt: "2026-04-02T09:00:00.000Z",
       },
     ]);
+    mocks.ensureWorldRegistrationInteraction.mockResolvedValue(null);
 
     const { default: ProfilePage } = await import("@/app/profile/page");
     const markup = renderToStaticMarkup(await ProfilePage());
 
     expect(markup).toContain("Avery Collins");
     expect(markup).toContain("MeshPay");
-    expect(markup).toContain("Nina Volkov");
-    expect(markup).toContain("Theo Mercer");
+    expect(markup).toContain("INTRO ACCEPTED");
     expect(markup).toContain("Recent verified interactions");
-    expect(markup).toContain("LogoutButton");
+  });
+
+  it("shows the World ID registration interaction when no other verified interactions exist yet", async () => {
+    mocks.getCurrentUser.mockResolvedValue({
+      id: "usr_dynamic",
+      name: "Avery Collins",
+      email: "avery@meshed.app",
+      role: "operator",
+      bio: "",
+      skills: [],
+      sectors: [],
+      linkedinUrl: null,
+      walletAddress: null,
+      worldVerified: true,
+      dynamicUserId: null,
+      engagementScore: 0,
+      reliabilityScore: 0,
+      verificationBadges: ["world_verified"],
+      outsideNetworkAccessEnabled: false,
+      createdAt: "2025-01-01T00:00:00.000Z",
+    });
+    mocks.findMemberships.mockResolvedValue([]);
+    mocks.findSocialConnections.mockResolvedValue([]);
+    mocks.listRecentForUser.mockResolvedValue([]);
+    mocks.ensureWorldRegistrationInteraction.mockResolvedValue({
+      id: "int_world",
+      interactionType: "WORLD_ID_REGISTERED",
+      actorUserId: "usr_dynamic",
+      targetUserId: null,
+      authorizedByUserId: null,
+      companyId: null,
+      painPointTag: null,
+      matchScore: null,
+      verified: true,
+      actorWorldVerified: true,
+      actorWorldNullifier: "0xworld",
+      actorVerificationLevel: null,
+      targetWorldVerified: null,
+      targetWorldNullifier: null,
+      targetVerificationLevel: null,
+      rewardStatus: "NOT_REWARDABLE",
+      transactionHash: null,
+      metadata: null,
+      createdAt: "2026-04-02T09:00:00.000Z",
+      updatedAt: "2026-04-02T09:00:00.000Z",
+    });
+
+    const { default: ProfilePage } = await import("@/app/profile/page");
+    const markup = renderToStaticMarkup(await ProfilePage());
+
+    expect(mocks.ensureWorldRegistrationInteraction).toHaveBeenCalledWith("usr_dynamic");
+    expect(markup).toContain("World ID registered");
+    expect(markup).toContain("Verified Human session anchored through World ID.");
   });
 });

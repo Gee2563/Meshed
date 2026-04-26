@@ -66,6 +66,7 @@ enum ConnectionRequestStatus {
 }
 
 enum VerifiedInteractionType {
+  WORLD_ID_REGISTERED
   MATCH_SUGGESTED
   INTRO_REQUESTED
   INTRO_ACCEPTED

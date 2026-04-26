@@ -12,6 +12,7 @@ export const suggestMatchSchema = z.object({
 
 export const createVerifiedInteractionSchema = z.object({
   interactionType: z.enum([
+    "WORLD_ID_REGISTERED",
     "MATCH_SUGGESTED",
     "INTRO_REQUESTED",
     "INTRO_ACCEPTED",
@@ -39,6 +40,12 @@ export const updateProfileSchema = z
     skills: z.array(z.string().trim().min(1)).max(12).optional(),
     sectors: z.array(z.string().trim().min(1)).max(12).optional(),
     linkedinUrl: z.string().trim().url().optional().nullable().or(z.literal("")),
+    emailAddress: z.string().trim().email().optional().nullable().or(z.literal("")),
+    slackWorkspace: z.string().trim().max(160).optional().nullable().or(z.literal("")),
+    microsoftTeamsWorkspace: z.string().trim().max(160).optional().nullable().or(z.literal("")),
+    twitterHandle: z.string().trim().max(160).optional().nullable().or(z.literal("")),
+    calendarEmail: z.string().trim().email().optional().nullable().or(z.literal("")),
+    instagramHandle: z.string().trim().max(160).optional().nullable().or(z.literal("")),
     outsideNetworkAccessEnabled: z.boolean().optional(),
   })
   .refine(
@@ -50,6 +57,12 @@ export const updateProfileSchema = z
       value.skills !== undefined ||
       value.sectors !== undefined ||
       value.linkedinUrl !== undefined ||
+      value.emailAddress !== undefined ||
+      value.slackWorkspace !== undefined ||
+      value.microsoftTeamsWorkspace !== undefined ||
+      value.twitterHandle !== undefined ||
+      value.calendarEmail !== undefined ||
+      value.instagramHandle !== undefined ||
       value.outsideNetworkAccessEnabled !== undefined,
     {
       message: "At least one profile field is required.",

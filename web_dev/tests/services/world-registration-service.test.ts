@@ -57,6 +57,7 @@ describe("world registration service", () => {
     findUserIdByReplayKey: vi.fn(),
     reserveAndMarkVerified: vi.fn(),
     verifyPayload: vi.fn(),
+    ensureWorldRegistrationInteraction: vi.fn(),
     userId: vi.fn(),
     onboardingId: vi.fn(),
   };
@@ -69,6 +70,7 @@ describe("world registration service", () => {
     mocks.findUserIdByReplayKey.mockReset();
     mocks.reserveAndMarkVerified.mockReset();
     mocks.verifyPayload.mockReset();
+    mocks.ensureWorldRegistrationInteraction.mockReset();
     mocks.userId.mockReset();
     mocks.onboardingId.mockReset();
 
@@ -92,6 +94,9 @@ describe("world registration service", () => {
       },
       worldVerificationService: {
         verifyPayload: mocks.verifyPayload,
+      },
+      verifiedInteractionService: {
+        ensureWorldRegistrationInteraction: mocks.ensureWorldRegistrationInteraction,
       },
       idGenerator: {
         userId: mocks.userId,
@@ -151,6 +156,7 @@ describe("world registration service", () => {
       isExecutive: true,
       currentStep: "VC_COMPANY",
     });
+    expect(mocks.ensureWorldRegistrationInteraction).toHaveBeenCalledWith(existingUser.id);
     expect(result).toEqual({
       user: existingUser,
       onboardingProfile,
@@ -219,6 +225,7 @@ describe("world registration service", () => {
       action: "meshed-network-access",
       nullifier: "0xfeedface",
     });
+    expect(mocks.ensureWorldRegistrationInteraction).toHaveBeenCalledWith("usr_generated");
     expect(result).toEqual({
       user: verifiedUser,
       onboardingProfile,

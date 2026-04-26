@@ -24,6 +24,7 @@ type RecordVerifiedInteractionInput = {
   actorVerificationLevel?: string | null;
   targetVerificationLevel?: string | null;
   metadata?: Record<string, unknown> | null;
+  createdAt?: string | null;
 };
 
 type VerifiedInteractionServiceDependencies = {
@@ -60,7 +61,12 @@ type VerifiedInteractionServiceDependencies = {
       rewardStatus?: RewardStatus;
       transactionHash?: string | null;
       metadata?: Record<string, unknown> | null;
+      createdAt?: string | null;
     }): Promise<VerifiedInteractionSummary>;
+    findLatestByActorAndType(
+      actorUserId: string,
+      interactionType: VerifiedInteractionType,
+    ): Promise<VerifiedInteractionSummary | null>;
     listRecentByUserId(userId: string, limit?: number): Promise<VerifiedInteractionSummary[]>;
   };
   idGenerator: {
@@ -118,37 +124,67 @@ function normalizeOptionalScore(value?: number | null) {
   return value;
 }
 
+function normalizeOptionalTimestamp(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new ApiError(400, "createdAt must be a valid ISO timestamp when provided.");
+  }
+
+  return parsed.toISOString();
+}
+
 function mergeMetadata(
   metadata?: Record<string, unknown> | null,
   worldChain?: WorldChainSubmissionResult | null,
+  worldChainError?: { message: string } | null,
 ) {
-  if (!worldChain) {
+  if (!worldChain && !worldChainError) {
     return metadata ?? null;
   }
 
   return {
     ...(metadata ?? {}),
-    worldChain: {
-      network: worldChain.network,
-      chainId: worldChain.chainId,
-      contractAddress: worldChain.contractAddress,
-      transactionHash: worldChain.transactionHash,
-      explorerUrl: worldChain.explorerUrl,
-      recorderAddress: worldChain.recorderAddress,
-      blockNumber: worldChain.blockNumber,
-      interactionIdHash: worldChain.interactionIdHash,
-      actorHash: worldChain.actorHash,
-      targetHash: worldChain.targetHash,
-      companyHash: worldChain.companyHash,
-      painPointHash: worldChain.painPointHash,
-      metadataHash: worldChain.metadataHash,
-      submittedAt: worldChain.submittedAt,
-    },
+    ...(worldChain
+      ? {
+          worldChain: {
+            network: worldChain.network,
+            chainId: worldChain.chainId,
+            contractAddress: worldChain.contractAddress,
+            transactionHash: worldChain.transactionHash,
+            explorerUrl: worldChain.explorerUrl,
+            recorderAddress: worldChain.recorderAddress,
+            blockNumber: worldChain.blockNumber,
+            interactionIdHash: worldChain.interactionIdHash,
+            actorHash: worldChain.actorHash,
+            targetHash: worldChain.targetHash,
+            companyHash: worldChain.companyHash,
+            painPointHash: worldChain.painPointHash,
+            metadataHash: worldChain.metadataHash,
+            submittedAt: worldChain.submittedAt,
+          },
+        }
+      : {}),
+    ...(worldChainError
+      ? {
+          worldChainError: {
+            message: worldChainError.message,
+          },
+        }
+      : {}),
   };
 }
 
 function requiresTargetVerification(interactionType: VerifiedInteractionType) {
-  return interactionType !== "MATCH_SUGGESTED" && interactionType !== "INTRO_REQUESTED";
+  return (
+    interactionType !== "WORLD_ID_REGISTERED" &&
+    interactionType !== "MATCH_SUGGESTED" &&
+    interactionType !== "INTRO_REQUESTED"
+  );
 }
 
 function isWorldBackedInteraction(input: {
@@ -172,8 +208,7 @@ function isWorldBackedInteraction(input: {
 }
 
 export function createVerifiedInteractionService(deps: VerifiedInteractionServiceDependencies) {
-  return {
-    async recordInteraction(input: RecordVerifiedInteractionInput) {
+  const recordInteraction = async (input: RecordVerifiedInteractionInput) => {
       const actor = await deps.userRepository.findById(input.actorUserId);
       if (!actor) {
         throw new ApiError(404, "Actor user not found.");
@@ -210,6 +245,7 @@ export function createVerifiedInteractionService(deps: VerifiedInteractionServic
       const normalizedCompanyId = normalizeOptionalString(input.companyId);
       const normalizedPainPointTag = normalizeOptionalString(input.painPointTag);
       const normalizedMatchScore = normalizeOptionalScore(input.matchScore);
+      const normalizedCreatedAt = normalizeOptionalTimestamp(input.createdAt);
       const rewardStatus = input.rewardStatus ?? defaultRewardStatusForInteractionType(input.interactionType);
       const verified = isWorldBackedInteraction({
         interactionType: input.interactionType,
@@ -217,23 +253,31 @@ export function createVerifiedInteractionService(deps: VerifiedInteractionServic
         targetWorldVerified: target?.worldVerified ?? null,
       });
 
-      const worldChainWrite =
-        verified && deps.worldChainVerifiedInteractionService?.isReady()
-          ? await deps.worldChainVerifiedInteractionService.submitInteraction({
-              interactionId,
-              interactionType: input.interactionType,
-              authoritativeActorId: authorizedBy?.id ?? actor.id,
-              actorWorldNullifier: authoritativeActorNullifier?.nullifier ?? null,
-              targetUserId: target?.id ?? null,
-              targetWorldNullifier: targetNullifier?.nullifier ?? null,
-              companyId: normalizedCompanyId,
-              painPointTag: normalizedPainPointTag,
-              matchScore: normalizedMatchScore,
-              verified,
-              rewardStatus,
-              metadata: input.metadata ?? null,
-            })
-          : null;
+      let worldChainWrite: WorldChainSubmissionResult | null = null;
+      let worldChainError: { message: string } | null = null;
+
+      if (verified && deps.worldChainVerifiedInteractionService?.isReady()) {
+        try {
+          worldChainWrite = await deps.worldChainVerifiedInteractionService.submitInteraction({
+            interactionId,
+            interactionType: input.interactionType,
+            authoritativeActorId: authorizedBy?.id ?? actor.id,
+            actorWorldNullifier: authoritativeActorNullifier?.nullifier ?? null,
+            targetUserId: target?.id ?? null,
+            targetWorldNullifier: targetNullifier?.nullifier ?? null,
+            companyId: normalizedCompanyId,
+            painPointTag: normalizedPainPointTag,
+            matchScore: normalizedMatchScore,
+            verified,
+            rewardStatus,
+            metadata: input.metadata ?? null,
+          });
+        } catch (error) {
+          worldChainError = {
+            message: error instanceof Error ? error.message : "World Chain write failed.",
+          };
+        }
+      }
 
       return deps.verifiedInteractionRepository.create({
         id: interactionId,
@@ -253,8 +297,41 @@ export function createVerifiedInteractionService(deps: VerifiedInteractionServic
         targetVerificationLevel: normalizeOptionalString(input.targetVerificationLevel),
         rewardStatus,
         transactionHash: worldChainWrite?.transactionHash ?? normalizeOptionalString(input.transactionHash),
-        metadata: mergeMetadata(input.metadata ?? null, worldChainWrite),
+        metadata: mergeMetadata(input.metadata ?? null, worldChainWrite, worldChainError),
+        createdAt: normalizedCreatedAt,
       });
+    };
+
+  const ensureWorldRegistrationInteraction = async (userId: string) => {
+    const existing = await deps.verifiedInteractionRepository.findLatestByActorAndType(userId, "WORLD_ID_REGISTERED");
+    if (existing) {
+      return existing;
+    }
+
+    const user = await deps.userRepository.findById(userId);
+    if (!user?.worldVerified) {
+      return null;
+    }
+
+    const latestNullifier = await deps.worldVerificationNullifierRepository.findLatestByUserId(userId);
+
+    return recordInteraction({
+      interactionType: "WORLD_ID_REGISTERED",
+      actorUserId: userId,
+      rewardStatus: "NOT_REWARDABLE",
+      metadata: {
+        source: "world_registration",
+        worldAction: latestNullifier?.action ?? null,
+      },
+      createdAt: latestNullifier?.createdAt ?? null,
+    });
+  };
+
+  return {
+    recordInteraction,
+
+    async ensureWorldRegistrationInteraction(userId: string) {
+      return ensureWorldRegistrationInteraction(userId);
     },
 
     async listRecentForUser(userId: string, limit = 10) {

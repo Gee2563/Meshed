@@ -11,7 +11,6 @@ type TopNavProps = {
 
 export function TopNav({ currentUser }: TopNavProps) {
   const links: Array<{ href: Route; label: string }> = [
-    { href: "/", label: "Home" },
     { href: "/agent", label: "Agent" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/upcycle", label: "Meshed Upcycle" },

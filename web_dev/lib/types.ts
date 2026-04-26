@@ -42,6 +42,7 @@ export type OnboardingContractStep =
 export type ContractGenerationMode = "mock" | "real";
 export type ConnectionRequestStatus = "pending" | "accepted" | "declined";
 export type VerifiedInteractionType =
+  | "WORLD_ID_REGISTERED"
   | "MATCH_SUGGESTED"
   | "INTRO_REQUESTED"
   | "INTRO_ACCEPTED"

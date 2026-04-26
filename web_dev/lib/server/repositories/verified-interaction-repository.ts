@@ -49,6 +49,7 @@ export const verifiedInteractionRepository = {
     rewardStatus?: RewardStatus;
     transactionHash?: string | null;
     metadata?: Record<string, unknown> | null;
+    createdAt?: string | null;
   }) {
     const interaction = await prisma.verifiedInteraction.create({
       data: {
@@ -69,6 +70,7 @@ export const verifiedInteractionRepository = {
         targetVerificationLevel: input.targetVerificationLevel ?? null,
         rewardStatus: input.rewardStatus ?? "NOT_REWARDABLE",
         transactionHash: input.transactionHash ?? null,
+        createdAt: input.createdAt ? new Date(input.createdAt) : undefined,
         metadata:
           input.metadata === null
             ? Prisma.JsonNull
@@ -82,6 +84,18 @@ export const verifiedInteractionRepository = {
   async findById(id: string) {
     const interaction = await prisma.verifiedInteraction.findUnique({
       where: { id },
+    });
+
+    return interaction ? toVerifiedInteractionSummary(interaction) : null;
+  },
+
+  async findLatestByActorAndType(actorUserId: string, interactionType: VerifiedInteractionType) {
+    const interaction = await prisma.verifiedInteraction.findFirst({
+      where: {
+        actorUserId,
+        interactionType,
+      },
+      orderBy: [{ createdAt: "desc" }],
     });
 
     return interaction ? toVerifiedInteractionSummary(interaction) : null;

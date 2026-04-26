@@ -46,7 +46,7 @@ export type WorldChainSubmissionResult = {
 };
 
 type RuntimeConfig = {
-  rpcUrl: string;
+  rpcUrl: string | null;
   privateKey: string | null;
   chainId: number;
   contractAddress: string | null;
@@ -54,15 +54,17 @@ type RuntimeConfig = {
 };
 
 const NETWORK_NAME = "worldchain-sepolia";
+const DEFAULT_WORLD_CHAIN_RPC_URL = "https://worldchain-sepolia.g.alchemy.com/public";
 
 const interactionTypeIndex: Record<VerifiedInteractionType, number> = {
-  MATCH_SUGGESTED: 0,
-  INTRO_REQUESTED: 1,
-  INTRO_ACCEPTED: 2,
-  COLLABORATION_STARTED: 3,
-  COLLABORATION_COMPLETED: 4,
-  REWARD_EARNED: 5,
-  REWARD_DISTRIBUTED: 6,
+  WORLD_ID_REGISTERED: 0,
+  MATCH_SUGGESTED: 1,
+  INTRO_REQUESTED: 2,
+  INTRO_ACCEPTED: 3,
+  COLLABORATION_STARTED: 4,
+  COLLABORATION_COMPLETED: 5,
+  REWARD_EARNED: 6,
+  REWARD_DISTRIBUTED: 7,
 };
 
 const rewardStatusIndex: Record<RewardStatus, number> = {
@@ -79,6 +81,22 @@ function normalizePrivateKey(privateKey: string) {
 function normalizeString(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function normalizeRpcUrl(value?: string | null) {
+  const trimmed = normalizeString(value) ?? DEFAULT_WORLD_CHAIN_RPC_URL;
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed.replace(/^\/+/, "")}`;
+
+  try {
+    const parsed = new URL(withProtocol);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
 
 function stableSortJson(value: unknown): unknown {
@@ -121,7 +139,7 @@ function normalizeMatchScore(value?: number | null) {
 
 function getRuntimeConfig(): RuntimeConfig {
   return {
-    rpcUrl: env.WORLD_CHAIN_RPC_URL || "https://worldchain-sepolia.g.alchemy.com/public",
+    rpcUrl: normalizeRpcUrl(env.WORLD_CHAIN_RPC_URL),
     privateKey: normalizeString(env.WORLD_CHAIN_PRIVATE_KEY) ?? normalizeString(env.PRIVATE_KEY),
     chainId: env.WORLD_CHAIN_CHAIN_ID,
     contractAddress: normalizeString(env.WORLD_CHAIN_VERIFIED_INTERACTION_REGISTRY_ADDRESS),
@@ -132,11 +150,18 @@ function getRuntimeConfig(): RuntimeConfig {
 export const worldChainVerifiedInteractionService = {
   isReady() {
     const config = getRuntimeConfig();
-    return Boolean(config.privateKey && config.contractAddress);
+    return Boolean(config.rpcUrl && config.privateKey && config.contractAddress);
   },
 
   async submitInteraction(input: WorldChainSubmissionInput): Promise<WorldChainSubmissionResult> {
     const config = getRuntimeConfig();
+
+    if (!config.rpcUrl) {
+      throw new ApiError(
+        503,
+        "WORLD_CHAIN_RPC_URL is invalid. Use a full http(s) URL, for example https://worldchain-sepolia.g.alchemy.com/public.",
+      );
+    }
 
     if (!config.contractAddress) {
       throw new ApiError(

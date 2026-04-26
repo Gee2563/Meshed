@@ -87,6 +87,7 @@ describe("verifiedInteractionService", () => {
       },
       verifiedInteractionRepository: {
         create,
+        findLatestByActorAndType: vi.fn(async () => null),
         listRecentByUserId: vi.fn(async () => []),
       },
       idGenerator: {
@@ -172,6 +173,7 @@ describe("verifiedInteractionService", () => {
       },
       verifiedInteractionRepository: {
         create,
+        findLatestByActorAndType: vi.fn(async () => null),
         listRecentByUserId: vi.fn(async () => []),
       },
       idGenerator: {
@@ -225,6 +227,7 @@ describe("verifiedInteractionService", () => {
       },
       verifiedInteractionRepository: {
         create,
+        findLatestByActorAndType: vi.fn(async () => null),
         listRecentByUserId: vi.fn(async () => []),
       },
       idGenerator: {
@@ -294,6 +297,7 @@ describe("verifiedInteractionService", () => {
       },
       verifiedInteractionRepository: {
         create,
+        findLatestByActorAndType: vi.fn(async () => null),
         listRecentByUserId: vi.fn(async () => []),
       },
       worldChainVerifiedInteractionService: {
@@ -359,5 +363,136 @@ describe("verifiedInteractionService", () => {
         }),
       }),
     );
+  });
+
+  it("backfills the World ID registration interaction once for verified humans", async () => {
+    const actor = createUser({ id: "usr_actor", worldVerified: true });
+    const create = vi.fn(async (input) =>
+      createInteraction({
+        id: input.id,
+        interactionType: input.interactionType,
+        actorUserId: input.actorUserId,
+        targetUserId: input.targetUserId ?? null,
+        verified: input.verified,
+        actorWorldVerified: input.actorWorldVerified,
+        actorWorldNullifier: input.actorWorldNullifier ?? null,
+        rewardStatus: input.rewardStatus ?? "NOT_REWARDABLE",
+        metadata: input.metadata ?? null,
+        createdAt: input.createdAt ?? "2026-04-01T09:00:00.000Z",
+      }),
+    );
+
+    const service = createVerifiedInteractionService({
+      userRepository: {
+        findById: vi.fn(async () => actor),
+      },
+      companyRepository: {
+        findById: vi.fn(async () => null),
+      },
+      worldVerificationNullifierRepository: {
+        findLatestByUserId: vi.fn(async () => ({
+          action: "meshed-register-dev",
+          nullifier: "0xactor",
+          createdAt: "2026-04-01T09:00:00.000Z",
+        })),
+      },
+      verifiedInteractionRepository: {
+        create,
+        findLatestByActorAndType: vi.fn(async () => null),
+        listRecentByUserId: vi.fn(async () => []),
+      },
+      idGenerator: {
+        interactionId: vi.fn(() => "int_registered"),
+      },
+    });
+
+    const interaction = await service.ensureWorldRegistrationInteraction(actor.id);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "int_registered",
+        interactionType: "WORLD_ID_REGISTERED",
+        actorUserId: "usr_actor",
+        verified: true,
+        actorWorldVerified: true,
+        actorWorldNullifier: "0xactor",
+        rewardStatus: "NOT_REWARDABLE",
+        createdAt: "2026-04-01T09:00:00.000Z",
+        metadata: {
+          source: "world_registration",
+          worldAction: "meshed-register-dev",
+        },
+      }),
+    );
+    expect(interaction?.interactionType).toBe("WORLD_ID_REGISTERED");
+  });
+
+  it("still records the interaction when the World Chain write fails", async () => {
+    const actor = createUser({ id: "usr_actor", worldVerified: true });
+    const target = createUser({ id: "usr_target", worldVerified: true });
+    const create = vi.fn(async (input) =>
+      createInteraction({
+        id: input.id,
+        interactionType: input.interactionType,
+        actorUserId: input.actorUserId,
+        targetUserId: input.targetUserId ?? null,
+        verified: input.verified,
+        transactionHash: input.transactionHash ?? null,
+        metadata: input.metadata ?? null,
+      }),
+    );
+
+    const service = createVerifiedInteractionService({
+      userRepository: {
+        findById: vi.fn(async (userId: string) => (userId === actor.id ? actor : target)),
+      },
+      companyRepository: {
+        findById: vi.fn(async () => null),
+      },
+      worldVerificationNullifierRepository: {
+        findLatestByUserId: vi.fn(async (userId: string) => ({
+          action: "meshed-network-access",
+          nullifier: userId === actor.id ? "0xactor" : "0xtarget",
+          createdAt: "2026-04-01T09:00:00.000Z",
+        })),
+      },
+      verifiedInteractionRepository: {
+        create,
+        findLatestByActorAndType: vi.fn(async () => null),
+        listRecentByUserId: vi.fn(async () => []),
+      },
+      worldChainVerifiedInteractionService: {
+        isReady: vi.fn(() => true),
+        submitInteraction: vi.fn(async () => {
+          throw new Error("WORLD_CHAIN_RPC_URL is invalid.");
+        }),
+      },
+      idGenerator: {
+        interactionId: vi.fn(() => "int_failed_chain"),
+      },
+    });
+
+    const interaction = await service.recordInteraction({
+      interactionType: "INTRO_ACCEPTED",
+      actorUserId: actor.id,
+      targetUserId: target.id,
+      metadata: {
+        source: "dashboard",
+      },
+    });
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "int_failed_chain",
+        transactionHash: null,
+        metadata: expect.objectContaining({
+          source: "dashboard",
+          worldChainError: {
+            message: "WORLD_CHAIN_RPC_URL is invalid.",
+          },
+        }),
+      }),
+    );
+    expect(interaction.transactionHash).toBeNull();
   });
 });
