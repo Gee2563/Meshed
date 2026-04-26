@@ -112,8 +112,11 @@ function personPainText(person: A16zCompanyGraphPerson) {
 
 function resolvePrimaryMembership(memberships: MembershipWithCompany[]) {
   return (
+    memberships.find((membership) => membership.relation === "portfolio_member") ??
     memberships.find((membership) => membership.relation === "member") ??
+    memberships.find((membership) => membership.relation === "portfolio_network_member") ??
     memberships.find((membership) => membership.relation === "vc_member") ??
+    memberships.find((membership) => membership.relation === "network_member") ??
     memberships[0] ??
     null
   );

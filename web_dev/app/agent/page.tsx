@@ -50,6 +50,7 @@ export default async function AgentPage({ searchParams }: AgentPageProps) {
   return (
     <AgentExperience
       currentUserName={currentUser.name}
+      currentUserProfileImageUrl={currentUser.profileImageUrl ?? null}
       currentUserVerified={currentUser.worldVerified}
       currentUserRole={state.user.role}
       currentStep={state.currentStep}

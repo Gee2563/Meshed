@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { ApiError } from "@/lib/server/http";
+import { loadDashboardData, type A16zCompanyGraphNode } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
 import { listKnownVcOrganizations, resolveDashboardScopeForOrganization } from "@/lib/server/meshed-network/dashboard-scope";
 import { prisma } from "@/lib/server/prisma";
 import { companyRepository } from "@/lib/server/repositories/company-repository";
@@ -84,6 +85,46 @@ function titleForRole(role: UserSummary["role"]) {
   }
 }
 
+export function vcMembershipRelationForRole(role: UserSummary["role"]) {
+  if (role === "investor") {
+    return "vc_member";
+  }
+
+  if (role === "operator") {
+    return "portfolio_network_member";
+  }
+
+  return "network_member";
+}
+
+export function vcMembershipTitleForRole(role: UserSummary["role"]) {
+  if (role === "investor") {
+    return titleForRole(role);
+  }
+
+  if (role === "operator") {
+    return "Portfolio Company Founder / Operator";
+  }
+
+  if (role === "mentor") {
+    return "Advisor";
+  }
+
+  if (role === "consultant") {
+    return "Network Consultant";
+  }
+
+  return "Network Member";
+}
+
+export function memberCompanyRelationForRole(role: UserSummary["role"]) {
+  if (role === "operator") {
+    return "portfolio_member";
+  }
+
+  return "member";
+}
+
 function requiresMemberCompany(role: UserSummary["role"]) {
   return role !== "investor";
 }
@@ -101,6 +142,24 @@ function parsePainPointTags(value: string | null | undefined) {
       .map((entry) => entry.replace(/\s+/g, " "))
       .filter(Boolean),
   )].slice(0, 5);
+}
+
+function mergeProfileValues(...groups: Array<Array<string | null | undefined> | null | undefined>) {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+
+  for (const group of groups) {
+    for (const value of group ?? []) {
+      const normalized = String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+      if (!normalized || seen.has(normalized)) {
+        continue;
+      }
+      seen.add(normalized);
+      merged.push(normalized);
+    }
+  }
+
+  return merged;
 }
 
 function normalizeVcOptionName(value: string | null | undefined) {
@@ -176,6 +235,31 @@ export function dedupeVcOptions(
   return merged;
 }
 
+function matchCompanyNodeByName(nodes: A16zCompanyGraphNode[], companyName: string) {
+  const normalized = normalizeVcOptionName(companyName);
+  if (!normalized) {
+    return null;
+  }
+
+  return nodes.find((node) => normalizeVcOptionName(node.companyName) === normalized) ?? null;
+}
+
+async function findKnownCompanyContext(scope: NonNullable<ReturnType<typeof resolveDashboardScopeForOrganization>>, companyName: string) {
+  const dashboard = await loadDashboardData(scope);
+  const matchedNode = matchCompanyNodeByName(dashboard?.companyGraph.nodes ?? [], companyName);
+  if (!matchedNode) {
+    return null;
+  }
+
+  return {
+    sector: matchedNode.vertical?.trim() || "portfolio company",
+    stage: matchedNode.stage?.trim() || "active",
+    website: matchedNode.website ? normalizeWebsite(matchedNode.website) : "",
+    currentPainTags: matchedNode.currentPainPointTags,
+    resolvedPainTags: matchedNode.resolvedPainPointTags,
+  };
+}
+
 export function resolveCurrentStep(input: {
   onboardingProfile: OnboardingProfileSummary | null;
   socialConnections: UserSocialConnectionSummary[];
@@ -219,26 +303,58 @@ export function resolveCurrentStep(input: {
   return "socials" as const;
 }
 
-async function ensureVcMembership(userId: string, companyId: string, title: string) {
+async function upsertCompanyMembership(input: {
+  userId: string;
+  companyId: string;
+  relation: string;
+  title: string;
+}) {
   const existingMembership = await prisma.companyMembership.findFirst({
     where: {
-      userId,
-      companyId,
-      relation: "vc_member",
+      userId: input.userId,
+      companyId: input.companyId,
+      relation: input.relation,
     },
   });
 
   if (existingMembership) {
-    return existingMembership;
+    if (existingMembership.title === input.title) {
+      return existingMembership;
+    }
+
+    return prisma.companyMembership.update({
+      where: {
+        id: existingMembership.id,
+      },
+      data: {
+        title: input.title,
+      },
+    });
   }
 
   return prisma.companyMembership.create({
     data: {
       id: `mem_vc_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
-      userId,
-      companyId,
-      relation: "vc_member",
-      title,
+      userId: input.userId,
+      companyId: input.companyId,
+      relation: input.relation,
+      title: input.title,
+    },
+  });
+}
+
+async function removeCompanyMemberships(input: { userId: string; companyId?: string; relations: string[] }) {
+  if (input.relations.length === 0) {
+    return;
+  }
+
+  await prisma.companyMembership.deleteMany({
+    where: {
+      userId: input.userId,
+      companyId: input.companyId,
+      relation: {
+        in: input.relations,
+      },
     },
   });
 }
@@ -407,53 +523,86 @@ export const onboardingService = {
     });
 
     if (requiresMemberCompany(user.role)) {
+      const knownCompanyContext =
+        knownDashboardScope && memberCompanyName
+          ? await findKnownCompanyContext(knownDashboardScope, memberCompanyName)
+          : null;
       const existingMemberCompany = await resolveMemberCompanyForUser(existingOnboardingProfile);
       if (existingMemberCompany) {
         memberCompany = await companyRepository.updateDetails(existingMemberCompany.id, {
           name: memberCompanyName,
           description: `${memberCompanyName} onboarding company`,
+          sector: knownCompanyContext?.sector ?? existingMemberCompany.sector,
+          stage: knownCompanyContext?.stage ?? existingMemberCompany.stage,
           address: memberCompanyAddress,
-          website: existingMemberCompany.website || "",
+          website: knownCompanyContext?.website || existingMemberCompany.website || "",
           companyKind: user.role === "operator" ? "PORTFOLIO" : "OPERATING",
+          parentCompanyId: user.role === "operator" ? vcCompany.id : null,
         });
       } else {
-        memberCompany = await companyRepository.create({
-          id: `co_member_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
-          name: memberCompanyName,
-          description: `${memberCompanyName} onboarding company`,
-          sector: user.role === "operator" ? "portfolio company" : "operating company",
-          stage: "active",
-          website: "",
-          address: memberCompanyAddress,
-          ownerUserId: user.id,
-          currentPainTags: [],
-          resolvedPainTags: [],
-          companyKind: user.role === "operator" ? "PORTFOLIO" : "OPERATING",
+        const matchedCompany = await companyRepository.findByName(memberCompanyName);
+        if (matchedCompany) {
+          memberCompany = await companyRepository.updateDetails(matchedCompany.id, {
+            name: memberCompanyName,
+            description: matchedCompany.description || `${memberCompanyName} onboarding company`,
+            sector: knownCompanyContext?.sector ?? matchedCompany.sector,
+            stage: knownCompanyContext?.stage ?? matchedCompany.stage,
+            address: memberCompanyAddress,
+            website: knownCompanyContext?.website || matchedCompany.website || "",
+            companyKind: user.role === "operator" ? "PORTFOLIO" : "OPERATING",
+            parentCompanyId: user.role === "operator" ? vcCompany.id : null,
+          });
+        } else {
+          memberCompany = await companyRepository.create({
+            id: `co_member_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
+            name: memberCompanyName,
+            description: `${memberCompanyName} onboarding company`,
+            sector: knownCompanyContext?.sector ?? (user.role === "operator" ? "portfolio company" : "operating company"),
+            stage: knownCompanyContext?.stage ?? "active",
+            website: knownCompanyContext?.website ?? "",
+            address: memberCompanyAddress,
+            ownerUserId: user.id,
+            currentPainTags: knownCompanyContext?.currentPainTags ?? [],
+            resolvedPainTags: knownCompanyContext?.resolvedPainTags ?? [],
+            companyKind: user.role === "operator" ? "PORTFOLIO" : "OPERATING",
+            parentCompanyId: user.role === "operator" ? vcCompany.id : null,
+          });
+        }
+      }
+
+      if (memberCompany && knownCompanyContext) {
+        memberCompany = await companyRepository.updatePainTags(memberCompany.id, {
+          currentPainTags: knownCompanyContext.currentPainTags,
+          resolvedPainTags: knownCompanyContext.resolvedPainTags,
         });
       }
     }
 
-    await ensureVcMembership(user.id, vcCompany.id, titleForRole(user.role));
-    if (memberCompany) {
-      const existingMembership = await prisma.companyMembership.findFirst({
-        where: {
-          userId: user.id,
-          companyId: memberCompany.id,
-          relation: "member",
-        },
-      });
+    await removeCompanyMemberships({
+      userId: user.id,
+      companyId: vcCompany.id,
+      relations: ["vc_member", "portfolio_network_member", "network_member"],
+    });
+    await upsertCompanyMembership({
+      userId: user.id,
+      companyId: vcCompany.id,
+      relation: vcMembershipRelationForRole(user.role),
+      title: vcMembershipTitleForRole(user.role),
+    });
 
-      if (!existingMembership) {
-        await prisma.companyMembership.create({
-          data: {
-            id: `mem_company_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
-            userId: user.id,
-            companyId: memberCompany.id,
-            relation: "member",
-            title: titleForRole(user.role),
-          },
-        });
-      }
+    if (memberCompany) {
+      const memberRelation = memberCompanyRelationForRole(user.role);
+      await removeCompanyMemberships({
+        userId: user.id,
+        companyId: memberCompany.id,
+        relations: ["member", "portfolio_member"],
+      });
+      await upsertCompanyMembership({
+        userId: user.id,
+        companyId: memberCompany.id,
+        relation: memberRelation,
+        title: titleForRole(user.role),
+      });
     }
 
     const onboardingProfile = await onboardingRepository.upsertByUserId(user.id, {
@@ -479,12 +628,6 @@ export const onboardingService = {
 
   async saveSocials(user: UserSummary, input: SocialsInput) {
     const linkedinUrl = input.linkedinUrl?.trim() ? input.linkedinUrl.trim() : null;
-    if (linkedinUrl && linkedinUrl !== user.linkedinUrl) {
-      await userRepository.updateProfile(user.id, {
-        linkedinUrl,
-      });
-    }
-
     const socialConnections = await userSocialConnectionRepository.upsertMany(user.id, [
       {
         id: `soc_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
@@ -541,6 +684,26 @@ export const onboardingService = {
       await companyRepository.updatePainTags(painPointCompany.id, {
         currentPainTags,
         resolvedPainTags,
+      });
+    }
+
+    const derivedSkills = mergeProfileValues(user.skills, resolvedPainTags);
+    const derivedSectors = mergeProfileValues(
+      user.sectors,
+      memberCompany?.sector ? [memberCompany.sector] : [],
+      vcCompany?.sector ? [vcCompany.sector] : [],
+    );
+
+    const shouldUpdateProfile =
+      (linkedinUrl ?? null) !== (user.linkedinUrl ?? null) ||
+      JSON.stringify(derivedSkills) !== JSON.stringify(user.skills) ||
+      JSON.stringify(derivedSectors) !== JSON.stringify(user.sectors);
+
+    if (shouldUpdateProfile) {
+      await userRepository.updateProfile(user.id, {
+        linkedinUrl,
+        skills: derivedSkills,
+        sectors: derivedSectors,
       });
     }
 

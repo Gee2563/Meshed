@@ -89,6 +89,7 @@ export interface UserSummary {
   bio: string;
   skills: string[];
   sectors: string[];
+  profileImageUrl?: string | null;
   linkedinUrl?: string | null;
   walletAddress?: string | null;
   worldVerified: boolean;

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { ProfileImageUploader } from "@/components/profile/ProfileImageUploader";
 import { Button } from "@/components/ui/Button";
 import type {
   CompanySummary,
@@ -24,6 +25,7 @@ type VcOption = {
 type OnboardingChatbotProps = {
   currentStep: RegistrationFlowStep;
   currentUserName: string;
+  currentUserProfileImageUrl?: string | null;
   currentUserRole: UserRole;
   vcCompany: CompanySummary | null;
   memberCompany: CompanySummary | null;
@@ -46,6 +48,7 @@ type QuestionId =
   | "vc_contact_email"
   | "member_company_name"
   | "member_company_address"
+  | "profile_image"
   | "linkedin_url"
   | "email_address"
   | "slack_workspace"
@@ -71,6 +74,7 @@ type DraftState = {
   pointOfContactEmail: string;
   memberCompanyName: string;
   memberCompanyAddress: string;
+  profileImageUrl: string;
   linkedinUrl: string;
   emailAddress: string;
   slackWorkspace: string;
@@ -145,7 +149,7 @@ function getAccountLabel(
 function getStartingQuestion(step: RegistrationFlowStep) {
   switch (step) {
     case "socials":
-      return "linkedin_url" as const;
+      return "profile_image" as const;
     case "network_preparing":
     case "ready":
       return null;
@@ -166,6 +170,7 @@ function getVcQuestionOrder(isVcUser: boolean): QuestionId[] {
 
 function getSocialQuestionOrder(): QuestionId[] {
   return [
+    "profile_image",
     "linkedin_url",
     "email_address",
     "slack_workspace",
@@ -249,6 +254,12 @@ function getPromptForQuestion(questionId: QuestionId, draft: DraftState, vcOptio
         prompt: "What is your company address?",
         placeholder: "123 Market St, San Francisco, CA",
       };
+    case "profile_image":
+      return {
+        prompt: "Would you like to upload a profile image for your Meshed profile?",
+        helper: "A clear image helps your profile feel more human when Meshed suggests introductions and follow-ups. You can upload one now or skip it for later.",
+        canSkip: true,
+      };
     case "linkedin_url":
       return {
         prompt: "Now let's wire up your channels. What LinkedIn URL should your Meshed agent use?",
@@ -324,6 +335,7 @@ function getSummaryRows(draft: DraftState, isVcUser: boolean) {
           { label: "Your company", value: draft.memberCompanyName || "Not answered yet" },
           { label: "Company address", value: draft.memberCompanyAddress || "Not answered yet" },
         ]),
+    { label: "Profile image", value: draft.profileImageUrl ? "Uploaded" : "Skipped for now" },
     { label: "LinkedIn", value: draft.linkedinUrl || "Skipped for now" },
     { label: "Email", value: draft.emailAddress || "Skipped for now" },
     { label: "Slack", value: draft.slackWorkspace || "Skipped for now" },
@@ -339,6 +351,7 @@ function getSummaryRows(draft: DraftState, isVcUser: boolean) {
 export function OnboardingChatbot({
   currentStep,
   currentUserName,
+  currentUserProfileImageUrl = null,
   currentUserRole,
   vcCompany,
   memberCompany,
@@ -360,6 +373,7 @@ export function OnboardingChatbot({
     pointOfContactEmail: vcCompany?.pointOfContactEmail ?? "",
     memberCompanyName: memberCompany?.name ?? "",
     memberCompanyAddress: memberCompany?.address ?? "",
+    profileImageUrl: currentUserProfileImageUrl ?? "",
     linkedinUrl: getAccountLabel(socialConnections, "linkedin"),
     emailAddress: getAccountLabel(socialConnections, "email"),
     slackWorkspace: getAccountLabel(socialConnections, "slack"),
@@ -426,6 +440,7 @@ export function OnboardingChatbot({
         vc_contact_email: draft.pointOfContactEmail,
         member_company_name: draft.memberCompanyName,
         member_company_address: draft.memberCompanyAddress,
+        profile_image: draft.profileImageUrl,
         linkedin_url: draft.linkedinUrl,
         email_address: draft.emailAddress,
         slack_workspace: draft.slackWorkspace,
@@ -581,6 +596,8 @@ export function OnboardingChatbot({
           return { error: "I still need your company address to finish the company profile." };
         }
         return { nextDraft: { ...currentDraft, memberCompanyAddress: answer }, userEcho: answer };
+      case "profile_image":
+        return { nextDraft: currentDraft, userEcho: currentDraft.profileImageUrl ? "Use current profile image" : "Skip profile image for now" };
       case "linkedin_url":
         if (answer && !looksLikeUrl(answer)) {
           return { error: "That LinkedIn URL does not look valid yet. Paste the full profile URL or say skip." };
@@ -698,7 +715,7 @@ export function OnboardingChatbot({
   }
 
   async function handleAnswer(submittedValue?: string) {
-    if (!currentQuestionId || pending) {
+    if (!currentQuestionId || pending || currentQuestionId === "profile_image") {
       return;
     }
 
@@ -714,17 +731,25 @@ export function OnboardingChatbot({
       return;
     }
 
+    await completeQuestion(currentQuestionId, nextDraft, result.userEcho);
+  }
+
+  async function completeQuestion(questionId: QuestionId, nextDraft: DraftState, userEcho: string) {
+    if (pending) {
+      return;
+    }
+
     setPending(true);
     setErrorMessage(null);
-    setMessages((previous) => [...previous, { id: makeId("msg"), from: "user", text: result.userEcho }]);
+    setMessages((previous) => [...previous, { id: makeId("msg"), from: "user", text: userEcho }]);
     setDraft(nextDraft);
 
     try {
-      const nextQuestionId = getNextQuestion(currentQuestionId, isVcUser, nextDraft, vcOptions);
+      const nextQuestionId = getNextQuestion(questionId, isVcUser, nextDraft, vcOptions);
       const lastVcQuestion = getFinalVcQuestionId(isVcUser, nextDraft, vcOptions);
       const lastSocialQuestion = getSocialQuestionOrder().slice(-1)[0];
 
-      if (currentQuestionId === lastVcQuestion) {
+      if (questionId === lastVcQuestion) {
         await persistVcSelection(nextDraft);
         setMessages((previous) => [
           ...previous,
@@ -737,7 +762,7 @@ export function OnboardingChatbot({
         setStep("socials");
       }
 
-      if (currentQuestionId === lastSocialQuestion) {
+      if (questionId === lastSocialQuestion) {
         await persistSocials(nextDraft);
         setCurrentQuestionId(null);
         setInputValue("");
@@ -751,6 +776,19 @@ export function OnboardingChatbot({
     } finally {
       setPending(false);
     }
+  }
+
+  async function handleProfileImageUploaded(imageUrl: string) {
+    const nextDraft = {
+      ...draft,
+      profileImageUrl: imageUrl,
+    };
+
+    await completeQuestion("profile_image", nextDraft, "Uploaded profile image");
+  }
+
+  async function skipProfileImage() {
+    await completeQuestion("profile_image", draft, draft.profileImageUrl ? "Use current profile image" : "Skip profile image for now");
   }
 
   return (
@@ -842,48 +880,75 @@ export function OnboardingChatbot({
 
         {currentQuestionId ? (
           <div className="border-t border-slate-200 px-6 py-5">
-            {currentPrompt?.quickReplies?.length ? (
-              <div className="mb-4 flex flex-wrap gap-2">
-                {currentPrompt.quickReplies.map((quickReply) => (
-                  <button
-                    key={quickReply}
-                    type="button"
-                    onClick={() => handleAnswer(quickReply)}
-                    disabled={pending}
-                    className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {quickReply}
-                  </button>
-                ))}
+            {currentQuestionId === "profile_image" ? (
+              <div className="space-y-4">
+                <ProfileImageUploader
+                  initialImageUrl={draft.profileImageUrl || null}
+                  displayName={currentUserName}
+                  label="Profile image"
+                  description="Upload a headshot or brand image now, or skip it and come back later."
+                  compact
+                  onUploaded={(imageUrl) => {
+                    void handleProfileImageUploaded(imageUrl);
+                  }}
+                />
+                <div className="flex flex-wrap gap-3">
+                  {draft.profileImageUrl ? (
+                    <Button type="button" variant="secondary" onClick={() => void skipProfileImage()} disabled={pending}>
+                      Use current image
+                    </Button>
+                  ) : null}
+                  <Button type="button" variant="ghost" onClick={() => void skipProfileImage()} disabled={pending}>
+                    Skip for now
+                  </Button>
+                </div>
               </div>
-            ) : null}
+            ) : (
+              <>
+                {currentPrompt?.quickReplies?.length ? (
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {currentPrompt.quickReplies.map((quickReply) => (
+                      <button
+                        key={quickReply}
+                        type="button"
+                        onClick={() => handleAnswer(quickReply)}
+                        disabled={pending}
+                        className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {quickReply}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <input
-                type={currentPrompt?.type ?? "text"}
-                value={inputValue}
-                onChange={(event) => setInputValue(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    void handleAnswer();
-                  }
-                }}
-                placeholder={currentPrompt?.placeholder ?? "Type your answer"}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-              />
-              <Button type="button" onClick={() => void handleAnswer()} disabled={pending}>
-                {pending ? "Saving..." : "Send"}
-              </Button>
-            </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type={currentPrompt?.type ?? "text"}
+                    value={inputValue}
+                    onChange={(event) => setInputValue(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void handleAnswer();
+                      }
+                    }}
+                    placeholder={currentPrompt?.placeholder ?? "Type your answer"}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  />
+                  <Button type="button" onClick={() => void handleAnswer()} disabled={pending}>
+                    {pending ? "Saving..." : "Send"}
+                  </Button>
+                </div>
 
-            {currentPrompt?.canSkip ? (
-              <div className="mt-3">
-                <Button type="button" variant="ghost" onClick={() => void handleAnswer("skip")} disabled={pending}>
-                  Skip for now
-                </Button>
-              </div>
-            ) : null}
+                {currentPrompt?.canSkip ? (
+                  <div className="mt-3">
+                    <Button type="button" variant="ghost" onClick={() => void handleAnswer("skip")} disabled={pending}>
+                      Skip for now
+                    </Button>
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         ) : null}
       </div>

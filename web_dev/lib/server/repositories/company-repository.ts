@@ -70,11 +70,31 @@ export const companyRepository = {
     return company ? toCompanySummary(company) : null;
   },
 
+  async findByName(name: string) {
+    const normalized = name.trim().toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+
+    const companies = await prisma.company.findMany({
+      where: {
+        name: {
+          not: "",
+        },
+      },
+    });
+
+    const matched = companies.find((company) => company.name.trim().toLowerCase() === normalized) ?? null;
+    return matched ? toCompanySummary(matched) : null;
+  },
+
   async updateDetails(
     companyId: string,
     data: {
       name?: string;
       description?: string;
+      sector?: string;
+      stage?: string;
       address?: string | null;
       website?: string;
       companyKind?: "VC" | "PORTFOLIO" | "OPERATING";
@@ -86,6 +106,8 @@ export const companyRepository = {
       data: {
         name: data.name,
         description: data.description,
+        sector: data.sector,
+        stage: data.stage,
         address: data.address,
         website: data.website,
         companyKind: data.companyKind,

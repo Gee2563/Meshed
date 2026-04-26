@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { dedupeVcOptions, resolveCurrentStep } from "@/lib/server/services/onboarding-service";
+import {
+  dedupeVcOptions,
+  memberCompanyRelationForRole,
+  resolveCurrentStep,
+  vcMembershipRelationForRole,
+  vcMembershipTitleForRole,
+} from "@/lib/server/services/onboarding-service";
 
 describe("resolveCurrentStep", () => {
+  it("uses portfolio-aware membership labels for operator onboarding", () => {
+    expect(vcMembershipRelationForRole("operator")).toBe("portfolio_network_member");
+    expect(vcMembershipTitleForRole("operator")).toBe("Portfolio Company Founder / Operator");
+    expect(memberCompanyRelationForRole("operator")).toBe("portfolio_member");
+  });
+
   it("dedupes listed VCs against manual DB entries for the same firm", () => {
     const options = dedupeVcOptions(
       [

@@ -9,7 +9,9 @@ import { requireCurrentUser } from "@/lib/server/current-user";
 import { ApiError, fail, ok } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import {
+  buildPromptSuggestionReply,
   buildDeterministicMeshedFounderReply,
+  isPromptSuggestionRequest,
   meshedFounderAgentService,
   type FounderMembershipContext,
 } from "@/lib/server/services/meshed-founder-agent-service";
@@ -1664,6 +1666,15 @@ export async function POST(request: Request) {
         createdAt: interaction.createdAt,
       })),
     };
+
+    if (isPromptSuggestionRequest(question)) {
+      return ok({
+        question,
+        scope,
+        scopeLabel: scopeConfig.scopeLabel,
+        ...buildPromptSuggestionReply(founderContext),
+      });
+    }
 
     const response = meshedFounderAgentService.isAvailable()
       ? await meshedFounderAgentService

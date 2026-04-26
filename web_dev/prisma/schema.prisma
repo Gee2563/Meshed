@@ -131,6 +131,7 @@ model User {
   bio                         String              @default("")
   skills                      String[]
   sectors                     String[]
+  profileImageUrl             String?
   linkedinUrl                 String?
   walletAddress               String?             @unique
   worldVerified               Boolean             @default(false)

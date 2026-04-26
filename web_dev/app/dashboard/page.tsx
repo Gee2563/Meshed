@@ -5,7 +5,6 @@ import { CollapsibleCard } from "@/components/dashboard/CollapsibleCard";
 import { DashboardTopPanels } from "@/components/dashboard/DashboardTopPanels";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/Button";
-import { getDemoRoleLabel } from "@/lib/demo-role-label";
 import { loadDashboardData } from "@/lib/server/meshed-network/a16z-crypto-dashboard";
 import {
   getDashboardScopeConfig,
@@ -109,6 +108,11 @@ export default async function DashboardPage() {
   const selectedVcCompany = onboardingProfile?.vcCompanyId
     ? await prisma.company.findUnique({
         where: { id: onboardingProfile.vcCompanyId },
+      })
+    : null;
+  const selectedMemberCompany = onboardingProfile?.companyId
+    ? await prisma.company.findUnique({
+        where: { id: onboardingProfile.companyId },
       })
     : null;
   const latestNetworkJob = await networkPreparationJobRepository.findLatestByUserId(currentUser.id);
@@ -356,14 +360,14 @@ export default async function DashboardPage() {
   const dashboardBrandLogoUrl = `https://img.logo.dev/${dashboardBrandDomain}?size=160&format=png${
     logoDevToken ? `&token=${logoDevToken}` : ""
   }`;
+  const worldLogoUrl = `https://img.logo.dev/world.org?size=120&format=png${logoDevToken ? `&token=${logoDevToken}` : ""}`;
   const heroDescription = `Here's your daily AI-powered update on the ${dashboardScopeConfig.organizationName} Meshed network`;
-  const statusItems = [
-    { label: "Role", value: titleCase(currentUser.role) },
-    { label: "Meshed sign-in", value: currentUser.worldVerified ? "World-backed" : "Session active" },
-    { label: "World ID", value: currentUser.worldVerified ? "Verified Human" : "Not verified" },
-    { label: "Trust badges", value: formatRelativeCount(currentUser.verificationBadges.length, "badge") },
-    { label: "Company", value: membershipLookup.get(currentUser.id)?.name ?? "No company linked yet" },
-  ];
+  const userFirstName = currentUser.name.trim().split(/\s+/)[0] || "You";
+  const memberCompanyName = selectedMemberCompany?.name ?? membershipLookup.get(currentUser.id)?.name ?? "No company linked yet";
+  const trustBadgeCountLabel = formatRelativeCount(currentUser.verificationBadges.length, "badge");
+  const networkBundleLabel = snapshot.generated_via
+    ? snapshot.generated_via.replace(/^network_pipeline\./, "").replace(/_/g, " ")
+    : "Meshed graph bundle";
 
   return (
     <main className="px-4 py-8 sm:px-6 lg:px-10">
@@ -419,28 +423,66 @@ export default async function DashboardPage() {
               </div>
             </div>
           }
-          rightEyebrow=""
-          rightTitle="Verified Humans and Managed Access"
-          rightDescription="World ID now handles Meshed registration and human verification, so every trusted intro and rewardable action starts from a privacy-preserving verified human session."
+          rightEyebrow="World-Backed Trust"
+          rightTitle="Trusted coordination starts with a verified human"
+          rightDescription="Meshed uses World ID to anchor access and trust, so intros, agent actions, and rewardable coordination all start from a privacy-preserving verified human session."
           rightChildren={
             <>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                {statusItems.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">{item.label}</p>
-                    <p className="mt-2 text-sm font-medium text-ink">{item.value}</p>
+              <div className="rounded-[1.75rem] border border-white/80 bg-white/95 p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      Verified Human Session
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold tracking-tight text-ink">{userFirstName} is live inside the Meshed trust layer</h3>
+                      <p className="mt-2 max-w-xl text-sm leading-6 text-slate">
+                        World ID verified this session, so every intro, handoff, and rewardable action can route back to a real human
+                        without storing private identity data.
+                      </p>
+                    </div>
                   </div>
-                ))}
+                  <div className="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <img src={worldLogoUrl} alt="World logo" className="h-full w-full object-contain p-2.5" />
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">World-backed sign-in</span>
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Verified Human</span>
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Privacy-preserving trust</span>
+                </div>
               </div>
-              <div className="mt-5 rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Generated via</p>
-                <p className="mt-2 text-sm text-ink">{snapshot.generated_via ?? "network pipeline"}</p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Role</p>
+                  <p className="mt-2 text-base font-semibold text-ink">{titleCase(currentUser.role)}</p>
+                  <p className="mt-1 text-sm text-slate">Operating with a World-backed Meshed session.</p>
+                </div>
+                <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Company context</p>
+                  <p className="mt-2 text-base font-semibold text-ink">{memberCompanyName}</p>
+                  <p className="mt-1 text-sm text-slate">Current coordination and opportunity routing anchor.</p>
+                </div>
+                <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Trust badges</p>
+                  <p className="mt-2 text-base font-semibold text-ink">{trustBadgeCountLabel}</p>
+                  <p className="mt-1 text-sm text-slate">Compact trust signals Meshed can use without exposing private identity data.</p>
+                </div>
+                <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Network scope</p>
+                  <p className="mt-2 text-base font-semibold text-ink">{dashboardScopeConfig.organizationName}</p>
+                  <p className="mt-1 text-sm text-slate">Loaded from the curated {networkBundleLabel} context for this dashboard.</p>
+                </div>
               </div>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Button href="/" variant="secondary">
-                  Return home
-                </Button>
-                <LogoutButton />
+
+              <div className="mt-5 rounded-2xl border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(255,255,255,0.98))] px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Why this matters</p>
+                <p className="mt-2 text-sm leading-6 text-slate">
+                  When your agent surfaces a warm path, Meshed can tie the next move back to a verified human session, record the
+                  interaction, and route value distribution from a stronger trust foundation.
+                </p>
               </div>
             </>
           }

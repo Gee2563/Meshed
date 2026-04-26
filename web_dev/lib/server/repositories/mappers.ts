@@ -33,6 +33,7 @@ export function toUserSummary(user: User): UserSummary {
     bio: user.bio,
     skills: user.skills,
     sectors: user.sectors,
+    profileImageUrl: user.profileImageUrl,
     linkedinUrl: user.linkedinUrl,
     walletAddress: user.walletAddress,
     worldVerified: user.worldVerified,

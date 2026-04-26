@@ -1,5 +1,5 @@
 import { AppShell } from "@/app/layout/AppShell";
-import { LogoutButton } from "@/components/LogoutButton";
+import { ProfileImageUploader } from "@/components/profile/ProfileImageUploader";
 import { Button } from "@/components/ui/Button";
 import { getCurrentUser } from "@/lib/server/current-user";
 import { getDemoRoleLabel } from "@/lib/demo-role-label";
@@ -12,6 +12,39 @@ import { formatRelativeCount, titleCase } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+function formatMembershipRelation(relation: string) {
+  switch (relation) {
+    case "vc_member":
+      return "VC team";
+    case "portfolio_network_member":
+      return "Portfolio network";
+    case "portfolio_member":
+      return "Portfolio company";
+    case "network_member":
+      return "Network member";
+    case "member":
+      return "Company member";
+    default:
+      return relation.replace(/_/g, " ");
+  }
+}
+
+function uniqueLabels(values: string[]) {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+
+  for (const value of values) {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    merged.push(normalized);
+  }
+
+  return merged;
+}
+
 export default async function ProfilePage() {
   const currentUser = await getCurrentUser();
 
@@ -22,8 +55,8 @@ export default async function ProfilePage() {
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate">Profile access</p>
           <h1 className="mt-4 font-display text-4xl tracking-tight text-ink">Session required</h1>
           <p className="mt-4 text-sm leading-7 text-slate">
-            Sign in through the Meshed trust flow first, then come back to review your wallet, verification, and
-            current connection state.
+            Sign in through the Meshed trust flow first, then come back to review your profile, verification, image,
+            and current connection state.
           </p>
           <div className="mt-6">
             <Button href="/" variant="secondary">
@@ -46,6 +79,8 @@ export default async function ProfilePage() {
           name: true,
           sector: true,
           stage: true,
+          currentPainTags: true,
+          resolvedPainTags: true,
         },
       },
     },
@@ -60,6 +95,12 @@ export default async function ProfilePage() {
   const outgoingContacts = demoUsers.filter((user: UserSummary) =>
     connectionState.outgoingPendingContactIds.includes(user.id),
   );
+  const displaySkills = currentUser.skills.length
+    ? currentUser.skills
+    : uniqueLabels(memberships.flatMap((membership) => membership.company.resolvedPainTags)).slice(0, 5);
+  const displaySectors = currentUser.sectors.length
+    ? currentUser.sectors
+    : uniqueLabels(memberships.map((membership) => membership.company.sector));
 
   function interactionLabel(interaction: VerifiedInteractionSummary) {
     return interaction.interactionType.replaceAll("_", " ");
@@ -76,19 +117,23 @@ export default async function ProfilePage() {
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <article className="rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-sm backdrop-blur sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate">Profile</p>
-            <h1 className="mt-4 font-display text-4xl tracking-tight text-ink">{currentUser.name}</h1>
-            <p className="mt-3 text-sm leading-7 text-slate">{currentUser.bio || "Meshed member profile ready for demo flows."}</p>
+            <div className="mt-4 flex flex-col gap-6 lg:flex-row lg:items-start">
+              <ProfileImageUploader
+                initialImageUrl={currentUser.profileImageUrl ?? null}
+                displayName={currentUser.name}
+                label="Profile image"
+                description="Upload a recognizable image for your Meshed profile and agent-facing context."
+              />
+              <div className="flex-1">
+                <h1 className="font-display text-4xl tracking-tight text-ink">{currentUser.name}</h1>
+                <p className="mt-3 text-sm leading-7 text-slate">{currentUser.bio || "Meshed member profile ready for demo flows."}</p>
+              </div>
+            </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[1.4rem] border border-slate-200 bg-mist/70 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Role</p>
                 <p className="mt-2 text-sm font-medium text-ink">{getDemoRoleLabel(currentUser)}</p>
-              </div>
-              <div className="rounded-[1.4rem] border border-slate-200 bg-mist/70 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Wallet</p>
-                <p className="mt-2 text-sm font-medium text-ink">
-                  {currentUser.walletAddress ? "Connected" : "Pending"}
-                </p>
               </div>
               <div className="rounded-[1.4rem] border border-slate-200 bg-mist/70 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">World verification</p>
@@ -110,13 +155,13 @@ export default async function ProfilePage() {
               <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Skills</p>
                 <p className="mt-2 text-sm text-ink">
-                  {currentUser.skills.length ? currentUser.skills.join(", ") : "No skills saved yet"}
+                  {displaySkills.length ? displaySkills.map(titleCase).join(", ") : "No skills saved yet"}
                 </p>
               </div>
               <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Sectors</p>
                 <p className="mt-2 text-sm text-ink">
-                  {currentUser.sectors.length ? currentUser.sectors.join(", ") : "No sectors saved yet"}
+                  {displaySectors.length ? displaySectors.map(titleCase).join(", ") : "No sectors saved yet"}
                 </p>
               </div>
               <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
@@ -152,19 +197,6 @@ export default async function ProfilePage() {
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">{outgoingContacts.length}</p>
               </div>
             </div>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Button href="/agent" variant="secondary">
-                Open Agent
-              </Button>
-              <Button href="/agent?mode=setup" variant="secondary">
-                Update setup with Agent
-              </Button>
-              <Button href="/dashboard" variant="secondary">
-                Open dashboard
-              </Button>
-              <LogoutButton />
-            </div>
           </article>
         </div>
 
@@ -181,7 +213,7 @@ export default async function ProfilePage() {
                   <div key={membership.id} className="rounded-[1.4rem] border border-slate-200 bg-mist/60 px-4 py-4">
                     <p className="text-sm font-semibold text-ink">{membership.company.name}</p>
                     <p className="mt-1 text-sm text-slate">
-                      {membership.title} | {membership.relation}
+                      {membership.title} | {formatMembershipRelation(membership.relation)}
                     </p>
                     <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate">
                       {membership.company.sector} | {membership.company.stage}

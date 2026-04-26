@@ -55,6 +55,7 @@ export const userRepository = {
     bio: string;
     skills: string[];
     sectors: string[];
+    profileImageUrl?: string | null;
     linkedinUrl?: string | null;
     outsideNetworkAccessEnabled?: boolean;
   }) {
@@ -62,6 +63,7 @@ export const userRepository = {
     const user = await prisma.user.create({
       data: {
         ...data,
+        profileImageUrl: data.profileImageUrl ?? null,
         linkedinUrl: data.linkedinUrl ?? null,
         outsideNetworkAccessEnabled: data.outsideNetworkAccessEnabled ?? false,
       },
@@ -77,6 +79,7 @@ export const userRepository = {
       bio?: string;
       skills?: string[];
       sectors?: string[];
+      profileImageUrl?: string | null;
       linkedinUrl?: string | null;
       outsideNetworkAccessEnabled?: boolean;
     },
@@ -89,6 +92,7 @@ export const userRepository = {
         bio: data.bio,
         skills: data.skills,
         sectors: data.sectors,
+        profileImageUrl: data.profileImageUrl,
         linkedinUrl: data.linkedinUrl,
         outsideNetworkAccessEnabled: data.outsideNetworkAccessEnabled,
       },

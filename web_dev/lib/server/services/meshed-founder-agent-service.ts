@@ -224,6 +224,85 @@ function buildInstructions(context: FounderContext) {
   ].join("\n");
 }
 
+export function isPromptSuggestionRequest(question: string) {
+  const normalized = normalizeText(question).toLowerCase();
+  return (
+    /suggest(?:ed)?(?:\s+\w+){0,3}\s+prompts?/.test(normalized) ||
+    /sample prompts?/.test(normalized) ||
+    /starter prompts?/.test(normalized) ||
+    /prompt ideas/.test(normalized) ||
+    /suggest(?:ed)?(?:\s+\w+){0,3}\s+questions?/.test(normalized) ||
+    /what should i ask/.test(normalized) ||
+    /questions should i ask/.test(normalized) ||
+    /give me (?:some )?(?:questions|prompts|examples)/.test(normalized) ||
+    /examples? of what to say/.test(normalized)
+  );
+}
+
+function buildPromptSuggestionHighlights(context: FounderContext) {
+  const membershipCompanyName = context.memberships[0]?.companyName ?? null;
+  const rawPainTag = context.memberships.flatMap((membership) => membership.currentPainTags)[0] ?? null;
+  const primaryPainTag = rawPainTag ? formatPromptTag(rawPainTag) : null;
+
+  if (context.founder.role === "investor") {
+    return [
+      `Which founders, LPs, and advisors in ${context.scopeLabel} should I coordinate with this week?`,
+      `What are the strongest verified introductions I should make across ${context.scopeLabel} right now?`,
+      "Where is there a live pain-point match that deserves a human-backed intro this week?",
+      "Which recent verified interactions are most at risk of going cold if I do nothing?",
+      "What opportunities should my Meshed agent surface before my next partner meeting?",
+    ];
+  }
+
+  if (context.founder.role === "mentor" || context.founder.role === "consultant") {
+    return [
+      primaryPainTag
+        ? `Which teams in ${context.scopeLabel} are feeling ${primaryPainTag.toLowerCase()} and look like a strong fit for my help?`
+        : `Where can I be most useful across ${context.scopeLabel} this week?`,
+      "Which founders or operators should I proactively offer help to right now?",
+      "What warm introductions would let me support the right teams without creating noise?",
+      "Where is there a verified interaction I should follow up on before it fades?",
+      "What opportunities should my Meshed agent surface for me to support this month?",
+    ];
+  }
+
+  return [
+    primaryPainTag
+      ? `Who in ${context.scopeLabel} has already solved ${primaryPainTag.toLowerCase()} and is worth meeting first?`
+      : `Who in ${context.scopeLabel} should I meet to accelerate my current priorities?`,
+    `What are the strongest people and opportunity matches for ${membershipCompanyName ?? "my company"} right now?`,
+    "I'm heading to an event soon. Who should my Meshed agent recommend I meet first?",
+    "What proactive alerts should I be paying attention to this week?",
+    "Which verified interactions or introductions would create the most momentum for me right now?",
+  ];
+}
+
+function formatPromptTag(tag: string) {
+  return tag
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function buildPromptSuggestionReply(
+  founderContext: FounderContext,
+  mode: "openai_agent" | "deterministic_fallback" = "deterministic_fallback",
+): MeshedFounderAgentReply {
+  return {
+    answer:
+      "Here are a few strong ways to kick off the conversation. Pick one exactly as written, or ask me to tailor them around fundraising, partnerships, hiring, events, or follow-up priorities.",
+    intent: "prompt_suggestions",
+    layer: "individual",
+    specialist: "personal_agent",
+    highlights: buildPromptSuggestionHighlights(founderContext),
+    suggestedActions: [],
+    agentActions: [],
+    mode,
+    previousResponseId: null,
+  };
+}
+
 function mapToolReplyToHighlights(reply: GraphChatReply) {
   return reply.highlights.slice(0, 4);
 }
@@ -533,6 +612,10 @@ export function createMeshedFounderAgentService(deps?: {
     async answer(input: MeshedFounderAgentInput): Promise<MeshedFounderAgentReply> {
       if (!env.OPENAI_API_KEY) {
         throw new Error("OPENAI_API_KEY is not configured.");
+      }
+
+      if (isPromptSuggestionRequest(input.question)) {
+        return buildPromptSuggestionReply(input.founderContext, "openai_agent");
       }
 
       const client = (deps?.createOpenAIClient ?? defaultOpenAIClientFactory)();

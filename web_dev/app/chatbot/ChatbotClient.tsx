@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   CompanyDetailModal,
@@ -35,6 +35,8 @@ type ChatMessage = {
   from: "user" | "assistant";
   text: string;
   highlights?: ChatHighlight[];
+  introCapabilities?: Array<{ title: string; body: string }>;
+  introSamplePrompts?: string[];
   intent?: string;
   layer?: "individual" | "ecosystem" | "resilience";
   specialist?: string;
@@ -80,8 +82,8 @@ type ChatbotClientProps = {
   currentUserName?: string | null;
   currentUserVerified?: boolean;
   introMessage?: string | null;
-  draftPrompt?: string | null;
-  samplePrompts?: string[];
+  introCapabilities?: Array<{ title: string; body: string }>;
+  introSamplePrompts?: string[];
 };
 
 type ResolvedHighlightModal =
@@ -104,86 +106,180 @@ type ResolvedHighlightModal =
       partner: A16zCompanyGraphPartner;
     };
 
-const defaultSamplePrompts = [
-  "I'm heading to ETHDenver. Who should my Meshed agent recommend I meet?",
-  "What opportunities should my doppelganger surface for fundraising and hiring this month?",
-  "Which founders, LPs, and advisors should I coordinate with this week?",
-  "What are the strongest portfolio matches for my startup right now?",
-  "What proactive alerts should I be paying attention to based on my current network?",
-  "Where do I have resilience risk or follow-up gaps right now?",
-];
-
-function getIntentLabel(intent?: string) {
-  switch (intent) {
-    case "general":
-      return "Founder guidance";
-    case "lp_exposure":
-      return "LP exposure";
-    case "lp_company_coverage":
-      return "LP coverage";
-    case "lp_coverage_for_company":
-      return "Company LPs";
-    case "founder_recommendation":
-      return "Outreach recommendation";
-    case "top_connected_companies":
-      return "Connected companies";
-    case "bridge_insights":
-      return "Bridge insights";
-    case "companies_by_vertical":
-      return "Vertical mapping";
-    case "companies_with_pain_point":
-      return "Pain-point scan";
-    case "who_solved_pain_point":
-      return "Resolved signals";
-    case "latest_news_for_company":
-      return "Company news";
-    case "companies_with_recent_news":
-      return "Recent news";
-    default:
-      return "Founder guidance";
-  }
-}
-
-function getLayerLabel(layer?: string) {
-  switch (layer) {
-    case "individual":
-      return "Individual layer";
-    case "ecosystem":
-      return "Ecosystem layer";
-    case "resilience":
-      return "Resilience layer";
-    default:
-      return "Meshed layer";
-  }
-}
-
-function getSpecialistLabel(specialist?: string) {
-  if (!specialist) {
-    return "Founder agent";
-  }
-
-  return specialist.replaceAll("_", " ");
-}
-
 function normalizeEntityKey(value: string | null | undefined) {
   return String(value ?? "")
     .toLowerCase()
     .trim();
 }
 
+function getAgentLabel(currentUserName?: string | null) {
+  const firstName = (currentUserName ?? "").trim().split(/\s+/)[0];
+  return firstName ? `${firstName}'s Agent` : "Your Agent";
+}
+
 function isHighlightObject(highlight: ChatHighlight): highlight is ChatHighlightObject {
   return typeof highlight === "object" && highlight !== null && "text" in highlight;
+}
+
+function AgentThinkingVisualization() {
+  const nodes = [
+    { left: "8%", top: "54%", size: "0.7rem", color: "#1293C9", delay: "0s" },
+    { left: "28%", top: "24%", size: "0.8rem", color: "#2E5CA8", delay: "0.2s" },
+    { left: "31%", top: "74%", size: "0.78rem", color: "#54389F", delay: "0.35s" },
+    { left: "52%", top: "50%", size: "0.88rem", color: "#8E3AA4", delay: "0.1s" },
+    { left: "72%", top: "25%", size: "0.82rem", color: "#E3472C", delay: "0.28s" },
+    { left: "88%", top: "60%", size: "0.78rem", color: "#F59E0B", delay: "0.4s" },
+  ] as const;
+
+  const links = [
+    { left: "12%", top: "52%", width: "24%", rotate: "-28deg", delay: "0s" },
+    { left: "13%", top: "57%", width: "24%", rotate: "26deg", delay: "0.2s" },
+    { left: "34%", top: "34%", width: "22%", rotate: "22deg", delay: "0.1s" },
+    { left: "34%", top: "64%", width: "22%", rotate: "-22deg", delay: "0.35s" },
+    { left: "56%", top: "40%", width: "22%", rotate: "-24deg", delay: "0.18s" },
+    { left: "56%", top: "55%", width: "28%", rotate: "16deg", delay: "0.42s" },
+  ] as const;
+
+  return (
+    <>
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white/85 px-4 py-4">
+        <div className="flex items-center gap-4">
+          <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.98),rgba(248,250,252,0.92))]">
+            <span className="absolute inset-x-3 top-4 h-8 rounded-full bg-[linear-gradient(90deg,rgba(18,147,201,0.14),rgba(142,58,164,0.14),rgba(245,158,11,0.14))] blur-xl animate-pulse" />
+            {links.map((link, index) => (
+              <span
+                key={`link-${index}`}
+                className="absolute block h-[2px] origin-left rounded-full bg-[linear-gradient(90deg,rgba(18,147,201,0.38),rgba(142,58,164,0.34),rgba(245,158,11,0.34))]"
+                style={{
+                  left: link.left,
+                  top: link.top,
+                  width: link.width,
+                  transform: `rotate(${link.rotate})`,
+                }}
+              >
+                <span
+                  className="meshed-flow-signal absolute left-0 top-1/2 block h-[6px] w-[28%] -translate-y-1/2 rounded-full bg-[linear-gradient(90deg,#1293C9,#8E3AA4,#F59E0B)] blur-[0.2px]"
+                  style={{ animationDelay: link.delay }}
+                />
+              </span>
+            ))}
+            {nodes.map((node, index) => (
+              <span
+                key={`node-${index}`}
+                className="meshed-flow-node absolute block rounded-full shadow-[0_0_0_4px_rgba(255,255,255,0.72)]"
+                style={{
+                  left: node.left,
+                  top: node.top,
+                  width: node.size,
+                  height: node.size,
+                  backgroundColor: node.color,
+                  transform: "translate(-50%, -50%)",
+                  animationDelay: node.delay,
+                }}
+              />
+            ))}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="relative h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full w-2/3 rounded-full bg-[linear-gradient(90deg,#1293C9,#8E3AA4,#F59E0B)] opacity-85" />
+              <span className="meshed-progress-signal absolute inset-y-0 left-0 w-1/3 rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.85),rgba(255,255,255,0))]" />
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="meshed-inline-dot h-2.5 w-2.5 rounded-full bg-[#1293C9] [animation-delay:-0.25s]" />
+              <span className="meshed-inline-dot h-2.5 w-2.5 rounded-full bg-[#8E3AA4] [animation-delay:-0.1s]" />
+              <span className="meshed-inline-dot h-2.5 w-2.5 rounded-full bg-[#F59E0B]" />
+              <span className="h-1.5 w-16 rounded-full bg-sky-100" />
+              <span className="h-1.5 w-10 rounded-full bg-fuchsia-100" />
+              <span className="h-1.5 w-14 rounded-full bg-amber-100" />
+            </div>
+          </div>
+        </div>
+        <span className="sr-only">Agent is thinking.</span>
+      </div>
+      <style jsx>{`
+        .meshed-flow-signal {
+          animation: meshed-signal-flow 1.65s ease-in-out infinite;
+        }
+
+        .meshed-flow-node {
+          animation: meshed-node-breathe 1.9s ease-in-out infinite;
+        }
+
+        .meshed-progress-signal {
+          animation: meshed-progress-sweep 1.8s ease-in-out infinite;
+        }
+
+        .meshed-inline-dot {
+          animation: meshed-inline-breathe 1.7s ease-in-out infinite;
+        }
+
+        @keyframes meshed-signal-flow {
+          0% {
+            transform: translate(-120%, -50%);
+            opacity: 0;
+          }
+          18% {
+            opacity: 1;
+          }
+          65% {
+            opacity: 0.95;
+          }
+          100% {
+            transform: translate(320%, -50%);
+            opacity: 0;
+          }
+        }
+
+        @keyframes meshed-node-breathe {
+          0%,
+          100% {
+            opacity: 0.8;
+            transform: translate(-50%, -50%) scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.14);
+          }
+        }
+
+        @keyframes meshed-progress-sweep {
+          0% {
+            transform: translateX(-120%);
+            opacity: 0;
+          }
+          20% {
+            opacity: 0.9;
+          }
+          100% {
+            transform: translateX(320%);
+            opacity: 0;
+          }
+        }
+
+        @keyframes meshed-inline-breathe {
+          0%,
+          100% {
+            opacity: 0.75;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.15);
+          }
+        }
+      `}</style>
+    </>
+  );
 }
 
 export default function ChatbotClient({
   companyNodes,
   currentUserName,
-  currentUserVerified = false,
   introMessage = null,
-  draftPrompt = null,
-  samplePrompts,
+  introCapabilities = [],
+  introSamplePrompts = [],
 }: ChatbotClientProps) {
-  const [input, setInput] = useState(draftPrompt ?? "");
+  const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
     introMessage
       ? [
@@ -206,13 +302,43 @@ export default function ChatbotClient({
   const [activeNews, setActiveNews] = useState<{ companyName: string; items: A16zCompanyGraphNode["latestNews"] } | null>(null);
   const [executingActionKeys, setExecutingActionKeys] = useState<Record<string, boolean>>({});
   const [acceptedActionMessages, setAcceptedActionMessages] = useState<Record<string, string>>({});
-  const prompts = samplePrompts?.length ? samplePrompts : defaultSamplePrompts;
+  const [introCardsShown, setIntroCardsShown] = useState(false);
 
-  useEffect(() => {
-    if (draftPrompt?.trim()) {
-      setInput(draftPrompt);
+  function looksLikePositiveIntroResponse(question: string) {
+    const normalized = question.trim().toLowerCase();
+    return (
+      /^(yes|yeah|yep|sure|ok|okay|please|go ahead|tell me|show me|sounds good|absolutely|let'?s do it|lets do it)/.test(
+        normalized,
+      ) ||
+      normalized.includes("what can you do") ||
+      normalized.includes("show me what you can do") ||
+      normalized.includes("tell me what you can do")
+    );
+  }
+
+  async function askSamplePromptNow(prompt: string) {
+    if (!introCardsShown && introCapabilities.length > 0) {
+      setMessages((previous) => [
+        ...previous,
+        { from: "assistant", text: "Here are a few strong ways to kick off the conversation.", introCapabilities, introSamplePrompts },
+      ]);
+      setIntroCardsShown(true);
     }
-  }, [draftPrompt]);
+
+    await ask(prompt);
+  }
+
+  function editSamplePrompt(prompt: string) {
+    if (!introCardsShown && introCapabilities.length > 0) {
+      setMessages((previous) => [
+        ...previous,
+        { from: "assistant", text: "Here are a few strong ways to kick off the conversation.", introCapabilities, introSamplePrompts },
+      ]);
+      setIntroCardsShown(true);
+    }
+
+    setInput(prompt);
+  }
 
   const companyLookup = useMemo(() => {
     const map = new Map<string, A16zCompanyGraphNode>();
@@ -478,12 +604,31 @@ export default function ChatbotClient({
       return;
     }
 
+    if (!introCardsShown && introCapabilities.length > 0 && looksLikePositiveIntroResponse(question)) {
+      setMessages((previous) => [
+        ...previous,
+        { from: "user", text: question },
+        {
+          from: "assistant",
+          text: "Here are a few strong ways to kick off the conversation. Tap one and I'll drop it into chat for you.",
+          introCapabilities,
+          introSamplePrompts,
+          intent: "general",
+          layer: "individual",
+          specialist: "personal_agent",
+        },
+      ]);
+      setIntroCardsShown(true);
+      setInput("");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setMessages((previous) => [
       ...previous,
       { from: "user", text: question },
-      { from: "assistant", text: "Analyzing your graph and ranking the best matches...", isPending: true },
+      { from: "assistant", text: "", isPending: true },
     ]);
 
     try {
@@ -599,30 +744,7 @@ export default function ChatbotClient({
     <>
       <main className="mx-auto mt-4 max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
         <section className="rounded-3xl border border-white bg-white/85 p-6 shadow-sm backdrop-blur sm:p-8">
-          <h1 className="text-3xl font-bold text-ink">Meshed Agent</h1>
-          <p className="mt-2 text-sm text-slate">
-            {currentUserName ? `${currentUserName}'s ` : "Your "}
-            verified AI Doppelganger for people discovery, opportunity routing, and founder coordination across the Meshed network.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-              Meshed agents
-            </span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
-              Individual, Ecosystem, Resilience
-            </span>
-            <span
-              className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
-                currentUserVerified
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border-amber-200 bg-amber-50 text-amber-700"
-              }`}
-            >
-              {currentUserVerified ? "Verified Human" : "Verification pending"}
-            </span>
-          </div>
-
-          <div className="mt-6 space-y-4">
+          <div className="space-y-4">
             {messages.map((message, index) => (
               <div
                 key={`${message.from}-${index}`}
@@ -640,10 +762,7 @@ export default function ChatbotClient({
                   <>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-                        Verified AI Doppelganger
-                      </span>
-                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
-                        {getIntentLabel(message.intent)}
+                        {getAgentLabel(currentUserName)}
                       </span>
                       {message.isPending ? (
                         <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-700">
@@ -651,37 +770,101 @@ export default function ChatbotClient({
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-3 leading-7 text-ink">{message.text}</p>
-                    {message.layer || message.specialist || message.mode ? (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {message.layer ? (
-                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
-                            {getLayerLabel(message.layer)}
-                          </span>
-                        ) : null}
-                        {message.specialist ? (
-                          <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-                            {getSpecialistLabel(message.specialist)}
-                          </span>
-                        ) : null}
-                        {message.mode === "deterministic_fallback" ? (
-                          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
-                            Graph fallback
-                          </span>
-                        ) : null}
+                    {message.isPending ? (
+                      <AgentThinkingVisualization />
+                    ) : message.text ? (
+                      <p className="mt-3 leading-7 text-ink">{message.text}</p>
+                    ) : null}
+                    {message.introCapabilities?.length ? (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {message.introCapabilities.map((capability) => (
+                          <article key={capability.title} className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                            <p className="text-sm font-semibold text-ink">{capability.title}</p>
+                            <p className="mt-2 text-sm leading-6 text-slate">{capability.body}</p>
+                          </article>
+                        ))}
+                      </div>
+                    ) : null}
+                    {message.introSamplePrompts?.length ? (
+                      <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Try saying</p>
+                        <div className="space-y-3">
+                          {message.introSamplePrompts.map((prompt, promptIndex) => (
+                            <div key={`${prompt}-${promptIndex}`} className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Sample {promptIndex + 1}</p>
+                              <p className="mt-2 text-sm leading-6 text-ink">{prompt}</p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    void askSamplePromptNow(prompt);
+                                  }}
+                                  className="rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
+                                >
+                                  Ask this now
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    editSamplePrompt(prompt);
+                                  }}
+                                  className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate transition hover:border-slate-400 hover:bg-slate-50"
+                                >
+                                  Edit first
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ) : null}
                     {message.highlights?.length ? (
                       <div className="mt-4 space-y-2">
                         {message.highlights.map((highlight, highlightIndex) => {
+                          const highlightLabel = message.intent === "prompt_suggestions" ? "Prompt" : "Insight";
+
                           if (!isHighlightObject(highlight)) {
+                            if (message.intent === "prompt_suggestions") {
+                              return (
+                                <div
+                                  key={`${highlight}-${highlightIndex}`}
+                                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4"
+                                >
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
+                                    {highlightLabel} {highlightIndex + 1}
+                                  </p>
+                                  <p className="mt-2 text-sm leading-6 text-ink">{highlight}</p>
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        void ask(highlight);
+                                      }}
+                                      className="rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
+                                    >
+                                      Ask this now
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        editSamplePrompt(highlight);
+                                      }}
+                                      className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate transition hover:border-slate-400 hover:bg-slate-50"
+                                    >
+                                      Edit first
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            }
+
                             return (
                               <div
                                 key={`${highlight}-${highlightIndex}`}
                                 className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
                               >
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
-                                  Insight {highlightIndex + 1}
+                                  {highlightLabel} {highlightIndex + 1}
                                 </p>
                                 <p className="mt-1 text-sm leading-6 text-ink">{highlight}</p>
                               </div>
@@ -697,7 +880,7 @@ export default function ChatbotClient({
                               className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
                             >
                               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">
-                                Insight {highlightIndex + 1}
+                                {highlightLabel} {highlightIndex + 1}
                               </p>
                               {highlight.url && !canOpenModal ? (
                                 <a
@@ -806,14 +989,6 @@ export default function ChatbotClient({
               Ask a graph question
             </label>
             <div className="rounded-[1.6rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-ink">Ask your agent</p>
-                  <p className="mt-1 text-xs text-slate">
-                    Try a people, opportunity, conference, coordination, or resilience question.
-                  </p>
-                </div>
-              </div>
               <textarea
                 id="chat-message"
                 value={input}
@@ -828,35 +1003,17 @@ export default function ChatbotClient({
                 }}
                 disabled={loading}
                 className="mt-4 h-28 w-full resize-y rounded-2xl border border-slate-200 bg-white p-4 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-                placeholder="Type your question..."
+                placeholder="Ask your agent..."
               />
-              <div className="mt-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate">Suggested prompts</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {prompts.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => {
-                        void ask(prompt);
-                      }}
-                      className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-50"
-                      disabled={loading}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={loading || !input.trim()}
+                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accentStrong disabled:opacity-50"
+                >
+                  {loading ? "Submitting..." : "Submit"}
+                </button>
               </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accentStrong disabled:opacity-50"
-              >
-                {loading ? "Asking..." : "Ask"}
-              </button>
             </div>
           </form>
         </section>

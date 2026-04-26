@@ -317,4 +317,74 @@ describe("meshedFounderAgentService", () => {
     });
     expect(response.agentActions).toEqual([]);
   });
+
+  it("returns prompt suggestions instead of graph matches when the founder asks for starter prompts", async () => {
+    const queryGraph = vi.fn(() => ({
+      intent: "general",
+      answer: "Fallback graph answer",
+      highlights: ["Graph match that should not be used."],
+    }));
+
+    const { createMeshedFounderAgentService } = await import("@/lib/server/services/meshed-founder-agent-service");
+    const service = createMeshedFounderAgentService({
+      createOpenAIClient: () =>
+        ({
+          responses: {
+            parse: vi.fn(),
+          },
+        }) as never,
+      model: "gpt-4.1-mini",
+    });
+
+    const response = await service.answer({
+      question: "Suggest some prompts for me",
+      founderContext: {
+        founder: {
+          id: "usr_founder",
+          name: "Teegs",
+          email: "teegs@example.com",
+          role: "operator",
+          bio: "Founder building a network intelligence product.",
+          skills: ["fundraising"],
+          sectors: ["fintech"],
+          worldVerified: true,
+          verificationBadges: ["world_verified"],
+          outsideNetworkAccessEnabled: true,
+        },
+        scope: "flexpoint-ford",
+        scopeLabel: "Flexpoint Ford",
+        memberships: [
+          {
+            companyId: "co_1",
+            companyName: "Create Music Group",
+            sector: "music",
+            stage: "growth",
+            title: "Founder",
+            relation: "owner",
+            currentPainTags: ["fundraising"],
+            resolvedPainTags: [],
+          },
+        ],
+        recentInteractions: [],
+      },
+      queryGraph,
+    });
+
+    expect(queryGraph).not.toHaveBeenCalled();
+    expect(response).toMatchObject({
+      intent: "prompt_suggestions",
+      layer: "individual",
+      specialist: "personal_agent",
+      mode: "openai_agent",
+      suggestedActions: [],
+      agentActions: [],
+    });
+    expect(response.highlights).toEqual([
+      "Who in Flexpoint Ford has already solved fundraising and is worth meeting first?",
+      "What are the strongest people and opportunity matches for Create Music Group right now?",
+      "I'm heading to an event soon. Who should my Meshed agent recommend I meet first?",
+      "What proactive alerts should I be paying attention to this week?",
+      "Which verified interactions or introductions would create the most momentum for me right now?",
+    ]);
+  });
 });
